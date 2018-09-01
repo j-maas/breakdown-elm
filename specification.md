@@ -13,6 +13,7 @@ Tasks may have relationships. They can depend on the completion of others, or be
 - Strict enforcement of opinion. Rules should be encouraged, but breakable.
 
 # Scenarios
+The scenarios serve to drive the development on the basis of use cases. They should be plausible and showcase real needs that will be addressed with the system.
 
 ## Capture
 Peter is always busy. If he doesn't sleep, he showers, cooks, eats, works, or goes to bed. In his busy life, he often remembers things to do at the wrong time. "Buy milk" at work, "Fix the bike's lock" in the shower, "Fix that bug" during breakfast. Of course, when it is time to actually do these things, he will already have forgotten them.
@@ -24,16 +25,57 @@ Since the list of current tasks is on his phone's homescreen, every time he unlo
 What a good thing he noticed, or else he might have slept through his marriage day...
 
 ## Planning
-Break a task into subtasks.
+Anna, an ambitious student, has a problem any student has; procrastination. She will go to extreme lengths to avoid starting work on any task. Her room always is tidiest during exam phase.
+
+But she knows that once she starts working on something, she usually manages to accomplish a fair amount of work. Only getting started is the problem.
+
+Most of the time, her Todo list has quite abstract tasks on it. "Do homework", "Study machine learning", "Clean the room". Since it's not exactly clear what to do next, the tasks are not actionable enough to motivate Anna to start doing them.
+
+When Anna has a task at hand that she is not entirely motivated to do, she opens Breakdown and starts breaking it up into smaller tasks. "Clean the room" consists of
+
+- Sort stuff on desk (5 min)
+- Throw away garbage into bins (3 min)
+- Put clothes in basket (2 min)
+- Vacuum floor (7 min)
+- Sweep floor
+
+She is unsure how much time sweeping the floor will take, so she breaks that subtask down further:
+
+- Fill bucket with water and soap (3 min)
+- Sweep floor (7 min)
+- Throw away water (2 min)
+- Put away bucket and mop (2 min)
+
+With this, the total estimated time for cleaning her room is 31 minutes. The first thing she needs to do is "Sort stuff on desk". Since it only takes 5 minutes, she is motivated enough to start sorting... She could stop afterwards, if she doesn't feel like continuing.
+
+As often is the case, once she started, she soon is cleaning the entire appartement.
+
+Studying for the exam will have to wait until later.
 
 ## Delayed Planning
-Add a duration separately from capture with reminder.
+Frank is both super-budy and ambitious. Often during one task he will have ideas about what else he could do. But those new ideas need further consideration than Frank is willing to spend right now, because his cat is demanding full petting-attention.
+
+Therefore, Frank quickly notes down the general idea, "Cook cheesecake", without setting a duration. This will file the idea as an "unplanned" one, such that Frank can easily come back to it later, after he has enough of his cat's purring.
+
+Before Frank has had enough of his cat, the cat decides that it doesn't like being pet anymore, stands up and walks away arrogantly. While checking his phone, Frank sees he has unplanned tasks, so he decides to revisit it.
+
+Since "Cook cheesecake" is a bit too complex to estimate the duration, he breaks it down into subtasks. He then obtains a delicious estimate that motivates him to fire up the oven.
+
+Unfortunately, the cake tastes weird, slightly burnt. Frank investigates and dicovers that his cat had decided to take a nap in the oven...
 
 ## Future Reminder
-Defer a task until a date.
+Barry likes to plan ahead. He often thinks of tasks that he will have to accomplish later. Even though he tries to do everything as soon as possible, sometimes he has to wait before he can start working on something.
+
+He recently booked a flight to Ireland. Barry knows that he will have to check in online. Unfortunately, the flight company does not open the check in until three days prior to the departure. So Barry cannot do it know, he has to wait another two weeks.
+
+Barry does not want to forget checking in, so he creates a new task, "Check in online", and defers it until the day three days prior to the departure, giving it "Is online check-in open?". The task does not show up in the current ones.
+
+Three days prior to the departure, Breakdown asks him "Is online check-in open?" Barry goes online and manages to check in, so he marks the task as done.
+
+Unfortunately, Barry packed a metal spoon in his luggage. He is now considered a terrorist and will have to spend three months in jail.
 
 ## Dependency
-Defer a task until completion of another.
+TODO: Defer a task until completion of another.
 
 # Activities
 ## Engage
