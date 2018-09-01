@@ -2,7 +2,9 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Element exposing (Element)
+import Element exposing (..)
+import Element.Background as Background
+import Element.Input as Input
 import Html exposing (Html)
 import Url
 
@@ -19,22 +21,26 @@ main =
         }
 
 
-init flags url key =
-    simply { key = key }
-
-
-simply : Model -> ( Model, Cmd Msg )
-simply model =
-    ( model, Cmd.none )
-
-
 
 -- MODEL
 
 
 type alias Model =
     { key : Nav.Key
+    , newTaskAction : String
     }
+
+
+init flags url key =
+    simply
+        { key = key
+        , newTaskAction = ""
+        }
+
+
+simply : Model -> ( Model, Cmd Msg )
+simply model =
+    ( model, Cmd.none )
 
 
 
@@ -44,6 +50,7 @@ type alias Model =
 type Msg
     = NoOp
     | UrlRequest Browser.UrlRequest
+    | UpdateNewTask String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -59,6 +66,10 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
+
+        UpdateNewTask action ->
+            simply { model | newTaskAction = action }
+
 
 
 
@@ -78,6 +89,34 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        [ Element.layout [] <| Element.text "Welcome to Breakdown."
+        [ Element.layout [ padding 18 ] <|
+            column [ centerX, width (shrink |> minimum 400) ]
+                [ viewActionInput model.newTaskAction
+                ]
         ]
     }
+
+
+viewActionInput : String -> Element Msg
+viewActionInput currentAction =
+    row []
+        [ Input.text []
+            { label = Input.labelAbove [] <| text "Action"
+            , onChange = UpdateNewTask
+            , text = currentAction
+            , placeholder = Nothing
+            }
+        , viewButtonWithStyle [ alignBottom ] (Just AddNewTask) "+"
+        ]
+
+
+buttonStyle =
+    [ Background.color <| rgb 0.8 0.8 0.8
+    , width <| px 40
+    , height <| px 40
+    ]
+
+
+viewButtonWithStyle : List (Attribute Msg) -> Maybe Msg -> String -> Element Msg
+viewButtonWithStyle style msg label =
+    Input.button (buttonStyle ++ style) { onPress = msg, label = paragraph [ centerX, centerY, width shrink ] [ text label ] }
