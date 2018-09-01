@@ -25,7 +25,32 @@ Since the list of current tasks is on his phone's homescreen, every time he unlo
 What a good thing he noticed, or else he might have slept through his marriage day...
 
 ## Planning
-Break a task into subtasks.
+Anna, an ambitious student, has a problem any student has; procrastination. She will go to extreme lengths to avoid starting work on any task. Her room always is tidiest during exam phase.
+
+But she knows that once she starts working on something, she usually manages to accomplish a fair amount of work. Only getting started is the problem.
+
+Most of the time, her Todo list has quite abstract tasks on it. "Do homework", "Study machine learning", "Clean the room". Since it's not exactly clear what to do next, the tasks are not actionable enough to motivate Anna to start doing them.
+
+When Anna has a task at hand that she is not entirely motivated to do, she opens Breakdown and starts breaking it up into smaller tasks. "Clean the room" consists of
+
+- Sort stuff on desk (5 min)
+- Throw away garbage into bins (3 min)
+- Put clothes in basket (2 min)
+- Vacuum floor (7 min)
+- Sweep floor
+
+She is unsure how much time sweeping the floor will take, so she breaks that subtask down further:
+
+- Fill bucket with water and soap (3 min)
+- Sweep floor (7 min)
+- Throw away water (2 min)
+- Put away bucket and mop (2 min)
+
+With this, the total estimated time for cleaning her room is 31 minutes. The first thing she needs to do is "Sort stuff on desk". Since it only takes 5 minutes, she is motivated enough to start sorting... She could stop afterwards, if she doesn't feel like continuing.
+
+As often is the case, once she started, she soon is cleaning the entire appartement.
+
+Studying for the exam will have to wait until later.
 
 ## Delayed Planning
 Add a duration separately from capture with reminder.
