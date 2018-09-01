@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import Element exposing (Element)
 import Html exposing (Html)
 import Url
 
@@ -77,6 +78,6 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        [ Html.text "Welcome to Breakdown."
+        [ Element.layout [] <| Element.text "Welcome to Breakdown."
         ]
     }
