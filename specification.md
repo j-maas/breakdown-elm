@@ -67,7 +67,7 @@ Three days prior to the departure, Breakdown asks him "Is online check-in open?"
 Unfortunately, Barry packed a metal spoon in his luggage. He is now considered a terrorist and will have to spend three months in jail.
 
 ## Dependency
-Defer a task until completion of another.
+TODO: Defer a task until completion of another.
 
 # Activities
 ## Engage
