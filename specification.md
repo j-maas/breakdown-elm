@@ -53,7 +53,15 @@ As often is the case, once she started, she soon is cleaning the entire appartem
 Studying for the exam will have to wait until later.
 
 ## Delayed Planning
-Add a duration separately from capture with reminder.
+Frank is both super-budy and ambitious. Often during one task he will have ideas about what else he could do. But those new ideas need further consideration than Frank is willing to spend right now, because his cat is demanding full petting-attention.
+
+Therefore, Frank quickly notes down the general idea, "Cook cheesecake", without setting a duration. This will file the idea as an "unplanned" one, such that Frank can easily come back to it later, after he has enough of his cat's purring.
+
+Before Frank has had enough of his cat, the cat decides that it doesn't like being pet anymore, stands up and walks away arrogantly. While checking his phone, Frank sees he has unplanned tasks, so he decides to revisit it.
+
+Since "Cook cheesecake" is a bit too complex to estimate the duration, he breaks it down into subtasks. He then obtains a delicious estimate that motivates him to fire up the oven.
+
+Unfortunately, the cake tastes weird, slightly burnt. Frank investigates and dicovers that his cat had decided to take a nap in the oven...
 
 ## Future Reminder
 Barry likes to plan ahead. He often thinks of tasks that he will have to accomplish later. Even though he tries to do everything as soon as possible, sometimes he has to wait before he can start working on something.
