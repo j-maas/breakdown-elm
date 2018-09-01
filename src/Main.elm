@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (addTask, main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -75,11 +75,28 @@ update msg model =
             simply { model | newTaskAction = action }
 
         AddNewTask ->
+            let
+                newTasks =
+                    addTask model.newTaskAction model.tasks
+            in
             simply
                 { model
-                    | tasks = model.tasks ++ [ model.newTaskAction ]
+                    | tasks = newTasks
                     , newTaskAction = ""
                 }
+
+
+addTask : String -> List String -> List String
+addTask newTask tasks =
+    let
+        cleaned =
+            String.trim newTask
+    in
+    if String.isEmpty cleaned then
+        tasks
+
+    else
+        tasks ++ [ cleaned ]
 
 
 
