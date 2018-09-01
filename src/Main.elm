@@ -110,7 +110,7 @@ view model =
 
 viewActionInput : String -> Element Msg
 viewActionInput currentAction =
-    row []
+    row [ spacing 8, width fill ]
         [ Input.text []
             { label = Input.labelAbove [] <| text "Action"
             , onChange = UpdateNewTask
