@@ -28,6 +28,7 @@ main =
 type alias Model =
     { key : Nav.Key
     , newTaskAction : String
+    , tasks : List String
     }
 
 
@@ -35,6 +36,7 @@ init flags url key =
     simply
         { key = key
         , newTaskAction = ""
+        , tasks = []
         }
 
 
@@ -51,6 +53,7 @@ type Msg
     = NoOp
     | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
+    | AddNewTask
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -70,6 +73,12 @@ update msg model =
         UpdateNewTask action ->
             simply { model | newTaskAction = action }
 
+        AddNewTask ->
+            simply
+                { model
+                    | tasks = model.tasks ++ [ model.newTaskAction ]
+                    , newTaskAction = ""
+                }
 
 
 
@@ -92,6 +101,7 @@ view model =
         [ Element.layout [ padding 18 ] <|
             column [ centerX, width (shrink |> minimum 400) ]
                 [ viewActionInput model.newTaskAction
+                , viewTaskList model.tasks
                 ]
         ]
     }
@@ -120,3 +130,8 @@ buttonStyle =
 viewButtonWithStyle : List (Attribute Msg) -> Maybe Msg -> String -> Element Msg
 viewButtonWithStyle style msg label =
     Input.button (buttonStyle ++ style) { onPress = msg, label = paragraph [ centerX, centerY, width shrink ] [ text label ] }
+
+
+viewTaskList : List String -> Element Msg
+viewTaskList tasks =
+    html <| Html.ol [] <| List.map (\task -> Html.li [] <| [ Html.text task ]) tasks
