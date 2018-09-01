@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Input as Input
 import Html exposing (Html)
 import Url
@@ -120,16 +121,25 @@ viewActionInput currentAction =
         ]
 
 
+viewButtonWithStyle : List (Attribute Msg) -> Maybe Msg -> String -> Element Msg
+viewButtonWithStyle style msg label =
+    Input.button (buttonStyle ++ style)
+        { onPress = msg
+        , label = paragraph [ centerX, centerY, width shrink ] [ text label ]
+        }
+
+
 buttonStyle =
     [ Background.color <| rgb 0.8 0.8 0.8
     , width <| px 40
     , height <| px 40
+    , mouseOver buttonHoverStyle
+    , focused buttonHoverStyle
     ]
 
 
-viewButtonWithStyle : List (Attribute Msg) -> Maybe Msg -> String -> Element Msg
-viewButtonWithStyle style msg label =
-    Input.button (buttonStyle ++ style) { onPress = msg, label = paragraph [ centerX, centerY, width shrink ] [ text label ] }
+buttonHoverStyle =
+    [ Border.glow (rgba 0 0 0 0.2) 1 ]
 
 
 viewTaskList : List String -> Element Msg
