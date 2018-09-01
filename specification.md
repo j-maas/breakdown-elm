@@ -56,7 +56,15 @@ Studying for the exam will have to wait until later.
 Add a duration separately from capture with reminder.
 
 ## Future Reminder
-Defer a task until a date.
+Barry likes to plan ahead. He often thinks of tasks that he will have to accomplish later. Even though he tries to do everything as soon as possible, sometimes he has to wait before he can start working on something.
+
+He recently booked a flight to Ireland. Barry knows that he will have to check in online. Unfortunately, the flight company does not open the check in until three days prior to the departure. So Barry cannot do it know, he has to wait another two weeks.
+
+Barry does not want to forget checking in, so he creates a new task, "Check in online", and defers it until the day three days prior to the departure, giving it "Is online check-in open?". The task does not show up in the current ones.
+
+Three days prior to the departure, Breakdown asks him "Is online check-in open?" Barry goes online and manages to check in, so he marks the task as done.
+
+Unfortunately, Barry packed a metal spoon in his luggage. He is now considered a terrorist and will have to spend three months in jail.
 
 ## Dependency
 Defer a task until completion of another.
