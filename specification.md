@@ -13,6 +13,7 @@ Tasks may have relationships. They can depend on the completion of others, or be
 - Strict enforcement of opinion. Rules should be encouraged, but breakable.
 
 # Scenarios
+The scenarios serve to drive the development on the basis of use cases. They should be plausible and showcase real needs that will be addressed with the system.
 
 ## Capture
 Peter is always busy. If he doesn't sleep, he showers, cooks, eats, works, or goes to bed. In his busy life, he often remembers things to do at the wrong time. "Buy milk" at work, "Fix the bike's lock" in the shower, "Fix that bug" during breakfast. Of course, when it is time to actually do these things, he will already have forgotten them.
