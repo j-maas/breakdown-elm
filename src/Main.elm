@@ -143,7 +143,13 @@ viewActionInput currentAction =
             , css [ boxSizing borderBox, width (pct 100) ]
             ]
             []
-        , div [ css [ displayFlex, flexDirection row, justifyContent center ] ]
+        , div
+            [ css
+                [ displayFlex
+                , flexDirection row
+                , justifyContent center
+                ]
+            ]
             [ input [ type_ "submit", value "✔️" ] []
             , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
             ]
