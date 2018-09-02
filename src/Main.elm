@@ -2,9 +2,11 @@ module Main exposing (addTask, main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html exposing (..)
-import Html.Attributes exposing (type_, value)
-import Html.Events exposing (onInput, onSubmit)
+import Css exposing (..)
+import Html
+import Html.Styled exposing (Html, div, form, input, li, ol, text, toUnstyled)
+import Html.Styled.Attributes exposing (css, type_, value)
+import Html.Styled.Events exposing (onInput, onSubmit)
 import Url
 
 
@@ -114,17 +116,33 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        [ viewActionInput model.newTaskAction
-        , viewTaskList model.tasks
-        ]
+        List.map toUnstyled
+            [ viewAppContainer
+                [ viewActionInput model.newTaskAction
+                , viewTaskList model.tasks
+                ]
+            ]
     }
+
+
+viewAppContainer : List (Html Msg) -> Html Msg
+viewAppContainer content =
+    div [ css [ displayFlex, justifyContent center ] ]
+        [ div [ css [ minWidth (em 20) ] ] content
+        ]
 
 
 viewActionInput : String -> Html Msg
 viewActionInput currentAction =
     form [ onSubmit AddNewTask ]
-        [ input [ type_ "text", value currentAction, onInput UpdateNewTask ] []
-        , div []
+        [ input
+            [ type_ "text"
+            , value currentAction
+            , onInput UpdateNewTask
+            , css [ boxSizing borderBox, width (pct 100) ]
+            ]
+            []
+        , div [ css [ displayFlex, flexDirection row, justifyContent center ] ]
             [ input [ type_ "submit", value "✔️" ] []
             , input [ type_ "reset", value "❌" ] []
             ]
