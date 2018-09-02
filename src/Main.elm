@@ -2,11 +2,9 @@ module Main exposing (addTask, main)
 
 import Browser
 import Browser.Navigation as Nav
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Input as Input
-import Html exposing (Html)
+import Html exposing (..)
+import Html.Attributes exposing (type_, value)
+import Html.Events exposing (onInput, onSubmit)
 import Url
 
 
@@ -116,49 +114,23 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        [ Element.layout [ padding 18 ] <|
-            column [ centerX, width (shrink |> minimum 400) ]
-                [ viewActionInput model.newTaskAction
-                , viewTaskList model.tasks
-                ]
+        [ viewActionInput model.newTaskAction
+        , viewTaskList model.tasks
         ]
     }
 
 
-viewActionInput : String -> Element Msg
+viewActionInput : String -> Html Msg
 viewActionInput currentAction =
-    row [ spacing 8, width fill ]
-        [ Input.text []
-            { label = Input.labelAbove [] <| text "Action"
-            , onChange = UpdateNewTask
-            , text = currentAction
-            , placeholder = Nothing
-            }
-        , viewButtonWithStyle [ alignBottom ] (Just AddNewTask) "+"
+    form [ onSubmit AddNewTask ]
+        [ input [ type_ "text", value currentAction, onInput UpdateNewTask ] []
+        , div []
+            [ input [ type_ "submit", value "✔️" ] []
+            , input [ type_ "reset", value "❌" ] []
+            ]
         ]
 
 
-viewButtonWithStyle : List (Attribute Msg) -> Maybe Msg -> String -> Element Msg
-viewButtonWithStyle style msg label =
-    Input.button (buttonStyle ++ style)
-        { onPress = msg
-        , label = paragraph [ centerX, centerY, width shrink ] [ text label ]
-        }
-
-
-buttonStyle =
-    [ Background.color <| rgb 0.8 0.8 0.8
-    , width <| px 40
-    , height <| px 40
-    , mouseOver buttonHoverStyle
-    , focused buttonHoverStyle
-    ]
-
-
-buttonHoverStyle =
-    [ Border.glow (rgba 0 0 0 0.2) 1 ]
-
-
-viewTaskList : List String -> Element Msg
-viewTaskList tasks =
-    html <| Html.ol [] <| List.map (\task -> Html.li [] <| [ Html.text task ]) tasks
+viewTaskList : List String -> Html Msg
+viewTaskList =
+    ol [] << List.map (\task -> li [] <| [ text task ])
