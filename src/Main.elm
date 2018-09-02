@@ -5,8 +5,7 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Html
 import Html.Styled exposing (Html, div, form, input, li, ol, text, toUnstyled)
-import Html.Styled.Attributes exposing (css, type_, value)
-import Html.Styled.Events exposing (onInput, onSubmit)
+import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import Url
 
 
@@ -144,7 +143,7 @@ viewActionInput currentAction =
             []
         , div [ css [ displayFlex, flexDirection row, justifyContent center ] ]
             [ input [ type_ "submit", value "✔️" ] []
-            , input [ type_ "reset", value "❌" ] []
+            , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
             ]
         ]
 
