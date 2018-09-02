@@ -3,6 +3,7 @@ module Main exposing (addTask, main)
 import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
+import Css.Global exposing (global, selector)
 import Html
 import Html.Styled exposing (Html, div, form, input, li, ol, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, type_, value)
@@ -117,7 +118,8 @@ view model =
     { title = "Breakdown"
     , body =
         List.map toUnstyled
-            [ viewAppContainer
+            [ global [selector "body" [margin zero]]
+            , viewAppContainer
                 [ viewActionInput model.newTaskAction
                 , viewTaskList model.tasks
                 ]
@@ -127,7 +129,7 @@ view model =
 
 viewAppContainer : List (Html Msg) -> Html Msg
 viewAppContainer content =
-    div [ css [ displayFlex, justifyContent center ] ]
+    div [ css [ displayFlex, justifyContent center, margin (em 1) ] ]
         [ div [ css [ minWidth (em 20) ] ] content
         ]
 
