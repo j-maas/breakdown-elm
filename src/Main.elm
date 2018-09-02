@@ -2,11 +2,11 @@ module Main exposing (addTask, main)
 
 import Browser
 import Browser.Navigation as Nav
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Input as Input
-import Html exposing (Html)
+import Css exposing (..)
+import Html
+import Html.Styled exposing (Html, div, form, input, li, ol, text, toUnstyled)
+import Html.Styled.Attributes exposing (autofocus, css, type_, value)
+import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import Url
 
 
@@ -116,49 +116,46 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        [ Element.layout [ padding 18 ] <|
-            column [ centerX, width (shrink |> minimum 400) ]
+        List.map toUnstyled
+            [ viewAppContainer
                 [ viewActionInput model.newTaskAction
                 , viewTaskList model.tasks
                 ]
-        ]
+            ]
     }
 
 
-viewActionInput : String -> Element Msg
-viewActionInput currentAction =
-    row [ spacing 8, width fill ]
-        [ Input.text []
-            { label = Input.labelAbove [] <| text "Action"
-            , onChange = UpdateNewTask
-            , text = currentAction
-            , placeholder = Nothing
-            }
-        , viewButtonWithStyle [ alignBottom ] (Just AddNewTask) "+"
+viewAppContainer : List (Html Msg) -> Html Msg
+viewAppContainer content =
+    div [ css [ displayFlex, justifyContent center ] ]
+        [ div [ css [ minWidth (em 20) ] ] content
         ]
 
 
-viewButtonWithStyle : List (Attribute Msg) -> Maybe Msg -> String -> Element Msg
-viewButtonWithStyle style msg label =
-    Input.button (buttonStyle ++ style)
-        { onPress = msg
-        , label = paragraph [ centerX, centerY, width shrink ] [ text label ]
-        }
+viewActionInput : String -> Html Msg
+viewActionInput currentAction =
+    form [ onSubmit AddNewTask ]
+        [ input
+            [ type_ "text"
+            , value currentAction
+            , onInput UpdateNewTask
+            , autofocus True
+            , css [ boxSizing borderBox, width (pct 100) ]
+            ]
+            []
+        , div
+            [ css
+                [ displayFlex
+                , flexDirection row
+                , justifyContent center
+                ]
+            ]
+            [ input [ type_ "submit", value "✔️" ] []
+            , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+            ]
+        ]
 
 
-buttonStyle =
-    [ Background.color <| rgb 0.8 0.8 0.8
-    , width <| px 40
-    , height <| px 40
-    , mouseOver buttonHoverStyle
-    , focused buttonHoverStyle
-    ]
-
-
-buttonHoverStyle =
-    [ Border.glow (rgba 0 0 0 0.2) 1 ]
-
-
-viewTaskList : List String -> Element Msg
-viewTaskList tasks =
-    html <| Html.ol [] <| List.map (\task -> Html.li [] <| [ Html.text task ]) tasks
+viewTaskList : List String -> Html Msg
+viewTaskList =
+    ol [] << List.map (\task -> li [] <| [ text task ])
