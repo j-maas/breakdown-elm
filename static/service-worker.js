@@ -2,8 +2,7 @@
 
 const CACHE_NAME = 'breakdown-cache-v1';
 var urlsToCache = [
-    '/',
-    '/elm.js'
+    '#'
 ];
 
 self.addEventListener('install', function (event) {
