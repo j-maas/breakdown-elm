@@ -7426,6 +7426,7 @@ var author$project$Main$viewActionInput = function (currentAction) {
 };
 var rtfeldman$elm_css$Css$EmUnits = 0;
 var rtfeldman$elm_css$Css$em = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'em');
+var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
 var rtfeldman$elm_css$Css$minWidth = rtfeldman$elm_css$Css$prop1('min-width');
 var author$project$Main$viewAppContainer = function (content) {
 	return A2(
@@ -7436,7 +7437,9 @@ var author$project$Main$viewAppContainer = function (content) {
 				_List_fromArray(
 					[
 						rtfeldman$elm_css$Css$displayFlex,
-						rtfeldman$elm_css$Css$justifyContent(rtfeldman$elm_css$Css$center)
+						rtfeldman$elm_css$Css$justifyContent(rtfeldman$elm_css$Css$center),
+						rtfeldman$elm_css$Css$margin(
+						rtfeldman$elm_css$Css$em(1))
 					]))
 			]),
 		_List_fromArray(
@@ -7479,10 +7482,32 @@ var author$project$Main$viewTaskList = A2(
 						rtfeldman$elm_css$Html$Styled$text(task)
 					]));
 		}));
+var rtfeldman$elm_css$Css$UnitlessInteger = 0;
+var rtfeldman$elm_css$Css$zero = {aB: 0, af: 0, G: 0, ag: 0, ah: 0, O: 0, P: 0, aD: 0, J: 0, aZ: 0, ar: '', aO: 0, A: '0'};
 var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
 };
+var rtfeldman$elm_css$VirtualDom$Styled$unstyledNode = rtfeldman$elm_css$VirtualDom$Styled$Unstyled;
+var rtfeldman$elm_css$Css$Global$global = function (snippets) {
+	return rtfeldman$elm_css$VirtualDom$Styled$unstyledNode(
+		A3(
+			elm$virtual_dom$VirtualDom$node,
+			'style',
+			_List_Nil,
+			elm$core$List$singleton(
+				elm$virtual_dom$VirtualDom$text(
+					rtfeldman$elm_css$Css$Preprocess$Resolve$compile(
+						elm$core$List$singleton(
+							rtfeldman$elm_css$Css$Preprocess$stylesheet(snippets)))))));
+};
+var rtfeldman$elm_css$Css$Global$selector = F2(
+	function (selectorStr, styles) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$makeSnippet,
+			styles,
+			A2(rtfeldman$elm_css$Css$Structure$CustomSelector, selectorStr, _List_Nil));
+	});
 var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
 		_VirtualDom_noScript(tag));
@@ -7967,6 +7992,17 @@ var author$project$Main$view = function (model) {
 			rtfeldman$elm_css$Html$Styled$toUnstyled,
 			_List_fromArray(
 				[
+					rtfeldman$elm_css$Css$Global$global(
+					_List_fromArray(
+						[
+							A2(
+							rtfeldman$elm_css$Css$Global$selector,
+							'body',
+							_List_fromArray(
+								[
+									rtfeldman$elm_css$Css$margin(rtfeldman$elm_css$Css$zero)
+								]))
+						])),
 					author$project$Main$viewAppContainer(
 					_List_fromArray(
 						[
