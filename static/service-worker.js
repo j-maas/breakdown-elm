@@ -1,9 +1,8 @@
 // Code taken from https://developers.google.com/web/fundamentals/primers/service-workers/
 
-const CACHE_NAME = 'breakdown-cache-v1';
+const CACHE_NAME = 'app-shell';
 var urlsToCache = [
-    '/',
-    '/elm.js'
+    '#'
 ];
 
 self.addEventListener('install', function (event) {
