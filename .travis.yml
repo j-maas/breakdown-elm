@@ -6,9 +6,9 @@ install:
   - yarn add --dev elm elm-test@beta
 cache:
   yarn: true
+  "yarn.lock": true
   directories:
     - node_modules
-    - yarn.lock
     - elm-stuff/build-artifacts
     - elm-stuff/packages
 
