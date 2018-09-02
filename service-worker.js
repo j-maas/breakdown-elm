@@ -1,6 +1,6 @@
 // Code taken from https://developers.google.com/web/fundamentals/primers/service-workers/
 
-const CACHE_NAME = 'app-shell';
+var CACHE_NAME = 'app-shell';
 var urlsToCache = [
     '.'
 ];
@@ -10,7 +10,7 @@ self.addEventListener('install', function (event) {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(function (cache) {
-                console.log('Opened cache');
+                console.debug('Opened cache');
                 return cache.addAll(urlsToCache);
             })
     );
@@ -29,7 +29,7 @@ self.addEventListener('fetch', function (event) {
                 // can only be consumed once. Since we are consuming this
                 // once by cache and once by the browser for fetch, we need
                 // to clone the response.
-                const fetchRequest = event.request.clone();
+                var fetchRequest = event.request.clone();
 
                 return fetch(fetchRequest).then(
                     function (response) {
@@ -42,7 +42,7 @@ self.addEventListener('fetch', function (event) {
                         // and because we want the browser to consume the response
                         // as well as the cache consuming the response, we need
                         // to clone it so we have two streams.
-                        const responseToCache = response.clone();
+                        var responseToCache = response.clone();
 
                         caches.open(CACHE_NAME)
                             .then(function (cache) {
