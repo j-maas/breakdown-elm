@@ -11,3 +11,7 @@ if ('serviceWorker' in navigator) {
         });
     });
 }
+
+window.addEventListener('load', function () {
+    var app = Elm.Main.init();
+})
