@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Html
 import Html.Styled exposing (Html, div, form, input, li, ol, text, toUnstyled)
+import Html.Styled.Attributes exposing (autofocus, css, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import Url
 
@@ -138,6 +139,7 @@ viewActionInput currentAction =
             [ type_ "text"
             , value currentAction
             , onInput UpdateNewTask
+            , autofocus True
             , css [ boxSizing borderBox, width (pct 100) ]
             ]
             []
