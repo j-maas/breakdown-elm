@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - lts/*
+
+install:
+  - yarn add --dev elm elm-test@beta
+cache:
+  yarn: true
+  directories:
+    - node_modules
+    - elm-stuff/build-artifacts
+    - elm-stuff/packages
+
+script:
+  - yarn run elm-test
