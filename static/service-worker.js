@@ -2,7 +2,7 @@
 
 const CACHE_NAME = 'app-shell';
 var urlsToCache = [
-    '#'
+    '.'
 ];
 
 self.addEventListener('install', function (event) {
