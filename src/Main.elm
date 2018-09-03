@@ -146,7 +146,7 @@ view model =
                     ]
                 ]
             , main_ [ css [ minWidth (em 20) ] ]
-                [ viewActionInput [] model.newTask
+                [ viewActionInput model.newTask
                 , viewTaskList [ marginTop (em 1.5) ] <| List.map viewTask model.currentTasks
                 , viewTaskList [ marginTop (em 1.5) ] <| List.map viewAccomplishedTask model.accomplishedTasks
                 ]
@@ -154,9 +154,9 @@ view model =
     }
 
 
-viewActionInput : List Style -> String -> Html Msg
-viewActionInput styles currentAction =
-    form [ onSubmit AddNewTask, css styles ]
+viewActionInput : String -> Html Msg
+viewActionInput currentAction =
+    form [ onSubmit AddNewTask ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
