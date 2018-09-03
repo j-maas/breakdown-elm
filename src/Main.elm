@@ -63,7 +63,8 @@ type Msg
     | AddNewTask
     | AccomplishTask Int
     | UnaccomplishTask Int
-    | Edit Int
+    | StartEdit Int
+    | Edit Int String
     | CloseEdit
 
 
@@ -139,11 +140,18 @@ update msg model =
                     , currentTasks = newCurrentTasks
                 }
 
-        Edit index ->
+        StartEdit index ->
             simply { model | editing = Just index }
 
         CloseEdit ->
             simply { model | editing = Nothing }
+
+        Edit index newAction ->
+            let
+                newCurrentTasks =
+                    List.setAt index newAction model.currentTasks
+            in
+            simply { model | currentTasks = newCurrentTasks }
 
 
 addTask : String -> List String -> List String
@@ -185,9 +193,21 @@ view model =
                     , fontFamily sansSerif
                     ]
                 ]
-            , main_ [ css [ minWidth (em 20) ] ]
+            , main_
+                [ css
+                    [ minWidth (em 20) ]
+                ]
                 [ viewActionInput model.newTask
-                , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewTask model.currentTasks
+                , let
+                    renderTask =
+                        case model.editing of
+                            Nothing ->
+                                \index task -> viewTask index False task
+
+                            Just editIndex ->
+                                \index task -> viewTask index (editIndex == index) task
+                  in
+                  viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap renderTask model.currentTasks
                 , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewAccomplishedTask model.accomplishedTasks
                 ]
             ]
@@ -195,14 +215,19 @@ view model =
 
 
 viewActionInput : String -> Html Msg
-viewActionInput currentAction =
-    form [ onSubmit AddNewTask ]
+viewActionInput =
+    viewActionInputBase UpdateNewTask AddNewTask (UpdateNewTask "")
+
+
+viewActionInputBase : (String -> Msg) -> Msg -> Msg -> String -> Html Msg
+viewActionInputBase updateAction add reset currentAction =
+    form [ onSubmit add ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
                 [ type_ "text"
                 , value currentAction
-                , onInput UpdateNewTask
+                , onInput updateAction
                 , autofocus True
                 , css [ boxSizing borderBox, width (pct 100) ]
                 ]
@@ -221,7 +246,7 @@ viewActionInput currentAction =
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
-                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick reset ] []
                 ]
             ]
         ]
@@ -244,15 +269,32 @@ viewTaskList styles =
             )
 
 
-viewTask : Int -> String -> Html Msg
-viewTask index task =
-    viewTaskBase []
+viewTask : Int -> Bool -> String -> Html Msg
+viewTask index isEditing task =
+    viewTaskBase
+        (if isEditing then
+            viewEditAction index task
+
+         else
+            viewAction [] task
+        )
         (iconButton (AccomplishTask index) "Mark as done" "✔️")
-        task
 
 
-viewTaskBase : List Style -> Html Msg -> String -> Html Msg
-viewTaskBase textStyles actionButton task =
+viewAccomplishedTask : Int -> String -> Html Msg
+viewAccomplishedTask index task =
+    viewTaskBase
+        (viewAction
+            [ textDecoration lineThrough
+            , opacity (num 0.6)
+            ]
+            task
+        )
+        (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
+
+
+viewTaskBase : Html Msg -> Html Msg -> Html Msg
+viewTaskBase action btn =
     div
         [ css
             [ height (em 2)
@@ -261,29 +303,29 @@ viewTaskBase textStyles actionButton task =
             , padding (em 0.5)
             ]
         ]
-        [ span
-            [ css
-                ([ whiteSpace noWrap
-                 , overflow hidden
-                 , textOverflow ellipsis
-                 , flex (num 1)
-                 ]
-                    ++ textStyles
-                )
-            ]
-            [ text task ]
-        , actionButton
+        [ action
+        , btn
         ]
 
 
-viewAccomplishedTask : Int -> String -> Html Msg
-viewAccomplishedTask index task =
-    viewTaskBase
-        [ textDecoration lineThrough
-        , opacity (num 0.6)
+viewAction : List Style -> String -> Html Msg
+viewAction textStyles action =
+    span
+        [ css
+            ([ whiteSpace noWrap
+             , overflow hidden
+             , textOverflow ellipsis
+             , flex (num 1)
+             ]
+                ++ textStyles
+            )
         ]
-        (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
-        task
+        [ text action ]
+
+
+viewEditAction : Int -> String -> Html Msg
+viewEditAction index =
+    viewActionInputBase (Edit index) CloseEdit (Edit index "")
 
 
 iconButton : Msg -> String -> String -> Html Msg
