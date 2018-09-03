@@ -120,7 +120,7 @@ view model =
         List.map toUnstyled
             [ global [ selector "body" [ margin zero ] ]
             , viewAppContainer
-                [ viewActionInput model.newTaskAction
+                [ viewActionInput [ marginBottom (em 1.5) ] model.newTaskAction
                 , viewTaskList model.tasks
                 ]
             ]
@@ -134,9 +134,9 @@ viewAppContainer content =
         ]
 
 
-viewActionInput : String -> Html Msg
-viewActionInput currentAction =
-    form [ onSubmit AddNewTask ]
+viewActionInput : List Style -> String -> Html Msg
+viewActionInput styles currentAction =
+    form [ onSubmit AddNewTask, css styles ]
         [ input
             [ type_ "text"
             , value currentAction
