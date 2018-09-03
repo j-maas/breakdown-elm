@@ -222,7 +222,7 @@ viewActionInput =
 
 viewActionInputBase : (String -> Msg) -> Msg -> Msg -> String -> Html Msg
 viewActionInputBase updateAction add reset currentAction =
-    form [ onSubmit add ]
+    form [ onSubmit add, css [ flex (num 1) ] ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
