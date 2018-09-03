@@ -116,6 +116,7 @@ update msg model =
                 { model
                     | currentTasks = newCurrentTasks
                     , accomplishedTasks = newAccomplishedTasks
+                    , editing = Nothing
                 }
 
         UnaccomplishTask index ->
