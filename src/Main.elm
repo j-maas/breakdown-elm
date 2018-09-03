@@ -223,7 +223,7 @@ viewTask task =
                 ]
             ]
             [ text task ]
-        , button [ onClick (AccomplishTask task) ] [ text "✔️" ]
+        , iconButton (AccomplishTask task) "Mark as done" "✔️"
         ]
 
 
@@ -247,10 +247,20 @@ viewAccomplishedTask task =
                 ]
             ]
             [ text task ]
-        , button [ onClick (UnaccomplishTask task) ] [ text "🔄" ]
+        , iconButton (UnaccomplishTask task) "Mark as to do" "🔄"
         ]
 
 
+iconButton : Msg -> String -> String -> Html Msg
+iconButton msg hint icon =
+    button [ onClick msg ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+{-| Hides an element visually, but keeps it discoverable to assistive technologies.
+
+See <https://www.w3.org/WAI/tutorials/forms/labels/#note-on-hiding-elements> for further information.
+
+-}
 hide : Style
 hide =
     batch
