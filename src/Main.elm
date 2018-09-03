@@ -184,6 +184,7 @@ viewTaskList =
                             [ whiteSpace noWrap
                             , overflow hidden
                             , textOverflow ellipsis
+                            , flex (num 1)
                             ]
                         ]
                     [ text task ]
