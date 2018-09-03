@@ -32,6 +32,7 @@ type alias Model =
     { key : Nav.Key
     , newTask : String
     , currentTasks : List String
+    , accomplishedTasks : List String
     }
 
 
@@ -40,6 +41,7 @@ init flags url key =
         { key = key
         , newTask = ""
         , currentTasks = []
+        , accomplishedTasks = []
         }
 
 
@@ -58,6 +60,7 @@ type Msg
     | UpdateNewTask String
     | AddNewTask
     | AccomplishTask String
+    | UnaccomplishTask String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -89,7 +92,18 @@ update msg model =
                 }
 
         AccomplishTask task ->
-            simply { model | currentTasks = List.remove task model.currentTasks }
+            simply
+                { model
+                    | currentTasks = List.remove task model.currentTasks
+                    , accomplishedTasks = task :: model.accomplishedTasks
+                }
+
+        UnaccomplishTask task ->
+            simply
+                { model
+                    | accomplishedTasks = List.remove task model.accomplishedTasks
+                    , currentTasks = model.currentTasks ++ [ task ]
+                }
 
 
 addTask : String -> List String -> List String
@@ -132,8 +146,9 @@ view model =
                     ]
                 ]
             , main_ [ css [ minWidth (em 20) ] ]
-                [ viewActionInput [ marginBottom (em 1.5) ] model.newTask
-                , viewTaskList model.currentTasks
+                [ viewActionInput [] model.newTask
+                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewTask model.currentTasks
+                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewAccomplishedTask model.accomplishedTasks
                 ]
             ]
     }
@@ -172,9 +187,9 @@ viewActionInput styles currentAction =
         ]
 
 
-viewTaskList : List String -> Html Msg
-viewTaskList =
-    ol [ css [ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
+viewTaskList : List Style -> List (Html Msg) -> Html Msg
+viewTaskList styles =
+    ol [ css ([ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ++ styles) ]
         << List.map
             (\task ->
                 li
@@ -185,7 +200,7 @@ viewTaskList =
                             ]
                         ]
                     ]
-                    [ viewTask task ]
+                    [ task ]
             )
 
 
@@ -209,6 +224,30 @@ viewTask task =
             ]
             [ text task ]
         , button [ onClick (AccomplishTask task) ] [ text "✔️" ]
+        ]
+
+
+viewAccomplishedTask : String -> Html Msg
+viewAccomplishedTask task =
+    section
+        [ css
+            [ height (em 2)
+            , displayFlex
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        ]
+        [ span
+            [ css
+                [ whiteSpace noWrap
+                , overflow hidden
+                , textOverflow ellipsis
+                , textDecoration lineThrough
+                , flex (num 1)
+                ]
+            ]
+            [ text task ]
+        , button [ onClick (UnaccomplishTask task) ] [ text "🔄" ]
         ]
 
 
