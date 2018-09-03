@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html
-import Html.Styled exposing (Html, div, form, input, label, main_, li, ol, section, span, text, toUnstyled)
+import Html.Styled exposing (Html, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import Url
@@ -118,7 +118,14 @@ view model =
     { title = "Breakdown"
     , body =
         List.map toUnstyled
-            [ global [ selector "body" [ displayFlex, justifyContent center, margin (em 1) ] ]
+            [ global
+                [ selector "body"
+                    [ displayFlex
+                    , justifyContent center
+                    , margin (em 1)
+                    , fontFamily  sansSerif
+                    ]
+                ]
             , main_ [ css [ minWidth (em 20) ] ]
                 [ viewActionInput [ marginBottom (em 1.5) ] model.newTaskAction
                 , viewTaskList model.tasks
@@ -127,20 +134,19 @@ view model =
     }
 
 
-
 viewActionInput : List Style -> String -> Html Msg
 viewActionInput styles currentAction =
     form [ onSubmit AddNewTask, css styles ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
-            [ type_ "text"
-            , value currentAction
-            , onInput UpdateNewTask
-            , autofocus True
-            , css [ boxSizing borderBox, width (pct 100) ]
-            ]
-            []
+                [ type_ "text"
+                , value currentAction
+                , onInput UpdateNewTask
+                , autofocus True
+                , css [ boxSizing borderBox, width (pct 100) ]
+                ]
+                []
             ]
         , div
             [ css
@@ -155,9 +161,9 @@ viewActionInput styles currentAction =
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
-            , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+                , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+                ]
             ]
-        ]
         ]
 
 
@@ -187,7 +193,7 @@ viewTaskList =
                             , flex (num 1)
                             ]
                         ]
-                    [ text task ]
+                        [ text task ]
                     ]
             )
 
