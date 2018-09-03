@@ -33,7 +33,7 @@ type alias Model =
     , newTask : String
     , currentTasks : List String
     , accomplishedTasks : List String
-    , editing : Maybe String
+    , editing : Maybe Int
     }
 
 
@@ -61,9 +61,9 @@ type Msg
     | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
     | AddNewTask
-    | AccomplishTask String
-    | UnaccomplishTask String
-    | Edit String
+    | AccomplishTask Int
+    | UnaccomplishTask Int
+    | Edit Int
     | CloseEdit
 
 
@@ -95,22 +95,52 @@ update msg model =
                     , newTask = ""
                 }
 
-        AccomplishTask task ->
+        AccomplishTask index ->
+            let
+                task =
+                    List.getAt index model.currentTasks
+
+                newCurrentTasks =
+                    List.removeAt index model.currentTasks
+
+                newAccomplishedTasks =
+                    case task of
+                        Nothing ->
+                            model.accomplishedTasks
+
+                        Just aTask ->
+                            aTask :: model.accomplishedTasks
+            in
             simply
                 { model
-                    | currentTasks = List.remove task model.currentTasks
-                    , accomplishedTasks = task :: model.accomplishedTasks
+                    | currentTasks = newCurrentTasks
+                    , accomplishedTasks = newAccomplishedTasks
                 }
 
-        UnaccomplishTask task ->
+        UnaccomplishTask index ->
+            let
+                task =
+                    List.getAt index model.accomplishedTasks
+
+                newAccomplishedTasks =
+                    List.removeAt index model.accomplishedTasks
+
+                newCurrentTasks =
+                    case task of
+                        Nothing ->
+                            model.currentTasks
+
+                        Just aTask ->
+                            model.currentTasks ++ [ aTask ]
+            in
             simply
                 { model
-                    | accomplishedTasks = List.remove task model.accomplishedTasks
-                    , currentTasks = model.currentTasks ++ [ task ]
+                    | accomplishedTasks = newAccomplishedTasks
+                    , currentTasks = newCurrentTasks
                 }
 
-        Edit task ->
-            simply { model | editing = Just task }
+        Edit index ->
+            simply { model | editing = Just index }
 
         CloseEdit ->
             simply { model | editing = Nothing }
@@ -157,8 +187,8 @@ view model =
                 ]
             , main_ [ css [ minWidth (em 20) ] ]
                 [ viewActionInput model.newTask
-                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewTask model.currentTasks
-                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewAccomplishedTask model.accomplishedTasks
+                , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewTask model.currentTasks
+                , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewAccomplishedTask model.accomplishedTasks
                 ]
             ]
     }
@@ -214,10 +244,10 @@ viewTaskList styles =
             )
 
 
-viewTask : String -> Html Msg
-viewTask task =
+viewTask : Int -> String -> Html Msg
+viewTask index task =
     viewTaskBase []
-        (iconButton (AccomplishTask task) "Mark as done" "✔️")
+        (iconButton (AccomplishTask index) "Mark as done" "✔️")
         task
 
 
@@ -246,13 +276,13 @@ viewTaskBase textStyles actionButton task =
         ]
 
 
-viewAccomplishedTask : String -> Html Msg
-viewAccomplishedTask task =
+viewAccomplishedTask : Int -> String -> Html Msg
+viewAccomplishedTask index task =
     viewTaskBase
         [ textDecoration lineThrough
         , opacity (num 0.6)
         ]
-        (iconButton (UnaccomplishTask task) "Mark as to do" "🔄")
+        (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
         task
 
 
