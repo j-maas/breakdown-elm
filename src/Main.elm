@@ -187,7 +187,7 @@ viewActionInput currentAction =
             ]
             [ label []
                 [ span [ css [ hide ] ] [ text "Add new task" ]
-                , input [ css [ buttonStyle ], type_ "submit", value "✔️" ] []
+                , input [ css [ buttonStyle ], type_ "submit", value "➕" ] []
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
