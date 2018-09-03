@@ -30,16 +30,16 @@ main =
 
 type alias Model =
     { key : Nav.Key
-    , newTaskAction : String
-    , tasks : List String
+    , newTask : String
+    , currentTasks : List String
     }
 
 
 init flags url key =
     simply
         { key = key
-        , newTaskAction = ""
-        , tasks = [ "One", "Two", "Three", "Four", "Five" ]
+        , newTask = ""
+        , currentTasks = []
         }
 
 
@@ -75,34 +75,34 @@ update msg model =
                     ( model, Nav.load href )
 
         UpdateNewTask action ->
-            simply { model | newTaskAction = action }
+            simply { model | newTask = action }
 
         AddNewTask ->
             let
                 newTasks =
-                    addTask model.newTaskAction model.tasks
+                    addTask model.newTask model.currentTasks
             in
             simply
                 { model
-                    | tasks = newTasks
-                    , newTaskAction = ""
+                    | currentTasks = newTasks
+                    , newTask = ""
                 }
 
         AccomplishTask task ->
-            simply { model | tasks = List.remove task model.tasks }
+            simply { model | currentTasks = List.remove task model.currentTasks }
 
 
 addTask : String -> List String -> List String
-addTask newTask tasks =
+addTask newTask currentTasks =
     let
         cleaned =
             String.trim newTask
     in
     if String.isEmpty cleaned then
-        tasks
+        currentTasks
 
     else
-        tasks ++ [ cleaned ]
+        currentTasks ++ [ cleaned ]
 
 
 
@@ -132,8 +132,8 @@ view model =
                     ]
                 ]
             , main_ [ css [ minWidth (em 20) ] ]
-                [ viewActionInput [ marginBottom (em 1.5) ] model.newTaskAction
-                , viewTaskList model.tasks
+                [ viewActionInput [ marginBottom (em 1.5) ] model.newTask
+                , viewTaskList model.currentTasks
                 ]
             ]
     }
