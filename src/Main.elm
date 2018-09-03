@@ -177,11 +177,11 @@ viewActionInput currentAction =
             ]
             [ label []
                 [ span [ css [ hide ] ] [ text "Add new task" ]
-                , input [ type_ "submit", value "✔️" ] []
+                , input [ css [ buttonStyle ], type_ "submit", value "✔️" ] []
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
-                , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
                 ]
             ]
         ]
@@ -254,7 +254,26 @@ viewAccomplishedTask task =
 
 iconButton : Msg -> String -> String -> Html Msg
 iconButton msg hint icon =
-    button [ onClick msg ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+    button [ onClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+buttonStyle : Style
+buttonStyle =
+    let
+        size =
+            em 2
+    in
+    batch
+        [ border zero
+        , padding zero
+        , width size
+        , height size
+        , textAlign center
+        , backgroundColor (rgba 0 0 0 0.1)
+        , hover [ backgroundColor (rgba 0 0 0 0.07) ]
+        , active [ boxShadow5 inset (em 0.1) (em 0.1) (em 0.2) (rgba 0 0 0 0.1) ]
+        , margin (em 0.1)
+        ]
 
 
 {-| Hides an element visually, but keeps it discoverable to assistive technologies.
