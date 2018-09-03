@@ -4809,12 +4809,7 @@ var author$project$Main$simply = function (model) {
 var author$project$Main$init = F3(
 	function (flags, url, key) {
 		return author$project$Main$simply(
-			{
-				ba: key,
-				ai: '',
-				aK: _List_fromArray(
-					['First', 'Second', 'Third', 'Fourth', 'Fifth'])
-			});
+			{ba: key, ai: '', aK: _List_Nil});
 	});
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
