@@ -5,9 +5,10 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html
-import Html.Styled exposing (Html, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
+import Html.Styled exposing (Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
+import List.Extra as List
 import Url
 
 
@@ -29,16 +30,18 @@ main =
 
 type alias Model =
     { key : Nav.Key
-    , newTaskAction : String
-    , tasks : List String
+    , newTask : String
+    , currentTasks : List String
+    , accomplishedTasks : List String
     }
 
 
 init flags url key =
     simply
         { key = key
-        , newTaskAction = ""
-        , tasks = []
+        , newTask = ""
+        , currentTasks = []
+        , accomplishedTasks = []
         }
 
 
@@ -56,6 +59,8 @@ type Msg
     | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
     | AddNewTask
+    | AccomplishTask String
+    | UnaccomplishTask String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,31 +78,45 @@ update msg model =
                     ( model, Nav.load href )
 
         UpdateNewTask action ->
-            simply { model | newTaskAction = action }
+            simply { model | newTask = action }
 
         AddNewTask ->
             let
                 newTasks =
-                    addTask model.newTaskAction model.tasks
+                    addTask model.newTask model.currentTasks
             in
             simply
                 { model
-                    | tasks = newTasks
-                    , newTaskAction = ""
+                    | currentTasks = newTasks
+                    , newTask = ""
+                }
+
+        AccomplishTask task ->
+            simply
+                { model
+                    | currentTasks = List.remove task model.currentTasks
+                    , accomplishedTasks = task :: model.accomplishedTasks
+                }
+
+        UnaccomplishTask task ->
+            simply
+                { model
+                    | accomplishedTasks = List.remove task model.accomplishedTasks
+                    , currentTasks = model.currentTasks ++ [ task ]
                 }
 
 
 addTask : String -> List String -> List String
-addTask newTask tasks =
+addTask newTask currentTasks =
     let
         cleaned =
             String.trim newTask
     in
     if String.isEmpty cleaned then
-        tasks
+        currentTasks
 
     else
-        tasks ++ [ cleaned ]
+        currentTasks ++ [ cleaned ]
 
 
 
@@ -127,16 +146,17 @@ view model =
                     ]
                 ]
             , main_ [ css [ minWidth (em 20) ] ]
-                [ viewActionInput [ marginBottom (em 1.5) ] model.newTaskAction
-                , viewTaskList model.tasks
+                [ viewActionInput model.newTask
+                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewTask model.currentTasks
+                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewAccomplishedTask model.accomplishedTasks
                 ]
             ]
     }
 
 
-viewActionInput : List Style -> String -> Html Msg
-viewActionInput styles currentAction =
-    form [ onSubmit AddNewTask, css styles ]
+viewActionInput : String -> Html Msg
+viewActionInput currentAction =
+    form [ onSubmit AddNewTask ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
@@ -157,47 +177,110 @@ viewActionInput styles currentAction =
             ]
             [ label []
                 [ span [ css [ hide ] ] [ text "Add new task" ]
-                , input [ type_ "submit", value "✔️" ] []
+                , input [ css [ buttonStyle ], type_ "submit", value "✔️" ] []
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
-                , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
                 ]
             ]
         ]
 
 
-viewTaskList : List String -> Html Msg
-viewTaskList =
-    ol [ css [ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
+viewTaskList : List Style -> List (Html Msg) -> Html Msg
+viewTaskList styles =
+    ol [ css ([ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ++ styles) ]
         << List.map
             (\task ->
                 li
                     [ css
-                        [ height (em 2)
-                        , displayFlex
-                        , alignItems center
-                        , padding (em 0.5)
-                        , hover [ backgroundColor (rgba 0 0 0 0.03) ]
+                        [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
                         , pseudoClass "not(:last-child)"
                             [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
                             ]
                         ]
                     ]
-                <|
-                    [ span
-                        [ css
-                            [ whiteSpace noWrap
-                            , overflow hidden
-                            , textOverflow ellipsis
-                            , flex (num 1)
-                            ]
-                        ]
-                        [ text task ]
-                    ]
+                    [ task ]
             )
 
 
+viewTask : String -> Html Msg
+viewTask task =
+    section
+        [ css
+            [ height (em 2)
+            , displayFlex
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        ]
+        [ span
+            [ css
+                [ whiteSpace noWrap
+                , overflow hidden
+                , textOverflow ellipsis
+                , flex (num 1)
+                ]
+            ]
+            [ text task ]
+        , iconButton (AccomplishTask task) "Mark as done" "✔️"
+        ]
+
+
+viewAccomplishedTask : String -> Html Msg
+viewAccomplishedTask task =
+    section
+        [ css
+            [ height (em 2)
+            , displayFlex
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        ]
+        [ span
+            [ css
+                [ whiteSpace noWrap
+                , overflow hidden
+                , textOverflow ellipsis
+                , textDecoration lineThrough
+                , opacity (num 0.6)
+                , flex (num 1)
+                ]
+            ]
+            [ text task ]
+        , iconButton (UnaccomplishTask task) "Mark as to do" "🔄"
+        ]
+
+
+iconButton : Msg -> String -> String -> Html Msg
+iconButton msg hint icon =
+    button [ onClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+buttonStyle : Style
+buttonStyle =
+    let
+        size =
+            em 2
+    in
+    batch
+        [ border zero
+        , padding zero
+        , width size
+        , height size
+        , textAlign center
+        , backgroundColor (rgba 0 0 0 0.1)
+        , hover [ backgroundColor (rgba 0 0 0 0.07) ]
+        , active [ boxShadow5 inset (em 0.1) (em 0.1) (em 0.2) (rgba 0 0 0 0.1) ]
+        , margin (em 0.1)
+        ]
+
+
+{-| Hides an element visually, but keeps it discoverable to assistive technologies.
+
+See <https://www.w3.org/WAI/tutorials/forms/labels/#note-on-hiding-elements> for further information.
+
+-}
 hide : Style
 hide =
     batch
