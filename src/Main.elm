@@ -118,7 +118,7 @@ view model =
     { title = "Breakdown"
     , body =
         List.map toUnstyled
-            [ global [selector "body" [margin zero]]
+            [ global [ selector "body" [ margin zero ] ]
             , viewAppContainer
                 [ viewActionInput model.newTaskAction
                 , viewTaskList model.tasks
