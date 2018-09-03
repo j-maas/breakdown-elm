@@ -2,7 +2,9 @@
 
 var CACHE_NAME = 'app-shell';
 var urlsToCache = [
-    '.'
+    '.',
+    'setup.js',
+    'elm.js'
 ];
 
 self.addEventListener('install', function (event) {
