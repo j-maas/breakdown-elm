@@ -5,9 +5,10 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html
-import Html.Styled exposing (Html, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
+import Html.Styled exposing (Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
+import List.Extra as List
 import Url
 
 
@@ -38,7 +39,7 @@ init flags url key =
     simply
         { key = key
         , newTaskAction = ""
-        , tasks = []
+        , tasks = [ "One", "Two", "Three", "Four", "Five" ]
         }
 
 
@@ -56,6 +57,7 @@ type Msg
     | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
     | AddNewTask
+    | AccomplishTask String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -85,6 +87,9 @@ update msg model =
                     | tasks = newTasks
                     , newTaskAction = ""
                 }
+
+        AccomplishTask task ->
+            simply { model | tasks = List.remove task model.tasks }
 
 
 addTask : String -> List String -> List String
@@ -188,22 +193,23 @@ viewTask : String -> Html Msg
 viewTask task =
     section
         [ css
-                        [ height (em 2)
-                        , displayFlex
-                        , alignItems center
-                        , padding (em 0.5)
-                        ]
-                    ]
-                    [ span
-                        [ css
-                            [ whiteSpace noWrap
-                            , overflow hidden
-                            , textOverflow ellipsis
-                            , flex (num 1)
-                            ]
-                        ]
-                        [ text task ]
-                    ]
+            [ height (em 2)
+            , displayFlex
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        ]
+        [ span
+            [ css
+                [ whiteSpace noWrap
+                , overflow hidden
+                , textOverflow ellipsis
+                , flex (num 1)
+                ]
+            ]
+            [ text task ]
+        , button [ onClick (AccomplishTask task) ] [ text "✔️" ]
+        ]
 
 
 hide : Style
