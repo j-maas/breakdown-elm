@@ -38,7 +38,7 @@ init flags url key =
     simply
         { key = key
         , newTaskAction = ""
-        , tasks = []
+        , tasks = [ "First", "Second", "Third", "Fourth", "Fifth" ]
         }
 
 
@@ -160,4 +160,21 @@ viewActionInput styles currentAction =
 
 viewTaskList : List String -> Html Msg
 viewTaskList =
-    ol [] << List.map (\task -> li [] <| [ text task ])
+    ol [ css [ listStyleType none, margin zero, padding zero ] ]
+        << List.map
+            (\task ->
+                li
+                    [ css
+                        [ height (em 2)
+                        , displayFlex
+                        , alignItems center
+                        , padding (em 0.5)
+                        , hover [ backgroundColor (rgba 0 0 0 0.03) ]
+                        , pseudoClass "not(:last-child)"
+                            [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
+                            ]
+                        ]
+                    ]
+                <|
+                    [ text task ]
+            )
