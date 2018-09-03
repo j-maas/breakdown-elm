@@ -275,10 +275,10 @@ viewTask : Int -> Bool -> String -> Html Msg
 viewTask index isEditing task =
     viewTaskBase
         (if isEditing then
-            CloseEdit
+            onDirectClick CloseEdit
 
          else
-            StartEdit index
+            onClick (StartEdit index)
         )
         (if isEditing then
             viewEditAction index task
@@ -292,7 +292,7 @@ viewTask index isEditing task =
 viewAccomplishedTask : Int -> String -> Html Msg
 viewAccomplishedTask index task =
     viewTaskBase
-        NoOp
+        (onClick NoOp)
         (viewAction
             [ textDecoration lineThrough
             , opacity (num 0.6)
@@ -302,8 +302,8 @@ viewAccomplishedTask index task =
         (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
 
 
-viewTaskBase : Msg -> Html Msg -> Html Msg -> Html Msg
-viewTaskBase clicked action btn =
+viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
+viewTaskBase whenClicked action btn =
     div
         [ css
             [ height (em 2)
@@ -311,7 +311,7 @@ viewTaskBase clicked action btn =
             , alignItems center
             , padding (em 0.5)
             ]
-        , onDirectClick clicked
+        , whenClicked
         ]
         [ action
         , btn
@@ -352,16 +352,16 @@ onDirectClick : Msg -> Attribute Msg
 onDirectClick msg =
     let
         decoder =
-            Decode.map2 (\current target -> Debug.log "Is same?" <| current == target)
-                (Decode.field "currentTarget" Decode.string)
-                (Decode.field "target" Decode.string)
+            Decode.map2 (\current target -> Debug.log "Current" current == Debug.log "Target" target)
+                (Decode.field "currentTarget" Decode.value)
+                (Decode.field "target" Decode.value)
                 |> Decode.andThen
                     (\isDirect ->
                         if isDirect then
-                            Debug.log "Success" <| Decode.succeed msg
+                            Decode.succeed msg
 
                         else
-                            Debug.log "Fail" <| Decode.fail "Is not a direct click."
+                            Decode.fail "Is not a direct click."
                     )
     in
     on "click" decoder
