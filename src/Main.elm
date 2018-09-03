@@ -174,17 +174,26 @@ viewTaskList =
             (\task ->
                 li
                     [ css
-                        [ height (em 2)
-                        , displayFlex
-                        , alignItems center
-                        , padding (em 0.5)
-                        , hover [ backgroundColor (rgba 0 0 0 0.03) ]
+                        [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
                         , pseudoClass "not(:last-child)"
                             [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
                             ]
                         ]
                     ]
-                <|
+                    [ viewTask task ]
+            )
+
+
+viewTask : String -> Html Msg
+viewTask task =
+    section
+        [ css
+                        [ height (em 2)
+                        , displayFlex
+                        , alignItems center
+                        , padding (em 0.5)
+                        ]
+                    ]
                     [ span
                         [ css
                             [ whiteSpace noWrap
@@ -195,7 +204,6 @@ viewTaskList =
                         ]
                         [ text task ]
                     ]
-            )
 
 
 hide : Style
