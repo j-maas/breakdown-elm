@@ -243,6 +243,7 @@ viewAccomplishedTask task =
                 , overflow hidden
                 , textOverflow ellipsis
                 , textDecoration lineThrough
+                , opacity (num 0.6)
                 , flex (num 1)
                 ]
             ]
