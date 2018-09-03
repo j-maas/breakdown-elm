@@ -33,6 +33,7 @@ type alias Model =
     , newTask : String
     , currentTasks : List String
     , accomplishedTasks : List String
+    , editing : Maybe String
     }
 
 
@@ -42,6 +43,7 @@ init flags url key =
         , newTask = ""
         , currentTasks = []
         , accomplishedTasks = []
+        , editing = Nothing
         }
 
 
@@ -61,6 +63,8 @@ type Msg
     | AddNewTask
     | AccomplishTask String
     | UnaccomplishTask String
+    | Edit String
+    | CloseEdit
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -104,6 +108,12 @@ update msg model =
                     | accomplishedTasks = List.remove task model.accomplishedTasks
                     , currentTasks = model.currentTasks ++ [ task ]
                 }
+
+        Edit task ->
+            simply { model | editing = Just task }
+
+        CloseEdit ->
+            simply { model | editing = Nothing }
 
 
 addTask : String -> List String -> List String
@@ -206,7 +216,14 @@ viewTaskList styles =
 
 viewTask : String -> Html Msg
 viewTask task =
-    section
+    viewTaskBase []
+        (iconButton (AccomplishTask task) "Mark as done" "✔️")
+        task
+
+
+viewTaskBase : List Style -> Html Msg -> String -> Html Msg
+viewTaskBase textStyles actionButton task =
+    div
         [ css
             [ height (em 2)
             , displayFlex
@@ -216,40 +233,27 @@ viewTask task =
         ]
         [ span
             [ css
-                [ whiteSpace noWrap
-                , overflow hidden
-                , textOverflow ellipsis
-                , flex (num 1)
-                ]
+                ([ whiteSpace noWrap
+                 , overflow hidden
+                 , textOverflow ellipsis
+                 , flex (num 1)
+                 ]
+                    ++ textStyles
+                )
             ]
             [ text task ]
-        , iconButton (AccomplishTask task) "Mark as done" "✔️"
+        , actionButton
         ]
 
 
 viewAccomplishedTask : String -> Html Msg
 viewAccomplishedTask task =
-    section
-        [ css
-            [ height (em 2)
-            , displayFlex
-            , alignItems center
-            , padding (em 0.5)
-            ]
+    viewTaskBase
+        [ textDecoration lineThrough
+        , opacity (num 0.6)
         ]
-        [ span
-            [ css
-                [ whiteSpace noWrap
-                , overflow hidden
-                , textOverflow ellipsis
-                , textDecoration lineThrough
-                , opacity (num 0.6)
-                , flex (num 1)
-                ]
-            ]
-            [ text task ]
-        , iconButton (UnaccomplishTask task) "Mark as to do" "🔄"
-        ]
+        (iconButton (UnaccomplishTask task) "Mark as to do" "🔄")
+        task
 
 
 iconButton : Msg -> String -> String -> Html Msg
