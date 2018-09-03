@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html
-import Html.Styled exposing (Html, div, form, input, li, ol, text, toUnstyled)
+import Html.Styled exposing (Html, div, form, input, li, ol, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import Url
@@ -160,7 +160,7 @@ viewActionInput styles currentAction =
 
 viewTaskList : List String -> Html Msg
 viewTaskList =
-    ol [ css [ listStyleType none, margin zero, padding zero ] ]
+    ol [ css [ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
         << List.map
             (\task ->
                 li
@@ -176,5 +176,13 @@ viewTaskList =
                         ]
                     ]
                 <|
+                    [ span
+                        [ css
+                            [ whiteSpace noWrap
+                            , overflow hidden
+                            , textOverflow ellipsis
+                            ]
+                        ]
                     [ text task ]
+                    ]
             )
