@@ -118,20 +118,14 @@ view model =
     { title = "Breakdown"
     , body =
         List.map toUnstyled
-            [ global [ selector "body" [ margin zero ] ]
-            , viewAppContainer
+            [ global [ selector "body" [ displayFlex, justifyContent center, margin (em 1) ] ]
+            , main_ [ css [ minWidth (em 20) ] ]
                 [ viewActionInput [ marginBottom (em 1.5) ] model.newTaskAction
                 , viewTaskList model.tasks
                 ]
             ]
     }
 
-
-viewAppContainer : List (Html Msg) -> Html Msg
-viewAppContainer content =
-    div [ css [ displayFlex, justifyContent center, margin (em 1) ] ]
-        [ div [ css [ minWidth (em 20) ] ] content
-        ]
 
 
 viewActionInput : List Style -> String -> Html Msg
