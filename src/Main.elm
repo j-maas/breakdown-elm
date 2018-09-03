@@ -38,7 +38,7 @@ init flags url key =
     simply
         { key = key
         , newTaskAction = ""
-        , tasks = [ "First", "Second", "Third", "Fourth", "Fifth" ]
+        , tasks = []
         }
 
 
@@ -123,7 +123,7 @@ view model =
                     [ displayFlex
                     , justifyContent center
                     , margin (em 1)
-                    , fontFamily  sansSerif
+                    , fontFamily sansSerif
                     ]
                 ]
             , main_ [ css [ minWidth (em 20) ] ]
