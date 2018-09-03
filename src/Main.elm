@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html
-import Html.Styled exposing (Html, div, form, input, li, ol, span, text, toUnstyled)
+import Html.Styled exposing (Html, div, form, input, label, main_, li, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import Url
@@ -137,7 +137,9 @@ viewAppContainer content =
 viewActionInput : List Style -> String -> Html Msg
 viewActionInput styles currentAction =
     form [ onSubmit AddNewTask, css styles ]
-        [ input
+        [ label []
+            [ span [ css [ hide ] ] [ text "New task's action" ]
+            , input
             [ type_ "text"
             , value currentAction
             , onInput UpdateNewTask
@@ -145,6 +147,7 @@ viewActionInput styles currentAction =
             , css [ boxSizing borderBox, width (pct 100) ]
             ]
             []
+            ]
         , div
             [ css
                 [ displayFlex
@@ -152,9 +155,15 @@ viewActionInput styles currentAction =
                 , justifyContent center
                 ]
             ]
-            [ input [ type_ "submit", value "✔️" ] []
+            [ label []
+                [ span [ css [ hide ] ] [ text "Add new task" ]
+                , input [ type_ "submit", value "✔️" ] []
+                ]
+            , label []
+                [ span [ css [ hide ] ] [ text "Clear input" ]
             , input [ type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
             ]
+        ]
         ]
 
 
@@ -186,3 +195,18 @@ viewTaskList =
                     [ text task ]
                     ]
             )
+
+
+hide : Style
+hide =
+    batch
+        [ border zero
+        , property "clip" "rect(0 0 0 0)"
+        , height (px 1)
+        , margin (px -1)
+        , overflow hidden
+        , padding zero
+        , position absolute
+        , whiteSpace noWrap
+        , width (px 1)
+        ]
