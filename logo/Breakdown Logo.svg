@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192">
-    <filter id="a" height="130%">
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="-5 -5 202 202">
+    <filter id="dropshadow">
         <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
         <feOffset dx="2" dy="2" result="offsetblur"/>
         <feComponentTransfer>
@@ -10,7 +10,7 @@
             <feMergeNode in="SourceGraphic"/>
         </feMerge>
     </filter>
-    <g fill="#50bf00" stroke="#fff" stroke-miterlimit="10" stroke-width="2" filter="url(#a)">
+    <g fill="#50bf00" stroke="#fff" stroke-miterlimit="10" stroke-width="2" filter="url(#dropshadow)">
         <path stroke-width="1.9799" d="M65.27 116.55l28.42 28.42-28.42 28.42-28.42-28.42zM97.06 84.32l28.42 28.42-28.42 28.42-28.42-28.42zM160.91 19.45l28.42 28.42-28.42 28.42-28.42-28.42zM32.87 84.73l28.42 28.42-28.42 28.42-28.42-28.42z"/>
         <path d="M63.509 102.359l-19.701 19.7-9.701-9.7 4.478-4.477 5.074 5.074 15.224-15.223z"/>
         <path stroke-width="1.9799" d="M128.95 51.85l28.42 28.42-28.42 28.42-28.42-28.42z"/>
