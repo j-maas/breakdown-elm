@@ -4,10 +4,10 @@ import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
-import Html
-import Html.Styled exposing (Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
-import Html.Styled.Attributes exposing (autofocus, css, type_, value)
-import Html.Styled.Events exposing (onClick, onInput, onSubmit)
+import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
+import Html.Styled.Attributes exposing (autofocus, css, id, type_, value)
+import Html.Styled.Events exposing (on, onClick, onInput, onSubmit)
+import Json.Decode as Decode
 import List.Extra as List
 import Url
 
@@ -273,6 +273,13 @@ viewTaskList styles =
 viewTask : Int -> Bool -> String -> Html Msg
 viewTask index isEditing task =
     viewTaskBase
+        index
+        (if isEditing then
+            onClickWithId (idForTask index) CloseEdit
+
+         else
+            onClick (StartEdit index)
+        )
         (if isEditing then
             viewEditAction index task
 
@@ -282,9 +289,16 @@ viewTask index isEditing task =
         (iconButton (AccomplishTask index) "Mark as done" "✔️")
 
 
+idForTask : Int -> String
+idForTask index =
+    "task-" ++ String.fromInt index
+
+
 viewAccomplishedTask : Int -> String -> Html Msg
 viewAccomplishedTask index task =
     viewTaskBase
+        index
+        (onClick NoOp)
         (viewAction
             [ textDecoration lineThrough
             , opacity (num 0.6)
@@ -294,15 +308,17 @@ viewAccomplishedTask index task =
         (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
 
 
-viewTaskBase : Html Msg -> Html Msg -> Html Msg
-viewTaskBase action btn =
+viewTaskBase : Int -> Attribute Msg -> Html Msg -> Html Msg -> Html Msg
+viewTaskBase index whenClicked action btn =
     div
-        [ css
+        [ id (idForTask index)
+        , css
             [ height (em 2)
             , displayFlex
             , alignItems center
             , padding (em 0.5)
             ]
+        , whenClicked
         ]
         [ action
         , btn
@@ -332,6 +348,26 @@ viewEditAction index =
 iconButton : Msg -> String -> String -> Html Msg
 iconButton msg hint icon =
     button [ onClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+{-| Only fires for clicks exactly on the element.
+
+See <https://javascript.info/bubbling-and-capturing#event-target> for further information.
+
+-}
+onClickWithId : String -> Msg -> Attribute Msg
+onClickWithId targetId msg =
+    on "click"
+        (Decode.at [ "target", "id" ] Decode.string
+            |> Decode.andThen
+                (\actualId ->
+                    if actualId == targetId then
+                        Decode.succeed msg
+
+                    else
+                        Decode.fail <| "Element id was " ++ actualId ++ ", expected " ++ targetId ++ "."
+                )
+        )
 
 
 buttonStyle : Style
