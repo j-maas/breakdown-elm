@@ -1,5 +1,7 @@
 module Tasks exposing (addTask, empty, getId, idToComparable, readAction, toList)
 
+-- COLLECTION
+
 
 type Collection name
     = Collection (List (Task name))
@@ -10,19 +12,8 @@ empty _ =
     Collection []
 
 
-type Task collection
-    = Task
-        { id : TaskId
-        , action : Action
-        }
 
-
-type TaskId
-    = TaskId Int
-
-
-type Action
-    = Action String
+-- BUILD
 
 
 addTask : String -> Collection c -> Collection c
@@ -55,22 +46,23 @@ addTask rawAction (Collection list) =
     Collection newList
 
 
-actionFromString : String -> Maybe Action
-actionFromString rawAction =
-    let
-        cleaned =
-            String.trim rawAction
-    in
-    if String.isEmpty cleaned then
-        Nothing
 
-    else
-        Just (Action cleaned)
+-- READ
 
 
-stringFromAction : Action -> String
-stringFromAction (Action rawAction) =
-    rawAction
+type Task collection
+    = Task
+        { id : TaskId
+        , action : Action
+        }
+
+
+type TaskId
+    = TaskId Int
+
+
+type Action
+    = Action String
 
 
 getId : Task c -> TaskId
@@ -91,3 +83,25 @@ readAction (Task task) =
 toList : Collection c -> List (Task c)
 toList (Collection list) =
     list
+
+
+
+-- ACTIONS
+
+
+actionFromString : String -> Maybe Action
+actionFromString rawAction =
+    let
+        cleaned =
+            String.trim rawAction
+    in
+    if String.isEmpty cleaned then
+        Nothing
+
+    else
+        Just (Action cleaned)
+
+
+stringFromAction : Action -> String
+stringFromAction (Action rawAction) =
+    rawAction
