@@ -4,9 +4,8 @@ import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
-import Html
 import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
-import Html.Styled.Attributes exposing (autofocus, css, type_, value)
+import Html.Styled.Attributes exposing (autofocus, css, id, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput, onSubmit)
 import Json.Decode as Decode
 import List.Extra as List
@@ -274,8 +273,9 @@ viewTaskList styles =
 viewTask : Int -> Bool -> String -> Html Msg
 viewTask index isEditing task =
     viewTaskBase
+        index
         (if isEditing then
-            onDirectClick CloseEdit
+            onClickWithId (idForTask index) CloseEdit
 
          else
             onClick (StartEdit index)
@@ -289,9 +289,15 @@ viewTask index isEditing task =
         (iconButton (AccomplishTask index) "Mark as done" "✔️")
 
 
+idForTask : Int -> String
+idForTask index =
+    "task-" ++ String.fromInt index
+
+
 viewAccomplishedTask : Int -> String -> Html Msg
 viewAccomplishedTask index task =
     viewTaskBase
+        index
         (onClick NoOp)
         (viewAction
             [ textDecoration lineThrough
@@ -302,10 +308,11 @@ viewAccomplishedTask index task =
         (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
 
 
-viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
-viewTaskBase whenClicked action btn =
+viewTaskBase : Int -> Attribute Msg -> Html Msg -> Html Msg -> Html Msg
+viewTaskBase index whenClicked action btn =
     div
-        [ css
+        [ id (idForTask index)
+        , css
             [ height (em 2)
             , displayFlex
             , alignItems center
@@ -348,23 +355,19 @@ iconButton msg hint icon =
 See <https://javascript.info/bubbling-and-capturing#event-target> for further information.
 
 -}
-onDirectClick : Msg -> Attribute Msg
-onDirectClick msg =
-    let
-        decoder =
-            Decode.map2 (\current target -> Debug.log "Current" current == Debug.log "Target" target)
-                (Decode.field "currentTarget" Decode.value)
-                (Decode.field "target" Decode.value)
-                |> Decode.andThen
-                    (\isDirect ->
-                        if isDirect then
-                            Decode.succeed msg
+onClickWithId : String -> Msg -> Attribute Msg
+onClickWithId targetId msg =
+    on "click"
+        (Decode.at [ "target", "id" ] Decode.string
+            |> Decode.andThen
+                (\actualId ->
+                    if actualId == targetId then
+                        Decode.succeed msg
 
-                        else
-                            Decode.fail "Is not a direct click."
-                    )
-    in
-    on "click" decoder
+                    else
+                        Decode.fail <| "Element id was " ++ actualId ++ ", expected " ++ targetId ++ "."
+                )
+        )
 
 
 buttonStyle : Style
