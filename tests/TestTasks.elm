@@ -1,6 +1,7 @@
 module TestTasks exposing (suite)
 
 import Expect
+import List.Extra as List
 import Tasks exposing (..)
 import Test exposing (..)
 
@@ -33,12 +34,21 @@ suite =
                         |> readActionsList
                         |> Expect.equal []
             ]
+        , let
+            fromList =
+                List.foldl addTask (empty Current)
+          in
+          describe "Ids"
+            [ test "tasks in same list have different ids" <|
+                \_ ->
+                    fromList [ "Same", "Different", "Same" ]
+                        |> toList
+                        |> List.allDifferentBy (getId >> idToComparable)
+                        |> Expect.true "Detected duplicate ids."
+            , todo "tasks across different lists have different ids"
+            ]
         , describe "Editing"
             [ todo "edits task's action"
             , todo "moves task between lists"
-            ]
-        , describe "Ids"
-            [ todo "tasks in same list have different ids"
-            , todo "tasks across different lists have different ids"
             ]
         ]

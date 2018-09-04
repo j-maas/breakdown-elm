@@ -1,4 +1,4 @@
-module Tasks exposing (addTask, empty, readAction, toList)
+module Tasks exposing (addTask, empty, getId, idToComparable, readAction, toList)
 
 
 type Collection name
@@ -71,6 +71,16 @@ actionFromString rawAction =
 stringFromAction : Action -> String
 stringFromAction (Action rawAction) =
     rawAction
+
+
+getId : Task c -> TaskId
+getId (Task { id }) =
+    id
+
+
+idToComparable : TaskId -> Int
+idToComparable (TaskId id) =
+    id
 
 
 readAction : Task c -> String
