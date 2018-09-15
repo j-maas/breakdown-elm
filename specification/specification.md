@@ -75,7 +75,15 @@ Three days prior to the departure, Breakdown asks him "Is online check-in open?"
 Unfortunately, Barry packed a metal spoon in his luggage. He is now considered a terrorist and will have to spend three months in jail.
 
 ## Wait for Answer
-Defer a task until answer is given. (Deferral templates.)
+John works at the support for a universities online system. He gets constantly bombarded with emails, because the system is poorly designed and students need help for the smallest of tasks.
+
+Because John is a good man, he works on finding design improvements that the then suggests to his superior. Of course, his superior is always busy, bathing in the money his company gained from the contract with the university. So John has given up on expecting timely answers. Instead, he has to regularly reiterate his suggestions, before they all ultimaltely are denied (hope dies last).
+
+Again, John has identified that many students have trouble finding their enrollment attestation. After adding "Make attestions easier to find", he writes up an email proposing to make that funcitionality more prominent on the landing page while reducing its clutter. Since he is certain that he will have to resend a mail, he defers the newly added task until next Wednesday. (He is really patient and gives his superior a grace period of a few days in which to ignore John.)
+
+Since this is a routine deferral, he doesn't want to input the same reason again and again, and instead chooses "Has responded?".
+
+This time, the superior will answer before the deadline given by John, because he spent all his money and has to fire John.
 
 # Activities
 ## Engage
