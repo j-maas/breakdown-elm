@@ -3,7 +3,7 @@ node_js:
   - lts/*
 
 install:
-  - yarn add --dev elm elm-test@beta
+  - yarn add --dev elm elm-test@0.19.0-beta8
 cache:
   yarn: true
   directories:
