@@ -77,9 +77,6 @@ Unfortunately, Barry packed a metal spoon in his luggage. He is now considered a
 ## Wait for Answer
 Defer a task until answer is given. (Deferral templates.)
 
-## Dependency
-TODO: Defer a task until completion of another.
-
 # Activities
 ## Engage
 Input of new tasks must be fast. Whether the user will subsequently move on to divide the task depends on his situation. Breakdown Todo supports both capture of ideas to be dealt with later, as well as planning of ideas to be divided immediately.
