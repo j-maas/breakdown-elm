@@ -1,6 +1,7 @@
 module TestTasks exposing (suite)
 
 import Expect
+import Fuzz exposing (..)
 import List.Extra as List
 import Tasks exposing (..)
 import Test exposing (..)
@@ -14,11 +15,21 @@ type Collection
 suite : Test
 suite =
     let
-        fromList =
-            List.foldl addTask (empty Current)
+        fromList collection =
+            List.foldl addTask (empty collection)
+
+        length =
+            toList >> List.length
 
         readActionsList =
             toList >> List.map readAction
+
+        indexFromShift shift max =
+            if shift == 1 then
+                0
+
+            else
+                max |> toFloat |> (*) shift |> floor
     in
     describe "Tasks"
         [ describe "Build"
@@ -43,93 +54,120 @@ suite =
                 toList >> List.allDifferentBy (getId >> idToComparable)
           in
           describe "IDs"
-            [ test "tasks have different ids" <|
-                \_ ->
-                    fromList [ "Same", "Different", "Same" ]
+            [ fuzz (list string) "tasks have different ids" <|
+                \rawActions ->
+                    fromList Current rawActions
                         |> hasUniqueIds
                         |> Expect.true "Detected duplicate ids."
-            , test "moving tasks keeps unique ids" <|
-                \_ ->
+            , fuzz3 (list string) (list string) percentage "moving tasks keeps unique ids" <|
+                \rawActionsCurrent rawActionsDone shift ->
                     let
                         current =
-                            fromList [ "One", "Two", "Three" ]
+                            fromList Current rawActionsCurrent
 
                         done =
-                            fromList [ "Four", "Five", "Six" ]
+                            fromList Done rawActionsDone
 
                         mayBeTask =
-                            List.getAt 1 (toList current)
+                            List.getAt (indexFromShift shift <| length current) (toList current)
                     in
                     case mayBeTask of
                         Just task ->
                             moveTask (getId task) current done
-                                |> Expect.all
-                                    [ Tuple.mapBoth readActionsList readActionsList
-                                        >> Expect.equal ( [ "One", "Three" ], [ "Four", "Five", "Six", "Two" ] )
-                                    , Tuple.mapBoth hasUniqueIds hasUniqueIds
-                                        >> Expect.equal ( True, True )
-                                    ]
+                                |> Tuple.mapBoth hasUniqueIds hasUniqueIds
+                                |> Expect.equal ( True, True )
 
                         Nothing ->
-                            Expect.fail "Did not find task in list."
+                            -- current collection might be empty, then task can legitimately not be found.
+                            if length current == 0 then
+                                Expect.pass
+
+                            else
+                                Expect.fail "Did not find task in list."
             ]
         , describe "Editing"
-            [ test "edits task's action" <|
-                \_ ->
+            [ fuzz3 (list string) string percentage "edits task's action" <|
+                \rawActions rawNewAction shift ->
                     let
                         tasks =
-                            fromList [ "One", "Too" ]
+                            fromList Current rawActions
+
+                        index =
+                            indexFromShift shift <| length tasks
 
                         mayBeTask =
-                            List.getAt 1 (toList tasks)
+                            List.getAt index (toList tasks)
 
-                        action =
-                            unsafeActionFromString "Two"
+                        mayBeAction =
+                            actionFromString rawNewAction
+
+                        expectedActions newAction =
+                            List.setAt index (stringFromAction newAction) (readActionsList tasks)
                     in
                     case mayBeTask of
                         Just task ->
-                            editTask (getId task) action tasks
-                                |> readActionsList
-                                |> Expect.equal [ "One", "Two" ]
+                            case mayBeAction of
+                                Just action ->
+                                    editTask (getId task) action tasks
+                                        |> readActionsList
+                                        |> Expect.equal (expectedActions action)
+
+                                Nothing ->
+                                    -- The fuzzer might generate invalid actions, which is not the fault of the module.
+                                    Expect.pass
 
                         Nothing ->
-                            Expect.fail "Did not find task in list."
-            , test "removes from list" <|
-                \_ ->
+                            -- The fuzzer might generate empty collections, which is not the fault of the module.
+                            Expect.pass
+            , fuzz2 (list string) percentage "removes from list" <|
+                \rawActions shift ->
                     let
                         tasks =
-                            fromList [ "Keep me", "Remove me" ]
+                            fromList Current rawActions
+
+                        index =
+                            indexFromShift shift <| length tasks
 
                         mayBeTask =
-                            List.getAt 1 (toList tasks)
+                            List.getAt index (toList tasks)
                     in
                     case mayBeTask of
                         Just task ->
                             removeTask (getId task) tasks
                                 |> readActionsList
-                                |> Expect.equal [ "Keep me" ]
+                                |> Expect.equal (List.removeAt index <| readActionsList tasks)
 
                         Nothing ->
-                            Expect.fail "Did not find task in list."
-            , test "moves task between lists" <|
-                \_ ->
+                            -- The fuzzer might generate empty collections, which is not the fault of the module.
+                            Expect.pass
+            , fuzz3 (list string) (list string) percentage "moves task between lists" <|
+                \rawActionsCurrent rawActionsDone shift ->
                     let
                         current =
-                            fromList [ "One", "Two", "Three" ]
+                            fromList Current rawActionsCurrent
 
                         done =
-                            empty Done
+                            fromList Done rawActionsDone
+
+                        index =
+                            indexFromShift shift <| length current
 
                         mayBeTask =
-                            List.getAt 1 (toList current)
+                            List.getAt index (toList current)
+
+                        expectedActions movedAction =
+                            ( readActionsList current |> List.removeAt index
+                            , readActionsList done ++ [ movedAction ]
+                            )
                     in
                     case mayBeTask of
                         Just task ->
                             moveTask (getId task) current done
                                 |> Tuple.mapBoth readActionsList readActionsList
-                                |> Expect.equal ( [ "One", "Three" ], [ "Two" ] )
+                                |> Expect.equal (expectedActions <| readAction task)
 
                         Nothing ->
-                            Expect.fail "Did not find task in list."
+                            -- The fuzzer might generate empty collections, which is not the fault of the module.
+                            Expect.pass
             ]
         ]
