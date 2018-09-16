@@ -38,12 +38,41 @@ suite =
                         |> readActionsList
                         |> Expect.equal []
             ]
-        , test "tasks have different ids" <|
-            \_ ->
-                fromList [ "Same", "Different", "Same" ]
-                    |> toList
-                    |> List.allDifferentBy (getId >> idToComparable)
-                    |> Expect.true "Detected duplicate ids."
+        , let
+            hasUniqueIds =
+                toList >> List.allDifferentBy (getId >> idToComparable)
+          in
+          describe "IDs"
+            [ test "tasks have different ids" <|
+                \_ ->
+                    fromList [ "Same", "Different", "Same" ]
+                        |> hasUniqueIds
+                        |> Expect.true "Detected duplicate ids."
+            , test "moving tasks keeps unique ids" <|
+                \_ ->
+                    let
+                        current =
+                            fromList [ "One", "Two", "Three" ]
+
+                        done =
+                            fromList [ "Four", "Five", "Six" ]
+
+                        mayBeTask =
+                            List.getAt 1 (toList current)
+                    in
+                    case mayBeTask of
+                        Just task ->
+                            moveTask (getId task) current done
+                                |> Expect.all
+                                    [ Tuple.mapBoth readActionsList readActionsList
+                                        >> Expect.equal ( [ "One", "Three" ], [ "Four", "Five", "Six", "Two" ] )
+                                    , Tuple.mapBoth hasUniqueIds hasUniqueIds
+                                        >> Expect.equal ( True, True )
+                                    ]
+
+                        Nothing ->
+                            Expect.fail "Did not find task in list."
+            ]
         , describe "Editing"
             [ test "edits task's action" <|
                 \_ ->
@@ -65,7 +94,7 @@ suite =
 
                         Nothing ->
                             Expect.fail "Did not find task in list."
-            , test "remove from list" <|
+            , test "removes from list" <|
                 \_ ->
                     let
                         tasks =
