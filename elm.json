@@ -12,7 +12,6 @@
             "elm/json": "1.0.0",
             "elm/url": "1.0.0",
             "elm-community/list-extra": "8.0.0",
-            "elm-explorations/test": "1.0.0",
             "rtfeldman/elm-css": "15.1.0"
         },
         "indirect": {
@@ -24,7 +23,9 @@
         }
     },
     "test-dependencies": {
-        "direct": {},
+        "direct": {
+            "elm-explorations/test": "1.1.0"
+        },
         "indirect": {}
     }
 }

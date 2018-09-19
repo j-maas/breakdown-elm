@@ -1,4 +1,4 @@
-module Main exposing (addTask, main)
+module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -9,6 +9,7 @@ import Html.Styled.Attributes exposing (autofocus, css, id, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput, onSubmit)
 import Json.Decode as Decode
 import List.Extra as List
+import Tasks
 import Url
 
 
@@ -28,11 +29,19 @@ main =
 -- MODEL
 
 
+type Current
+    = Current
+
+
+type Done
+    = Done
+
+
 type alias Model =
     { key : Nav.Key
     , newTask : String
-    , currentTasks : List String
-    , accomplishedTasks : List String
+    , currentTasks : Tasks.Collection Current
+    , doneTasks : Tasks.Collection Done
     , editing : Maybe Int
     }
 
@@ -41,8 +50,8 @@ init flags url key =
     simply
         { key = key
         , newTask = ""
-        , currentTasks = []
-        , accomplishedTasks = []
+        , currentTasks = Tasks.empty Current
+        , doneTasks = Tasks.empty Done
         , editing = Nothing
         }
 
@@ -61,10 +70,10 @@ type Msg
     | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
     | AddNewTask
-    | AccomplishTask Int
-    | UnaccomplishTask Int
+    | DoTask (Tasks.TaskId Current)
+    | UndoTask (Tasks.TaskId Done)
     | StartEdit Int
-    | Edit Int String
+    | Edit (Tasks.TaskId Current) String
     | CloseEdit
 
 
@@ -96,48 +105,26 @@ update msg model =
                     , newTask = ""
                 }
 
-        AccomplishTask index ->
+        DoTask id ->
             let
-                task =
-                    List.getAt index model.currentTasks
-
-                newCurrentTasks =
-                    List.removeAt index model.currentTasks
-
-                newAccomplishedTasks =
-                    case task of
-                        Nothing ->
-                            model.accomplishedTasks
-
-                        Just aTask ->
-                            aTask :: model.accomplishedTasks
+                ( newCurrentTasks, newDoneTasks ) =
+                    Tasks.moveTask id model.currentTasks model.doneTasks
             in
             simply
                 { model
                     | currentTasks = newCurrentTasks
-                    , accomplishedTasks = newAccomplishedTasks
+                    , doneTasks = newDoneTasks
                     , editing = Nothing
                 }
 
-        UnaccomplishTask index ->
+        UndoTask id ->
             let
-                task =
-                    List.getAt index model.accomplishedTasks
-
-                newAccomplishedTasks =
-                    List.removeAt index model.accomplishedTasks
-
-                newCurrentTasks =
-                    case task of
-                        Nothing ->
-                            model.currentTasks
-
-                        Just aTask ->
-                            model.currentTasks ++ [ aTask ]
+                ( newDoneTasks, newCurrentTasks ) =
+                    Tasks.moveTask id model.doneTasks model.currentTasks
             in
             simply
                 { model
-                    | accomplishedTasks = newAccomplishedTasks
+                    | doneTasks = newDoneTasks
                     , currentTasks = newCurrentTasks
                 }
 
@@ -147,25 +134,27 @@ update msg model =
         CloseEdit ->
             simply { model | editing = Nothing }
 
-        Edit index newAction ->
+        Edit id newRawAction ->
             let
                 newCurrentTasks =
-                    List.setAt index newAction model.currentTasks
+                    case Tasks.actionFromString newRawAction of
+                        Just action ->
+                            Tasks.editTask id action model.currentTasks
+
+                        Nothing ->
+                            model.currentTasks
             in
             simply { model | currentTasks = newCurrentTasks }
 
 
-addTask : String -> List String -> List String
-addTask newTask currentTasks =
-    let
-        cleaned =
-            String.trim newTask
-    in
-    if String.isEmpty cleaned then
-        currentTasks
+addTask : String -> Tasks.Collection c -> Tasks.Collection c
+addTask rawAction currentTasks =
+    case Tasks.actionFromString rawAction of
+        Just action ->
+            Tasks.addTask action currentTasks
 
-    else
-        currentTasks ++ [ cleaned ]
+        Nothing ->
+            currentTasks
 
 
 
@@ -208,8 +197,8 @@ view model =
                             Just editIndex ->
                                 \index task -> viewTask index (editIndex == index) task
                   in
-                  viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap renderTask model.currentTasks
-                , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewAccomplishedTask model.accomplishedTasks
+                  viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap renderTask <| Tasks.toList model.currentTasks
+                , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewDoneTasks <| Tasks.toList model.doneTasks
                 ]
             ]
     }
@@ -270,7 +259,7 @@ viewTaskList styles =
             )
 
 
-viewTask : Int -> Bool -> String -> Html Msg
+viewTask : Int -> Bool -> Tasks.Task Current -> Html Msg
 viewTask index isEditing task =
     viewTaskBase
         index
@@ -281,12 +270,12 @@ viewTask index isEditing task =
             onClick (StartEdit index)
         )
         (if isEditing then
-            viewEditAction index task
+            viewEditAction (Tasks.getId task) (Tasks.readAction task)
 
          else
-            viewAction [] task
+            viewAction [] <| Tasks.readAction task
         )
-        (iconButton (AccomplishTask index) "Mark as done" "✔️")
+        (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
 idForTask : Int -> String
@@ -294,8 +283,8 @@ idForTask index =
     "task-" ++ String.fromInt index
 
 
-viewAccomplishedTask : Int -> String -> Html Msg
-viewAccomplishedTask index task =
+viewDoneTasks : Int -> Tasks.Task Done -> Html Msg
+viewDoneTasks index task =
     viewTaskBase
         index
         (onClick NoOp)
@@ -303,9 +292,10 @@ viewAccomplishedTask index task =
             [ textDecoration lineThrough
             , opacity (num 0.6)
             ]
-            task
+         <|
+            Tasks.readAction task
         )
-        (iconButton (UnaccomplishTask index) "Mark as to do" "🔄")
+        (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
 
 
 viewTaskBase : Int -> Attribute Msg -> Html Msg -> Html Msg -> Html Msg
@@ -340,9 +330,9 @@ viewAction textStyles action =
         [ text action ]
 
 
-viewEditAction : Int -> String -> Html Msg
-viewEditAction index =
-    viewActionInputBase (Edit index) CloseEdit (Edit index "")
+viewEditAction : Tasks.TaskId Current -> String -> Html Msg
+viewEditAction id =
+    viewActionInputBase (Edit id) CloseEdit CloseEdit
 
 
 iconButton : Msg -> String -> String -> Html Msg
