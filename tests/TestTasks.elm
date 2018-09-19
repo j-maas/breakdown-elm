@@ -16,7 +16,7 @@ suite : Test
 suite =
     let
         fromList collection =
-            List.foldl addTask (empty collection)
+            List.filterMap actionFromString >> List.foldl addTask (empty collection)
 
         length =
             toList >> List.length
@@ -33,21 +33,40 @@ suite =
     in
     describe "Tasks"
         [ describe "Build"
-            [ test "adds new task to list" <|
-                \_ ->
-                    addTask "Add me" (empty Current)
-                        |> readActionsList
-                        |> Expect.equal [ "Add me" ]
-            , test "does not add empty actions" <|
-                \_ ->
-                    addTask "" (empty Current)
-                        |> readActionsList
-                        |> Expect.equal []
-            , test "does not add actions with only whitespace" <|
-                \_ ->
-                    addTask "  \t" (empty Current)
-                        |> readActionsList
-                        |> Expect.equal []
+            [ fuzz string "adds new task to list" <|
+                \rawAction ->
+                    let
+                        mayBeAction =
+                            actionFromString rawAction
+                    in
+                    case mayBeAction of
+                        Just action ->
+                            addTask action (empty Current)
+                                |> readActionsList
+                                |> Expect.equal [ stringFromAction action ]
+
+                        Nothing ->
+                            -- The fuzzer might generate invalid actions, which is not the fault of the module.
+                            Expect.pass
+            , describe "Actions"
+                [ test "creates valid action" <|
+                    \_ ->
+                        case actionFromString "I'm valid" of
+                            Just action ->
+                                stringFromAction action
+                                    |> Expect.equal "I'm valid"
+
+                            Nothing ->
+                                Expect.fail "Should create action."
+                , test "does not create empty actions" <|
+                    \_ ->
+                        actionFromString ""
+                            |> Expect.equal Nothing
+                , test "does not create actions with only whitespace" <|
+                    \_ ->
+                        actionFromString "  \t"
+                            |> Expect.equal Nothing
+                ]
             ]
         , let
             hasUniqueIds =

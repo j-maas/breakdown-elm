@@ -1,7 +1,7 @@
 module Tasks exposing
     ( Collection(..), empty
     , Task(..), TaskId(..), Action(..), readAction, toList, getId, idToComparable
-    , actionFromString, unsafeActionFromString, stringFromAction
+    , actionFromString, stringFromAction
     , addTask, removeTask, moveTask
     , editTask
     )
@@ -21,7 +21,7 @@ module Tasks exposing
 
 # Actions
 
-@docs actionFromString, unsafeActionFromString, stringFromAction
+@docs actionFromString, stringFromAction
 
 
 # Modify Collection
@@ -64,22 +64,14 @@ empty _ =
 
 {-| Add a new Task containing the given action to a collection.
 -}
-addTask : String -> Collection c -> Collection c
-addTask rawAction ((Collection list) as to) =
+addTask : Action -> Collection c -> Collection c
+addTask action ((Collection list) as to) =
     let
         nextId =
             nextIdForCollection to
 
-        newAction =
-            actionFromString rawAction
-
         newList =
-            case newAction of
-                Nothing ->
-                    list
-
-                Just action ->
-                    list ++ [ Task { id = nextId, action = action } ]
+            list ++ [ Task { id = nextId, action = action } ]
     in
     Collection newList
 
@@ -176,13 +168,6 @@ actionFromString rawAction =
 
     else
         Just (Action cleaned)
-
-
-{-| Only for use in tests. Prefer [`actionFromString`](#actionFromString).
--}
-unsafeActionFromString : String -> Action
-unsafeActionFromString rawAction =
-    Action rawAction
 
 
 {-| Extracts the `String` from an `Action`.
