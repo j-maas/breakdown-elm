@@ -42,7 +42,7 @@ type alias Model =
     , newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
-    , editing : Maybe ( Tasks.TaskId Current, String )
+    , editing : Maybe ( Tasks.TaskId Current, Tasks.Action )
     }
 
 
@@ -133,18 +133,18 @@ update msg model =
 
         StartEdit id ->
             let
-                taskAction =
+                editing =
                     case
                         Tasks.toList model.currentTasks
                             |> List.find (Tasks.getId >> (==) id)
                     of
                         Just task ->
-                            Tasks.readAction task
+                            Just ( id, Tasks.getAction task )
 
                         Nothing ->
-                            ""
+                            Nothing
             in
-            simply { model | editing = Just ( id, taskAction ) }
+            simply { model | editing = editing }
 
         StopEdit ->
             simply
@@ -153,7 +153,20 @@ update msg model =
                 }
 
         CancelEdit ->
-            simply { model | editing = Nothing }
+            let
+                updatedCurrentTasks =
+                    case model.editing of
+                        Just ( id, oldAction ) ->
+                            Tasks.editTask id oldAction model.currentTasks
+
+                        Nothing ->
+                            model.currentTasks
+            in
+            simply
+                { model
+                    | currentTasks = updatedCurrentTasks
+                    , editing = Nothing
+                }
 
         Edit id newRawAction ->
             let
@@ -273,7 +286,7 @@ viewActionInput currentAction =
         ]
 
 
-viewCurrentTaskList : Maybe ( Tasks.TaskId Current, String ) -> Tasks.Collection Current -> Html Msg
+viewCurrentTaskList : Maybe ( Tasks.TaskId Current, Tasks.Action ) -> Tasks.Collection Current -> Html Msg
 viewCurrentTaskList editing =
     ol [ css [ taskListStyle ] ]
         << List.map
@@ -290,9 +303,9 @@ viewCurrentTaskList editing =
                         Nothing ->
                             viewTask task
 
-                        Just ( id, editAction ) ->
+                        Just ( id, originalAction ) ->
                             if Tasks.getId task == id then
-                                viewEditTask task
+                                viewEditTask originalAction task
 
                             else
                                 viewTask task
@@ -309,11 +322,11 @@ viewTask task =
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
-viewEditTask : Tasks.Task Current -> Html Msg
-viewEditTask task =
+viewEditTask : Tasks.Action -> Tasks.Task Current -> Html Msg
+viewEditTask originalAction task =
     viewTaskBase
         (onButtonClick StopEdit)
-        (viewEditAction (Tasks.getId task) (Tasks.readAction task))
+        (viewEditAction originalAction task)
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
@@ -347,8 +360,8 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : Tasks.TaskId Current -> String -> Html Msg
-viewEditAction id currentAction =
+viewEditAction : Tasks.Action -> Tasks.Task Current -> Html Msg
+viewEditAction originalAction task =
     form
         [ css [ flex (num 1) ]
         , onSubmit StopEdit
@@ -357,8 +370,8 @@ viewEditAction id currentAction =
             [ span [ css [ hide ] ] [ text "Action" ]
             , input
                 [ type_ "text"
-                , value currentAction
-                , onInput (Edit id)
+                , value <| Tasks.readAction task
+                , onInput (Edit <| Tasks.getId task)
                 , stopPropagation
                 , css [ boxSizing borderBox, width (pct 100) ]
                 ]
@@ -367,12 +380,28 @@ viewEditAction id currentAction =
         , div
             [ css [ displayFlex, justifyContent center ] ]
             [ label []
-                [ span [ css [ hide ] ] [ text "Undo changes" ]
-                , input [ css [ buttonStyle ], onButtonClick CancelEdit, type_ "reset", value "️↩️" ] []
+                [ span
+                    [ css [ hide ]
+                    ]
+                    [ text "Undo changes" ]
+                , input
+                    [ css [ buttonStyle ]
+                    , Html.Styled.Attributes.disabled (originalAction == Tasks.getAction task)
+                    , onButtonClick CancelEdit
+                    , type_ "reset"
+                    , value "️↩️"
+                    ]
+                    []
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Delete task" ]
-                , input [ css [ buttonStyle ], onButtonClick (DeleteTask id), type_ "button", value "🗑️" ] []
+                , input
+                    [ css [ buttonStyle ]
+                    , onButtonClick (DeleteTask <| Tasks.getId task)
+                    , type_ "button"
+                    , value "🗑️"
+                    ]
+                    []
                 ]
             ]
         ]
@@ -458,6 +487,10 @@ buttonStyle =
         , hover [ backgroundColor (rgba 0 0 0 0.07) ]
         , active [ boxShadow5 inset (em 0.1) (em 0.1) (em 0.2) (rgba 0 0 0 0.1) ]
         , margin (em 0.1)
+        , pseudoClass "disabled"
+            [ color (rgb 0 0 0)
+            , opacity (num 0.5)
+            ]
         ]
 
 
