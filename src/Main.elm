@@ -336,6 +336,7 @@ viewEditAction id currentAction =
                 [ type_ "text"
                 , value currentAction
                 , onInput (Edit id)
+                , stopPropagation
                 , css [ boxSizing borderBox, width (pct 100) ]
                 ]
                 []
@@ -354,13 +355,19 @@ viewEditAction id currentAction =
         ]
 
 
-viewEditAction id =
-    viewActionInputBase (Edit id) CloseEdit CloseEdit
+stopPropagation : Attribute Msg
+stopPropagation =
+    stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
 
 
 iconButton : Msg -> String -> String -> Html Msg
 iconButton msg hint icon =
-    button [ onClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+    button [ onButtonClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+onButtonClick : Msg -> Attribute Msg
+onButtonClick msg =
+    stopPropagationOn "click" (Decode.succeed ( msg, True ))
 
 
 {-| Only fires for clicks exactly on the element.
