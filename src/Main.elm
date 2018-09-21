@@ -76,6 +76,7 @@ type Msg
     | Edit (Tasks.TaskId Current) String
     | ApplyEdit
     | CancelEdit
+    | DeleteTask (Tasks.TaskId Current)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -178,6 +179,13 @@ update msg model =
                             ""
             in
             simply { model | editing = Just ( id, sanitizedAction ) }
+
+        DeleteTask id ->
+            let
+                newCurrentTasks =
+                    Tasks.removeTask id model.currentTasks
+            in
+            simply { model | currentTasks = newCurrentTasks }
 
 
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
@@ -385,6 +393,10 @@ viewEditAction id currentAction =
             [ label []
                 [ span [ css [ hide ] ] [ text "Undo changes" ]
                 , input [ css [ buttonStyle ], onButtonClick CancelEdit, type_ "reset", value "️↩️" ] []
+                ]
+            , label []
+                [ span [ css [ hide ] ] [ text "Delete task" ]
+                , input [ css [ buttonStyle ], onButtonClick (DeleteTask id), type_ "button", value "🗑️" ] []
                 ]
             ]
         ]
