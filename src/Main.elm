@@ -1,14 +1,15 @@
-module Main exposing (addTask, main)
+module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
-import Html
-import Html.Styled exposing (Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
-import Html.Styled.Attributes exposing (autofocus, css, type_, value)
-import Html.Styled.Events exposing (onClick, onInput, onSubmit)
+import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
+import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
+import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
+import Json.Decode as Decode
 import List.Extra as List
+import Tasks
 import Url
 
 
@@ -28,11 +29,20 @@ main =
 -- MODEL
 
 
+type Current
+    = Current
+
+
+type Done
+    = Done
+
+
 type alias Model =
     { key : Nav.Key
     , newTask : String
-    , currentTasks : List String
-    , accomplishedTasks : List String
+    , currentTasks : Tasks.Collection Current
+    , doneTasks : Tasks.Collection Done
+    , editing : Maybe ( Tasks.TaskId Current, String )
     }
 
 
@@ -40,8 +50,9 @@ init flags url key =
     simply
         { key = key
         , newTask = ""
-        , currentTasks = []
-        , accomplishedTasks = []
+        , currentTasks = Tasks.empty Current
+        , doneTasks = Tasks.empty Done
+        , editing = Nothing
         }
 
 
@@ -59,8 +70,14 @@ type Msg
     | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
     | AddNewTask
-    | AccomplishTask String
-    | UnaccomplishTask String
+    | DoTask (Tasks.TaskId Current)
+    | UndoTask (Tasks.TaskId Done)
+    | StartEdit (Tasks.TaskId Current)
+    | Edit (Tasks.TaskId Current) String
+    | StopEdit
+    | CancelEdit
+    | DeleteTask (Tasks.TaskId Current)
+    | BackgroundClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -91,32 +108,87 @@ update msg model =
                     , newTask = ""
                 }
 
-        AccomplishTask task ->
+        DoTask id ->
+            let
+                ( newCurrentTasks, newDoneTasks ) =
+                    Tasks.moveTask id model.currentTasks model.doneTasks
+            in
             simply
                 { model
-                    | currentTasks = List.remove task model.currentTasks
-                    , accomplishedTasks = task :: model.accomplishedTasks
+                    | currentTasks = newCurrentTasks
+                    , doneTasks = newDoneTasks
+                    , editing = Nothing
                 }
 
-        UnaccomplishTask task ->
+        UndoTask id ->
+            let
+                ( newDoneTasks, newCurrentTasks ) =
+                    Tasks.moveTask id model.doneTasks model.currentTasks
+            in
             simply
                 { model
-                    | accomplishedTasks = List.remove task model.accomplishedTasks
-                    , currentTasks = model.currentTasks ++ [ task ]
+                    | doneTasks = newDoneTasks
+                    , currentTasks = newCurrentTasks
                 }
 
+        StartEdit id ->
+            let
+                taskAction =
+                    case
+                        Tasks.toList model.currentTasks
+                            |> List.find (Tasks.getId >> (==) id)
+                    of
+                        Just task ->
+                            Tasks.readAction task
 
-addTask : String -> List String -> List String
-addTask newTask currentTasks =
-    let
-        cleaned =
-            String.trim newTask
-    in
-    if String.isEmpty cleaned then
-        currentTasks
+                        Nothing ->
+                            ""
+            in
+            simply { model | editing = Just ( id, taskAction ) }
 
-    else
-        currentTasks ++ [ cleaned ]
+        StopEdit ->
+            simply
+                { model
+                    | editing = Nothing
+                }
+
+        CancelEdit ->
+            simply { model | editing = Nothing }
+
+        Edit id newRawAction ->
+            let
+                maybeNewAction =
+                    Tasks.actionFromString newRawAction
+
+                updatedCurrentTasks =
+                    case maybeNewAction of
+                        Just newAction ->
+                            Tasks.editTask id newAction model.currentTasks
+
+                        Nothing ->
+                            model.currentTasks
+            in
+            simply { model | currentTasks = updatedCurrentTasks }
+
+        DeleteTask id ->
+            let
+                newCurrentTasks =
+                    Tasks.removeTask id model.currentTasks
+            in
+            simply { model | currentTasks = newCurrentTasks }
+
+        BackgroundClicked ->
+            simply { model | editing = Nothing }
+
+
+addTask : String -> Tasks.Collection c -> Tasks.Collection c
+addTask rawAction currentTasks =
+    case Tasks.actionFromString rawAction of
+        Just action ->
+            Tasks.addTask action currentTasks
+
+        Nothing ->
+            currentTasks
 
 
 
@@ -138,17 +210,32 @@ view model =
     , body =
         List.map toUnstyled
             [ global
-                [ selector "body"
-                    [ displayFlex
-                    , justifyContent center
-                    , margin (em 1)
-                    , fontFamily sansSerif
+                [ selector "html" [ height (pct 100) ]
+                , selector "body"
+                    [ margin zero
+                    , height (pct 100)
                     ]
                 ]
-            , main_ [ css [ minWidth (em 20) ] ]
-                [ viewActionInput model.newTask
-                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewTask model.currentTasks
-                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewAccomplishedTask model.accomplishedTasks
+            , div
+                [ css
+                    [ boxSizing borderBox
+                    , width (pct 100)
+                    , height (pct 100)
+                    , displayFlex
+                    , justifyContent center
+                    , padding (em 1)
+                    , fontFamily sansSerif
+                    ]
+                , id "background"
+                , onClickWithId "background" BackgroundClicked
+                ]
+                [ main_
+                    [ css [ minWidth (em 20) ]
+                    ]
+                    [ viewActionInput model.newTask
+                    , viewCurrentTaskList model.editing model.currentTasks
+                    , viewDoneTaskList model.doneTasks
+                    ]
                 ]
             ]
     }
@@ -156,7 +243,7 @@ view model =
 
 viewActionInput : String -> Html Msg
 viewActionInput currentAction =
-    form [ onSubmit AddNewTask ]
+    form [ onSubmit AddNewTask, css [ flex (num 1) ] ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
@@ -177,7 +264,7 @@ viewActionInput currentAction =
             ]
             [ label []
                 [ span [ css [ hide ] ] [ text "Add new task" ]
-                , input [ css [ buttonStyle ], type_ "submit", value "✔️" ] []
+                , input [ css [ buttonStyle ], type_ "submit", value "➕" ] []
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
@@ -187,9 +274,9 @@ viewActionInput currentAction =
         ]
 
 
-viewTaskList : List Style -> List (Html Msg) -> Html Msg
-viewTaskList styles =
-    ol [ css ([ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ++ styles) ]
+viewCurrentTaskList : Maybe ( Tasks.TaskId Current, String ) -> Tasks.Collection Current -> Html Msg
+viewCurrentTaskList editing =
+    ol [ css [ taskListStyle ] ]
         << List.map
             (\task ->
                 li
@@ -200,61 +287,160 @@ viewTaskList styles =
                             ]
                         ]
                     ]
-                    [ task ]
+                    [ case editing of
+                        Nothing ->
+                            viewTask task
+
+                        Just ( id, editAction ) ->
+                            if Tasks.getId task == id then
+                                viewEditTask task
+
+                            else
+                                viewTask task
+                    ]
             )
+        << Tasks.toList
 
 
-viewTask : String -> Html Msg
+viewTask : Tasks.Task Current -> Html Msg
 viewTask task =
-    section
+    viewTaskBase
+        (onClick (StartEdit <| Tasks.getId task))
+        (viewAction noStyle (Tasks.readAction task))
+        (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
+
+
+viewEditTask : Tasks.Task Current -> Html Msg
+viewEditTask task =
+    viewTaskBase
+        (onClick StopEdit)
+        (viewEditAction (Tasks.getId task) (Tasks.readAction task))
+        (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
+
+
+viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
+viewTaskBase whenClicked action btn =
+    div
         [ css
-            [ height (em 2)
-            , displayFlex
+            [ displayFlex
             , alignItems center
+            , justifyContent spaceBetween
             , padding (em 0.5)
             ]
+        , whenClicked
         ]
-        [ span
-            [ css
-                [ whiteSpace noWrap
-                , overflow hidden
-                , textOverflow ellipsis
-                , flex (num 1)
+        [ action
+        , btn
+        ]
+
+
+viewAction : Style -> String -> Html Msg
+viewAction customStyle action =
+    span
+        [ css
+            [ whiteSpace noWrap
+            , overflow hidden
+            , textOverflow ellipsis
+            , flex (num 1)
+            , customStyle
+            ]
+        ]
+        [ text action ]
+
+
+viewEditAction : Tasks.TaskId Current -> String -> Html Msg
+viewEditAction id currentAction =
+    form
+        [ css [ flex (num 1) ]
+        , onSubmit StopEdit
+        ]
+        [ label []
+            [ span [ css [ hide ] ] [ text "Action" ]
+            , input
+                [ type_ "text"
+                , value currentAction
+                , onInput (Edit id)
+                , stopPropagation
+                , css [ boxSizing borderBox, width (pct 100) ]
+                ]
+                []
+            ]
+        , div
+            [ css [ displayFlex, justifyContent center ] ]
+            [ label []
+                [ span [ css [ hide ] ] [ text "Undo changes" ]
+                , input [ css [ buttonStyle ], onButtonClick CancelEdit, type_ "reset", value "️↩️" ] []
+                ]
+            , label []
+                [ span [ css [ hide ] ] [ text "Delete task" ]
+                , input [ css [ buttonStyle ], onButtonClick (DeleteTask id), type_ "button", value "🗑️" ] []
                 ]
             ]
-            [ text task ]
-        , iconButton (AccomplishTask task) "Mark as done" "✔️"
         ]
 
 
-viewAccomplishedTask : String -> Html Msg
-viewAccomplishedTask task =
-    section
-        [ css
-            [ height (em 2)
-            , displayFlex
-            , alignItems center
-            , padding (em 0.5)
-            ]
-        ]
-        [ span
-            [ css
-                [ whiteSpace noWrap
-                , overflow hidden
-                , textOverflow ellipsis
-                , textDecoration lineThrough
+viewDoneTaskList : Tasks.Collection Done -> Html Msg
+viewDoneTaskList =
+    ol [ css [ taskListStyle ] ]
+        << List.map
+            (\task ->
+                li
+                    [ css
+                        [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
+                        , pseudoClass "not(:last-child)"
+                            [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
+                            ]
+                        ]
+                    ]
+                    [ viewDoneTask task
+                    ]
+            )
+        << Tasks.toList
+
+
+viewDoneTask : Tasks.Task Done -> Html Msg
+viewDoneTask task =
+    viewTaskBase
+        (onClick NoOp)
+        (viewAction
+            (batch
+                [ textDecoration lineThrough
                 , opacity (num 0.6)
-                , flex (num 1)
                 ]
-            ]
-            [ text task ]
-        , iconButton (UnaccomplishTask task) "Mark as to do" "🔄"
-        ]
+            )
+            (Tasks.readAction task)
+        )
+        (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
+
+
+
+-- ELEMENTS
 
 
 iconButton : Msg -> String -> String -> Html Msg
 iconButton msg hint icon =
-    button [ onClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+    button [ onButtonClick msg, css [ buttonStyle ], title hint ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+
+-- STYLES
+
+
+{-| Shortcut for no style.
+-}
+noStyle : Style
+noStyle =
+    batch []
+
+
+taskListStyle : Style
+taskListStyle =
+    batch
+        [ listStyleType none
+        , margin3 (em 1.5) zero zero
+        , padding zero
+        , maxWidth (em 20)
+        ]
 
 
 buttonStyle : Style
@@ -294,3 +480,37 @@ hide =
         , whiteSpace noWrap
         , width (px 1)
         ]
+
+
+
+-- EVENTS
+
+
+stopPropagation : Attribute Msg
+stopPropagation =
+    stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
+
+
+onButtonClick : Msg -> Attribute Msg
+onButtonClick msg =
+    stopPropagationOn "click" (Decode.succeed ( msg, True ))
+
+
+{-| Only fires for clicks exactly on the element.
+
+See <https://javascript.info/bubbling-and-capturing#event-target> for further information.
+
+-}
+onClickWithId : String -> Msg -> Attribute Msg
+onClickWithId targetId msg =
+    on "click"
+        (Decode.at [ "target", "id" ] Decode.string
+            |> Decode.andThen
+                (\actualId ->
+                    if actualId == targetId then
+                        Decode.succeed msg
+
+                    else
+                        Decode.fail <| "Element id was " ++ actualId ++ ", expected " ++ targetId ++ "."
+                )
+        )
