@@ -6,7 +6,7 @@ import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, id, type_, value)
-import Html.Styled.Events exposing (on, onClick, onInput, onSubmit)
+import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
 import List.Extra as List
 import Tasks
@@ -205,19 +205,14 @@ view model =
 
 
 viewActionInput : String -> Html Msg
-viewActionInput =
-    viewActionInputBase UpdateNewTask AddNewTask (UpdateNewTask "")
-
-
-viewActionInputBase : (String -> Msg) -> Msg -> Msg -> String -> Html Msg
-viewActionInputBase updateAction add reset currentAction =
-    form [ onSubmit add, css [ flex (num 1) ] ]
+viewActionInput currentAction =
+    form [ onSubmit AddNewTask, css [ flex (num 1) ] ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
                 [ type_ "text"
                 , value currentAction
-                , onInput updateAction
+                , onInput UpdateNewTask
                 , autofocus True
                 , css [ boxSizing borderBox, width (pct 100) ]
                 ]
@@ -236,7 +231,7 @@ viewActionInputBase updateAction add reset currentAction =
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
-                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick reset ] []
+                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
                 ]
             ]
         ]
@@ -264,7 +259,7 @@ viewTask index isEditing task =
     viewTaskBase
         index
         (if isEditing then
-            onClickWithId (idForTask index) CloseEdit
+            onClick CloseEdit
 
          else
             onClick (StartEdit index)
@@ -331,6 +326,34 @@ viewAction textStyles action =
 
 
 viewEditAction : Tasks.TaskId Current -> String -> Html Msg
+viewEditAction id currentAction =
+    form
+        [ onSubmit CloseEdit
+        ]
+        [ label []
+            [ span [ css [ hide ] ] [ text "Action" ]
+            , input
+                [ type_ "text"
+                , value currentAction
+                , onInput (Edit id)
+                , css [ boxSizing borderBox, width (pct 100) ]
+                ]
+                []
+            ]
+        , div
+            []
+            [ label []
+                [ span [ css [ hide ] ] [ text "Save" ]
+                , input [ css [ buttonStyle ], type_ "submit", value "✔️" ] []
+                ]
+            , label []
+                [ span [ css [ hide ] ] [ text "Cancel" ]
+                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick CloseEdit ] []
+                ]
+            ]
+        ]
+
+
 viewEditAction id =
     viewActionInputBase (Edit id) CloseEdit CloseEdit
 
