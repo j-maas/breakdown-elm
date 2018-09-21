@@ -298,9 +298,9 @@ viewTaskBase index whenClicked action btn =
     div
         [ id (idForTask index)
         , css
-            [ height (em 2)
-            , displayFlex
+            [ displayFlex
             , alignItems center
+            , justifyContent spaceBetween
             , padding (em 0.5)
             ]
         , whenClicked
