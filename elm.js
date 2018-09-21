@@ -4166,8 +4166,8 @@ function _Browser_getViewport()
 		b3: {
 			a9: _Browser_window.pageXOffset,
 			ba: _Browser_window.pageYOffset,
-			aw: _Browser_doc.documentElement.clientWidth,
-			ah: _Browser_doc.documentElement.clientHeight
+			ax: _Browser_doc.documentElement.clientWidth,
+			ai: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4177,8 +4177,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		aw: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		ah: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		ax: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		ai: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4202,14 +4202,14 @@ function _Browser_getViewportOf(id)
 	{
 		return {
 			bY: {
-				aw: node.scrollWidth,
-				ah: node.scrollHeight
+				ax: node.scrollWidth,
+				ai: node.scrollHeight
 			},
 			b3: {
 				a9: node.scrollLeft,
 				ba: node.scrollTop,
-				aw: node.clientWidth,
-				ah: node.clientHeight
+				ax: node.clientWidth,
+				ai: node.clientHeight
 			}
 		};
 	});
@@ -4243,14 +4243,14 @@ function _Browser_getElement(id)
 			b3: {
 				a9: x,
 				ba: y,
-				aw: _Browser_doc.documentElement.clientWidth,
-				ah: _Browser_doc.documentElement.clientHeight
+				ax: _Browser_doc.documentElement.clientWidth,
+				ai: _Browser_doc.documentElement.clientHeight
 			},
 			cd: {
 				a9: x + rect.left,
 				ba: y + rect.top,
-				aw: rect.width,
-				ah: rect.height
+				ax: rect.width,
+				ai: rect.height
 			}
 		};
 	});
@@ -4528,22 +4528,22 @@ var elm$core$Array$builderToArray = F2(
 		if (!builder.g) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.i),
+				elm$core$Elm$JsArray$length(builder.j),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.i);
+				builder.j);
 		} else {
 			var treeLen = builder.g * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.j) : builder.j;
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.k) : builder.k;
 			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.g);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.i) + treeLen,
+				elm$core$Elm$JsArray$length(builder.j) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.i);
+				builder.j);
 		}
 	});
 var elm$core$Basics$idiv = _Basics_idiv;
@@ -4557,7 +4557,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{j: nodeList, g: (len / elm$core$Array$branchFactor) | 0, i: tail});
+					{k: nodeList, g: (len / elm$core$Array$branchFactor) | 0, j: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -4819,11 +4819,11 @@ var author$project$Main$init = F3(
 	function (flags, url, key) {
 		return author$project$Main$simply(
 			{
-				l: author$project$Tasks$empty(0),
+				h: author$project$Tasks$empty(0),
 				O: author$project$Tasks$empty(0),
-				E: elm$core$Maybe$Nothing,
+				z: elm$core$Maybe$Nothing,
 				be: key,
-				al: ''
+				am: ''
 			});
 	});
 var elm$core$Platform$Sub$batch = _Platform_batch;
@@ -4955,7 +4955,7 @@ var author$project$Tasks$addTask = F2(
 			list,
 			_List_fromArray(
 				[
-					{ax: action, aZ: nextId}
+					{Z: action, aZ: nextId}
 				]));
 		return newList;
 	});
@@ -4996,16 +4996,20 @@ var author$project$Tasks$editTask = F3(
 				var task = _n1;
 				return _Utils_update(
 					task,
-					{ax: action});
+					{Z: action});
 			},
 			list);
 	});
+var author$project$Tasks$getAction = function (_n0) {
+	var task = _n0;
+	return task.Z;
+};
 var author$project$Tasks$insertTask = F2(
 	function (_n0, into) {
 		var task = _n0;
 		var list = into;
 		var newId = author$project$Tasks$nextIdForCollection(into);
-		var newTask = {ax: task.ax, aZ: newId};
+		var newTask = {Z: task.Z, aZ: newId};
 		return _Utils_ap(
 			list,
 			_List_fromArray(
@@ -5077,14 +5081,6 @@ var author$project$Tasks$moveTask = F3(
 			return _Utils_Tuple2(from, to);
 		}
 	});
-var author$project$Tasks$stringFromAction = function (_n0) {
-	var rawAction = _n0;
-	return rawAction;
-};
-var author$project$Tasks$readAction = function (_n0) {
-	var task = _n0;
-	return author$project$Tasks$stringFromAction(task.ax);
-};
 var author$project$Tasks$toList = function (_n0) {
 	var list = _n0;
 	return list;
@@ -5398,65 +5394,76 @@ var author$project$Main$update = F2(
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{al: action}));
+						{am: action}));
 			case 3:
-				var newTasks = A2(author$project$Main$addTask, model.al, model.l);
+				var newTasks = A2(author$project$Main$addTask, model.am, model.h);
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{l: newTasks, al: ''}));
+						{h: newTasks, am: ''}));
 			case 4:
 				var id = msg.a;
-				var _n2 = A3(author$project$Tasks$moveTask, id, model.l, model.O);
+				var _n2 = A3(author$project$Tasks$moveTask, id, model.h, model.O);
 				var newCurrentTasks = _n2.a;
 				var newDoneTasks = _n2.b;
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{l: newCurrentTasks, O: newDoneTasks, E: elm$core$Maybe$Nothing}));
+						{h: newCurrentTasks, O: newDoneTasks, z: elm$core$Maybe$Nothing}));
 			case 5:
 				var id = msg.a;
-				var _n3 = A3(author$project$Tasks$moveTask, id, model.O, model.l);
+				var _n3 = A3(author$project$Tasks$moveTask, id, model.O, model.h);
 				var newDoneTasks = _n3.a;
 				var newCurrentTasks = _n3.b;
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{l: newCurrentTasks, O: newDoneTasks}));
+						{h: newCurrentTasks, O: newDoneTasks}));
 			case 6:
 				var id = msg.a;
-				var taskAction = function () {
+				var editing = function () {
 					var _n4 = A2(
 						elm_community$list_extra$List$Extra$find,
 						A2(
 							elm$core$Basics$composeR,
 							author$project$Tasks$getId,
 							elm$core$Basics$eq(id)),
-						author$project$Tasks$toList(model.l));
+						author$project$Tasks$toList(model.h));
 					if (!_n4.$) {
 						var task = _n4.a;
-						return author$project$Tasks$readAction(task);
+						return elm$core$Maybe$Just(
+							_Utils_Tuple2(
+								id,
+								author$project$Tasks$getAction(task)));
 					} else {
-						return '';
+						return elm$core$Maybe$Nothing;
 					}
 				}();
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{
-							E: elm$core$Maybe$Just(
-								_Utils_Tuple2(id, taskAction))
-						}));
+						{z: editing}));
 			case 8:
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{E: elm$core$Maybe$Nothing}));
+						{z: elm$core$Maybe$Nothing}));
 			case 9:
+				var updatedCurrentTasks = function () {
+					var _n5 = model.z;
+					if (!_n5.$) {
+						var _n6 = _n5.a;
+						var id = _n6.a;
+						var oldAction = _n6.b;
+						return A3(author$project$Tasks$editTask, id, oldAction, model.h);
+					} else {
+						return model.h;
+					}
+				}();
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{E: elm$core$Maybe$Nothing}));
+						{h: updatedCurrentTasks, z: elm$core$Maybe$Nothing}));
 			case 7:
 				var id = msg.a;
 				var newRawAction = msg.b;
@@ -5464,27 +5471,27 @@ var author$project$Main$update = F2(
 				var updatedCurrentTasks = function () {
 					if (!maybeNewAction.$) {
 						var newAction = maybeNewAction.a;
-						return A3(author$project$Tasks$editTask, id, newAction, model.l);
+						return A3(author$project$Tasks$editTask, id, newAction, model.h);
 					} else {
-						return model.l;
+						return model.h;
 					}
 				}();
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{l: updatedCurrentTasks}));
+						{h: updatedCurrentTasks}));
 			case 10:
 				var id = msg.a;
-				var newCurrentTasks = A2(author$project$Tasks$removeTask, id, model.l);
+				var newCurrentTasks = A2(author$project$Tasks$removeTask, id, model.h);
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{l: newCurrentTasks}));
+						{h: newCurrentTasks}));
 			default:
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{E: elm$core$Maybe$Nothing}));
+						{z: elm$core$Maybe$Nothing}));
 		}
 	});
 var author$project$Main$BackgroundClicked = {$: 11};
@@ -5542,7 +5549,7 @@ var rtfeldman$elm_css$Css$property = F2(
 		return rtfeldman$elm_css$Css$Preprocess$AppendProperty(key + (':' + value));
 	});
 var rtfeldman$elm_css$Css$backgroundColor = function (c) {
-	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.B);
+	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.C);
 };
 var rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
 	return {$: 6, a: a};
@@ -5550,7 +5557,7 @@ var rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
 var rtfeldman$elm_css$Css$batch = rtfeldman$elm_css$Css$Preprocess$ApplyStyles;
 var rtfeldman$elm_css$Css$prop1 = F2(
 	function (key, arg) {
-		return A2(rtfeldman$elm_css$Css$property, key, arg.B);
+		return A2(rtfeldman$elm_css$Css$property, key, arg.C);
 	});
 var rtfeldman$elm_css$Css$border = rtfeldman$elm_css$Css$prop1('border');
 var rtfeldman$elm_css$Css$prop5 = F6(
@@ -5562,10 +5569,13 @@ var rtfeldman$elm_css$Css$prop5 = F6(
 				elm$core$String$join,
 				' ',
 				_List_fromArray(
-					[argA.B, argB.B, argC.B, argD.B, argE.B])));
+					[argA.C, argB.C, argC.C, argD.C, argE.C])));
 	});
 var rtfeldman$elm_css$Css$boxShadow5 = rtfeldman$elm_css$Css$prop5('box-shadow');
 var rtfeldman$elm_css$Css$center = rtfeldman$elm_css$Css$prop1('center');
+var rtfeldman$elm_css$Css$color = function (c) {
+	return A2(rtfeldman$elm_css$Css$property, 'color', c.C);
+};
 var rtfeldman$elm_css$Css$EmUnits = 0;
 var elm$core$String$fromFloat = _String_fromNumber;
 var rtfeldman$elm_css$Css$Structure$Compatible = 0;
@@ -5574,21 +5584,21 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 		return {
 			bo: 0,
 			bw: 0,
-			ad: 0,
+			ae: 0,
 			n: 0,
 			aF: 0,
-			ai: 0,
-			I: 0,
 			aj: 0,
+			I: 0,
 			ak: 0,
+			al: 0,
 			R: 0,
 			S: 0,
-			z: 0,
+			A: 0,
 			L: numericValue,
-			as: 0,
-			au: unitLabel,
+			at: 0,
+			av: unitLabel,
 			aR: units,
-			B: _Utils_ap(
+			C: _Utils_ap(
 				elm$core$String$fromFloat(numericValue),
 				unitLabel)
 		};
@@ -5596,12 +5606,43 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 var rtfeldman$elm_css$Css$em = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'em');
 var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
 var rtfeldman$elm_css$Css$hover = rtfeldman$elm_css$Css$pseudoClass('hover');
-var rtfeldman$elm_css$Css$inset = {q: 0, B: 'inset'};
+var rtfeldman$elm_css$Css$inset = {q: 0, C: 'inset'};
 var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
+var rtfeldman$elm_css$Css$UnitlessFloat = 0;
+var rtfeldman$elm_css$Css$num = function (val) {
+	return {
+		S: 0,
+		A: 0,
+		aH: 0,
+		L: val,
+		av: '',
+		aR: 0,
+		C: elm$core$String$fromFloat(val)
+	};
+};
+var rtfeldman$elm_css$Css$opacity = rtfeldman$elm_css$Css$prop1('opacity');
 var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
 var rtfeldman$elm_css$Css$cssFunction = F2(
 	function (funcName, args) {
 		return funcName + ('(' + (A2(elm$core$String$join, ', ', args) + ')'));
+	});
+var rtfeldman$elm_css$Css$rgb = F3(
+	function (r, g, b) {
+		return {
+			az: 1,
+			aB: b,
+			y: 0,
+			aE: g,
+			aL: r,
+			C: A2(
+				rtfeldman$elm_css$Css$cssFunction,
+				'rgb',
+				A2(
+					elm$core$List$map,
+					elm$core$String$fromInt,
+					_List_fromArray(
+						[r, g, b])))
+		};
 	});
 var rtfeldman$elm_css$Css$rgba = F4(
 	function (r, g, b, alpha) {
@@ -5611,7 +5652,7 @@ var rtfeldman$elm_css$Css$rgba = F4(
 			y: 0,
 			aE: g,
 			aL: r,
-			B: A2(
+			C: A2(
 				rtfeldman$elm_css$Css$cssFunction,
 				'rgba',
 				_Utils_ap(
@@ -5706,7 +5747,7 @@ var rtfeldman$elm_css$Css$textAlign = function (fn) {
 };
 var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
 var rtfeldman$elm_css$Css$UnitlessInteger = 0;
-var rtfeldman$elm_css$Css$zero = {aF: 0, ai: 0, I: 0, aj: 0, ak: 0, R: 0, S: 0, aH: 0, L: 0, a1: 0, au: '', aR: 0, B: '0'};
+var rtfeldman$elm_css$Css$zero = {aF: 0, aj: 0, I: 0, ak: 0, al: 0, R: 0, S: 0, aH: 0, L: 0, a1: 0, av: '', aR: 0, C: '0'};
 var author$project$Main$buttonStyle = function () {
 	var size = rtfeldman$elm_css$Css$em(2);
 	return rtfeldman$elm_css$Css$batch(
@@ -5737,15 +5778,25 @@ var author$project$Main$buttonStyle = function () {
 						A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1))
 					])),
 				rtfeldman$elm_css$Css$margin(
-				rtfeldman$elm_css$Css$em(0.1))
+				rtfeldman$elm_css$Css$em(0.1)),
+				A2(
+				rtfeldman$elm_css$Css$pseudoClass,
+				'disabled',
+				_List_fromArray(
+					[
+						rtfeldman$elm_css$Css$color(
+						A3(rtfeldman$elm_css$Css$rgb, 0, 0, 0)),
+						rtfeldman$elm_css$Css$opacity(
+						rtfeldman$elm_css$Css$num(0.5))
+					]))
 			]));
 }();
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var rtfeldman$elm_css$Css$absolute = {aK: 0, B: 'absolute'};
-var rtfeldman$elm_css$Css$hidden = {q: 0, am: 0, B: 'hidden', aS: 0};
-var rtfeldman$elm_css$Css$noWrap = {aD: 0, aY: 0, B: 'nowrap', N: 0};
+var rtfeldman$elm_css$Css$absolute = {aK: 0, C: 'absolute'};
+var rtfeldman$elm_css$Css$hidden = {q: 0, an: 0, C: 'hidden', aS: 0};
+var rtfeldman$elm_css$Css$noWrap = {aD: 0, aY: 0, C: 'nowrap', N: 0};
 var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
 var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
 var rtfeldman$elm_css$Css$PxUnits = 0;
@@ -5767,7 +5818,7 @@ var author$project$Main$hide = rtfeldman$elm_css$Css$batch(
 			rtfeldman$elm_css$Css$width(
 			rtfeldman$elm_css$Css$px(1))
 		]));
-var rtfeldman$elm_css$Css$borderBox = {bb: 0, aU: 0, B: 'border-box'};
+var rtfeldman$elm_css$Css$borderBox = {bb: 0, aU: 0, C: 'border-box'};
 var rtfeldman$elm_css$Css$boxSizing = rtfeldman$elm_css$Css$prop1('box-sizing');
 var rtfeldman$elm_css$Css$displayFlex = A2(rtfeldman$elm_css$Css$property, 'display', 'flex');
 var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
@@ -5779,21 +5830,9 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		'justify-content',
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
-var rtfeldman$elm_css$Css$UnitlessFloat = 0;
-var rtfeldman$elm_css$Css$num = function (val) {
-	return {
-		S: 0,
-		z: 0,
-		aH: 0,
-		L: val,
-		au: '',
-		aR: 0,
-		B: elm$core$String$fromFloat(val)
-	};
-};
 var rtfeldman$elm_css$Css$PercentageUnits = 0;
 var rtfeldman$elm_css$Css$pct = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, '%');
-var rtfeldman$elm_css$Css$row = {bd: 0, aD: 0, B: 'row'};
+var rtfeldman$elm_css$Css$row = {bd: 0, aD: 0, C: 'row'};
 var rtfeldman$elm_css$VirtualDom$Styled$Node = F3(
 	function (a, b, c) {
 		return {$: 0, a: a, b: b, c: c};
@@ -5841,7 +5880,7 @@ var rtfeldman$elm_css$Html$Styled$Attributes$autofocus = rtfeldman$elm_css$Html$
 var elm$json$Json$Encode$string = _Json_wrap;
 var Skinney$murmur3$Murmur3$HashData = F4(
 	function (shift, seed, hash, charsProcessed) {
-		return {aa: charsProcessed, ag: hash, V: seed, ap: shift};
+		return {ab: charsProcessed, ah: hash, V: seed, aq: shift};
 	});
 var elm$core$Bitwise$and = _Bitwise_and;
 var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
@@ -5858,8 +5897,8 @@ var Skinney$murmur3$Murmur3$mix = F2(
 		return h1 ^ A2(Skinney$murmur3$Murmur3$mur, 461845907, (k1 >>> 17) | (k1 << 15));
 	});
 var Skinney$murmur3$Murmur3$finalize = function (data) {
-	var acc = data.ag ? A2(Skinney$murmur3$Murmur3$mix, data.V, data.ag) : data.V;
-	var h1 = acc ^ data.aa;
+	var acc = data.ah ? A2(Skinney$murmur3$Murmur3$mix, data.V, data.ah) : data.V;
+	var h1 = acc ^ data.ab;
 	var h2 = A2(Skinney$murmur3$Murmur3$mur, 2246822507, h1 ^ (h1 >>> 16));
 	var h3 = A2(Skinney$murmur3$Murmur3$mur, 3266489909, h2 ^ (h2 >>> 13));
 	return (h3 ^ (h3 >>> 16)) >>> 0;
@@ -5870,14 +5909,14 @@ var Skinney$murmur3$Murmur3$step = function (acc) {
 };
 var Skinney$murmur3$Murmur3$hashFold = F2(
 	function (c, data) {
-		var res = data.ag | (c << data.ap);
-		var _n0 = data.ap;
+		var res = data.ah | (c << data.aq);
+		var _n0 = data.aq;
 		if (_n0 === 24) {
 			var newHash = Skinney$murmur3$Murmur3$step(
 				A2(Skinney$murmur3$Murmur3$mix, data.V, res));
-			return {aa: data.aa + 1, ag: 0, V: newHash, ap: 0};
+			return {ab: data.ab + 1, ah: 0, V: newHash, aq: 0};
 		} else {
-			return {aa: data.aa + 1, ag: res, V: data.V, ap: data.ap + 8};
+			return {ab: data.ab + 1, ah: res, V: data.V, aq: data.aq + 8};
 		}
 	});
 var elm$core$Basics$ge = _Utils_ge;
@@ -7371,7 +7410,7 @@ var rtfeldman$elm_css$Css$Structure$Output$mediaExpressionToString = function (e
 		A2(
 			elm$core$Maybe$map,
 			elm$core$Basics$append(': '),
-			expression.B)) + ')'));
+			expression.C)) + ')'));
 };
 var rtfeldman$elm_css$Css$Structure$Output$mediaTypeToString = function (mediaType) {
 	switch (mediaType) {
@@ -7898,11 +7937,11 @@ var rtfeldman$elm_css$Css$prop3 = F4(
 				elm$core$String$join,
 				' ',
 				_List_fromArray(
-					[argA.B, argB.B, argC.B])));
+					[argA.C, argB.C, argC.C])));
 	});
 var rtfeldman$elm_css$Css$margin3 = rtfeldman$elm_css$Css$prop3('margin');
 var rtfeldman$elm_css$Css$maxWidth = rtfeldman$elm_css$Css$prop1('max-width');
-var rtfeldman$elm_css$Css$none = {Z: 0, bu: 0, q: 0, a: 0, f: 0, cj: 0, bH: 0, bf: 0, ak: 0, R: 0, z: 0, c: 0, b: 0, bh: 0, a1: 0, ct: 0, w: 0, a3: 0, cv: 0, ar: 0, X: 0, u: 0, e: 0, cA: 0, B: 'none'};
+var rtfeldman$elm_css$Css$none = {_: 0, bu: 0, q: 0, a: 0, f: 0, cj: 0, bH: 0, bf: 0, al: 0, R: 0, A: 0, c: 0, b: 0, bh: 0, a1: 0, ct: 0, w: 0, a3: 0, cv: 0, as: 0, X: 0, u: 0, e: 0, cA: 0, C: 'none'};
 var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -7964,8 +8003,17 @@ var author$project$Main$stopPropagation = A2(
 	'click',
 	elm$json$Json$Decode$succeed(
 		_Utils_Tuple2(author$project$Main$NoOp, true)));
+var author$project$Tasks$stringFromAction = function (_n0) {
+	var rawAction = _n0;
+	return rawAction;
+};
+var author$project$Tasks$readAction = function (_n0) {
+	var task = _n0;
+	return author$project$Tasks$stringFromAction(task.Z);
+};
+var rtfeldman$elm_css$Html$Styled$Attributes$disabled = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('disabled');
 var author$project$Main$viewEditAction = F2(
-	function (id, currentAction) {
+	function (originalAction, task) {
 		return A2(
 			rtfeldman$elm_css$Html$Styled$form,
 			_List_fromArray(
@@ -8002,9 +8050,11 @@ var author$project$Main$viewEditAction = F2(
 							_List_fromArray(
 								[
 									rtfeldman$elm_css$Html$Styled$Attributes$type_('text'),
-									rtfeldman$elm_css$Html$Styled$Attributes$value(currentAction),
+									rtfeldman$elm_css$Html$Styled$Attributes$value(
+									author$project$Tasks$readAction(task)),
 									rtfeldman$elm_css$Html$Styled$Events$onInput(
-									author$project$Main$Edit(id)),
+									author$project$Main$Edit(
+										author$project$Tasks$getId(task))),
 									author$project$Main$stopPropagation,
 									rtfeldman$elm_css$Html$Styled$Attributes$css(
 									_List_fromArray(
@@ -8053,6 +8103,10 @@ var author$project$Main$viewEditAction = F2(
 											rtfeldman$elm_css$Html$Styled$Attributes$css(
 											_List_fromArray(
 												[author$project$Main$buttonStyle])),
+											rtfeldman$elm_css$Html$Styled$Attributes$disabled(
+											_Utils_eq(
+												originalAction,
+												author$project$Tasks$getAction(task))),
 											author$project$Main$onButtonClick(author$project$Main$CancelEdit),
 											rtfeldman$elm_css$Html$Styled$Attributes$type_('reset'),
 											rtfeldman$elm_css$Html$Styled$Attributes$value('️↩️')
@@ -8084,7 +8138,8 @@ var author$project$Main$viewEditAction = F2(
 											_List_fromArray(
 												[author$project$Main$buttonStyle])),
 											author$project$Main$onButtonClick(
-											author$project$Main$DeleteTask(id)),
+											author$project$Main$DeleteTask(
+												author$project$Tasks$getId(task))),
 											rtfeldman$elm_css$Html$Styled$Attributes$type_('button'),
 											rtfeldman$elm_css$Html$Styled$Attributes$value('🗑️')
 										]),
@@ -8121,26 +8176,24 @@ var author$project$Main$viewTaskBase = F3(
 			_List_fromArray(
 				[action, btn]));
 	});
-var author$project$Main$viewEditTask = function (task) {
-	return A3(
-		author$project$Main$viewTaskBase,
-		author$project$Main$onButtonClick(author$project$Main$StopEdit),
-		A2(
-			author$project$Main$viewEditAction,
-			author$project$Tasks$getId(task),
-			author$project$Tasks$readAction(task)),
-		A3(
-			author$project$Main$iconButton,
-			author$project$Main$DoTask(
-				author$project$Tasks$getId(task)),
-			'Mark as done',
-			'✔️'));
-};
+var author$project$Main$viewEditTask = F2(
+	function (originalAction, task) {
+		return A3(
+			author$project$Main$viewTaskBase,
+			author$project$Main$onButtonClick(author$project$Main$StopEdit),
+			A2(author$project$Main$viewEditAction, originalAction, task),
+			A3(
+				author$project$Main$iconButton,
+				author$project$Main$DoTask(
+					author$project$Tasks$getId(task)),
+				'Mark as done',
+				'✔️'));
+	});
 var author$project$Main$StartEdit = function (a) {
 	return {$: 6, a: a};
 };
 var author$project$Main$noStyle = rtfeldman$elm_css$Css$batch(_List_Nil);
-var rtfeldman$elm_css$Css$ellipsis = {b0: 0, B: 'ellipsis'};
+var rtfeldman$elm_css$Css$ellipsis = {b0: 0, C: 'ellipsis'};
 var rtfeldman$elm_css$Css$textOverflow = rtfeldman$elm_css$Css$prop1('text-overflow');
 var author$project$Main$viewAction = F2(
 	function (customStyle, action) {
@@ -8182,7 +8235,7 @@ var author$project$Main$viewTask = function (task) {
 			'✔️'));
 };
 var rtfeldman$elm_css$Css$borderBottom3 = rtfeldman$elm_css$Css$prop3('border-bottom');
-var rtfeldman$elm_css$Css$solid = {q: 0, W: 0, B: 'solid'};
+var rtfeldman$elm_css$Css$solid = {q: 0, W: 0, C: 'solid'};
 var rtfeldman$elm_css$Html$Styled$li = rtfeldman$elm_css$Html$Styled$node('li');
 var rtfeldman$elm_css$Html$Styled$ol = rtfeldman$elm_css$Html$Styled$node('ol');
 var author$project$Main$viewCurrentTaskList = function (editing) {
@@ -8233,10 +8286,10 @@ var author$project$Main$viewCurrentTaskList = function (editing) {
 								} else {
 									var _n1 = editing.a;
 									var id = _n1.a;
-									var editAction = _n1.b;
+									var originalAction = _n1.b;
 									return _Utils_eq(
 										author$project$Tasks$getId(task),
-										id) ? author$project$Main$viewEditTask(task) : author$project$Main$viewTask(task);
+										id) ? A2(author$project$Main$viewEditTask, originalAction, task) : author$project$Main$viewTask(task);
 								}
 							}()
 							]));
@@ -8246,8 +8299,7 @@ var author$project$Main$viewCurrentTaskList = function (editing) {
 var author$project$Main$UndoTask = function (a) {
 	return {$: 5, a: a};
 };
-var rtfeldman$elm_css$Css$lineThrough = {ar: 0, B: 'line-through'};
-var rtfeldman$elm_css$Css$opacity = rtfeldman$elm_css$Css$prop1('opacity');
+var rtfeldman$elm_css$Css$lineThrough = {as: 0, C: 'line-through'};
 var rtfeldman$elm_css$Css$textDecoration = rtfeldman$elm_css$Css$prop1('text-decoration');
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 0, a: a};
@@ -8333,7 +8385,7 @@ var author$project$Main$viewDoneTaskList = A2(
 	author$project$Tasks$toList);
 var rtfeldman$elm_css$Css$fontFamily = rtfeldman$elm_css$Css$prop1('font-family');
 var rtfeldman$elm_css$Css$minWidth = rtfeldman$elm_css$Css$prop1('min-width');
-var rtfeldman$elm_css$Css$sansSerif = {P: 0, B: 'sans-serif'};
+var rtfeldman$elm_css$Css$sansSerif = {P: 0, C: 'sans-serif'};
 var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
@@ -8899,8 +8951,8 @@ var author$project$Main$view = function (model) {
 								]),
 							_List_fromArray(
 								[
-									author$project$Main$viewActionInput(model.al),
-									A2(author$project$Main$viewCurrentTaskList, model.E, model.l),
+									author$project$Main$viewActionInput(model.am),
+									A2(author$project$Main$viewCurrentTaskList, model.z, model.h),
 									author$project$Main$viewDoneTaskList(model.O)
 								]))
 						]))
