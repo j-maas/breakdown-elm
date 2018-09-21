@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
 import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
-import Html.Styled.Attributes exposing (autofocus, css, id, type_, value)
+import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
 import List.Extra as List
@@ -42,7 +42,7 @@ type alias Model =
     , newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
-    , editing : Maybe Int
+    , editing : Maybe ( Tasks.TaskId Current, String )
     }
 
 
@@ -72,9 +72,11 @@ type Msg
     | AddNewTask
     | DoTask (Tasks.TaskId Current)
     | UndoTask (Tasks.TaskId Done)
-    | StartEdit Int
+    | StartEdit (Tasks.TaskId Current)
     | Edit (Tasks.TaskId Current) String
-    | CloseEdit
+    | ApplyEdit
+    | CancelEdit
+    | DeleteTask (Tasks.TaskId Current)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -128,21 +130,60 @@ update msg model =
                     , currentTasks = newCurrentTasks
                 }
 
-        StartEdit index ->
-            simply { model | editing = Just index }
+        StartEdit id ->
+            let
+                taskAction =
+                    case
+                        Tasks.toList model.currentTasks
+                            |> List.find (Tasks.getId >> (==) id)
+                    of
+                        Just task ->
+                            Tasks.readAction task
 
-        CloseEdit ->
+                        Nothing ->
+                            ""
+            in
+            simply { model | editing = Just ( id, taskAction ) }
+
+        ApplyEdit ->
+            let
+                newCurrentTasks =
+                    case model.editing of
+                        Just ( id, rawAction ) ->
+                            Maybe.withDefault model.currentTasks
+                                (Tasks.actionFromString rawAction
+                                    |> Maybe.andThen
+                                        (\action -> Just <| Tasks.editTask id action model.currentTasks)
+                                )
+
+                        Nothing ->
+                            model.currentTasks
+            in
+            simply
+                { model
+                    | currentTasks = newCurrentTasks
+                    , editing = Nothing
+                }
+
+        CancelEdit ->
             simply { model | editing = Nothing }
 
         Edit id newRawAction ->
             let
-                newCurrentTasks =
+                sanitizedAction =
                     case Tasks.actionFromString newRawAction of
                         Just action ->
-                            Tasks.editTask id action model.currentTasks
+                            Tasks.stringFromAction action
 
                         Nothing ->
-                            model.currentTasks
+                            ""
+            in
+            simply { model | editing = Just ( id, sanitizedAction ) }
+
+        DeleteTask id ->
+            let
+                newCurrentTasks =
+                    Tasks.removeTask id model.currentTasks
             in
             simply { model | currentTasks = newCurrentTasks }
 
@@ -192,13 +233,21 @@ view model =
                     renderTask =
                         case model.editing of
                             Nothing ->
-                                \index task -> viewTask index False task
+                                \task -> viewTask Nothing task
 
-                            Just editIndex ->
-                                \index task -> viewTask index (editIndex == index) task
+                            Just ( id, editAction ) ->
+                                \task ->
+                                    viewTask
+                                        (if id == Tasks.getId task then
+                                            Just editAction
+
+                                         else
+                                            Nothing
+                                        )
+                                        task
                   in
-                  viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap renderTask <| Tasks.toList model.currentTasks
-                , viewTaskList [ marginTop (em 1.5) ] <| List.indexedMap viewDoneTasks <| Tasks.toList model.doneTasks
+                  viewTaskList [ marginTop (em 1.5) ] <| List.map renderTask <| Tasks.toList model.currentTasks
+                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewDoneTasks <| Tasks.toList model.doneTasks
                 ]
             ]
     }
@@ -254,21 +303,21 @@ viewTaskList styles =
             )
 
 
-viewTask : Int -> Bool -> Tasks.Task Current -> Html Msg
-viewTask index isEditing task =
+viewTask : Maybe String -> Tasks.Task Current -> Html Msg
+viewTask maybeEditAction task =
     viewTaskBase
-        index
-        (if isEditing then
-            onClick CloseEdit
+        (if maybeEditAction == Nothing then
+            onClick (StartEdit <| Tasks.getId task)
 
          else
-            onClick (StartEdit index)
+            onClick ApplyEdit
         )
-        (if isEditing then
-            viewEditAction (Tasks.getId task) (Tasks.readAction task)
+        (case maybeEditAction of
+            Nothing ->
+                viewAction [] <| Tasks.readAction task
 
-         else
-            viewAction [] <| Tasks.readAction task
+            Just editAction ->
+                viewEditAction (Tasks.getId task) editAction
         )
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
@@ -278,10 +327,9 @@ idForTask index =
     "task-" ++ String.fromInt index
 
 
-viewDoneTasks : Int -> Tasks.Task Done -> Html Msg
-viewDoneTasks index task =
+viewDoneTasks : Tasks.Task Done -> Html Msg
+viewDoneTasks task =
     viewTaskBase
-        index
         (onClick NoOp)
         (viewAction
             [ textDecoration lineThrough
@@ -293,11 +341,10 @@ viewDoneTasks index task =
         (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
 
 
-viewTaskBase : Int -> Attribute Msg -> Html Msg -> Html Msg -> Html Msg
-viewTaskBase index whenClicked action btn =
+viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
+viewTaskBase whenClicked action btn =
     div
-        [ id (idForTask index)
-        , css
+        [ css
             [ displayFlex
             , alignItems center
             , justifyContent spaceBetween
@@ -328,7 +375,7 @@ viewAction textStyles action =
 viewEditAction : Tasks.TaskId Current -> String -> Html Msg
 viewEditAction id currentAction =
     form
-        [ onSubmit CloseEdit
+        [ onSubmit ApplyEdit
         ]
         [ label []
             [ span [ css [ hide ] ] [ text "Action" ]
@@ -344,12 +391,12 @@ viewEditAction id currentAction =
         , div
             []
             [ label []
-                [ span [ css [ hide ] ] [ text "Save" ]
-                , input [ css [ buttonStyle ], type_ "submit", value "✔️" ] []
+                [ span [ css [ hide ] ] [ text "Undo changes" ]
+                , input [ css [ buttonStyle ], onButtonClick CancelEdit, type_ "reset", value "️↩️" ] []
                 ]
             , label []
-                [ span [ css [ hide ] ] [ text "Cancel" ]
-                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick CloseEdit ] []
+                [ span [ css [ hide ] ] [ text "Delete task" ]
+                , input [ css [ buttonStyle ], onButtonClick (DeleteTask id), type_ "button", value "🗑️" ] []
                 ]
             ]
         ]
@@ -362,7 +409,7 @@ stopPropagation =
 
 iconButton : Msg -> String -> String -> Html Msg
 iconButton msg hint icon =
-    button [ onButtonClick msg, css [ buttonStyle ] ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+    button [ onButtonClick msg, css [ buttonStyle ], title hint ] [ span [ css [ hide ] ] [ text hint ], text icon ]
 
 
 onButtonClick : Msg -> Attribute Msg
