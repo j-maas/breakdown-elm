@@ -1,6 +1,6 @@
 module Tasks exposing
     ( Collection(..), empty
-    , Task(..), TaskId(..), Action(..), readAction, toList, getId, idToComparable
+    , Task(..), TaskId(..), Action(..), getAction, readAction, toList, getId, idToComparable
     , actionFromString, stringFromAction
     , addTask, removeTask, moveTask
     , editTask
@@ -16,7 +16,7 @@ module Tasks exposing
 
 # Tasks
 
-@docs Task, TaskId, Action, readAction, toList, getId, idToComparable
+@docs Task, TaskId, Action, getAction, readAction, toList, getId, idToComparable
 
 
 # Actions
@@ -117,6 +117,13 @@ type TaskId collection
 -}
 type Action
     = Action String
+
+
+{-| Extracts the `Action` from a `Task`.
+-}
+getAction : Task c -> Action
+getAction (Task task) =
+    task.action
 
 
 {-| Extracts a `Task`'s `Action` as a `String`.

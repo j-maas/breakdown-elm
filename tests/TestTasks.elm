@@ -48,6 +48,22 @@ suite =
                         Nothing ->
                             -- The fuzzer might generate invalid actions, which is not the fault of the module.
                             Expect.pass
+            , fuzz string "stores action in new task" <|
+                \rawAction ->
+                    let
+                        mayBeAction =
+                            actionFromString rawAction
+                    in
+                    case mayBeAction of
+                        Just action ->
+                            addTask action (empty Current)
+                                |> toList
+                                |> List.map getAction
+                                |> Expect.equal [ action ]
+
+                        Nothing ->
+                            -- The fuzzer might generate invalid actions, which is not the fault of the module.
+                            Expect.pass
             , describe "Actions"
                 [ test "creates valid action" <|
                     \_ ->
