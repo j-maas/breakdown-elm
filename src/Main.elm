@@ -274,14 +274,8 @@ viewActionInput currentAction =
                 , justifyContent center
                 ]
             ]
-            [ label []
-                [ span [ css [ hide ] ] [ text "Add new task" ]
-                , input [ css [ buttonStyle ], type_ "submit", value "➕" ] []
-                ]
-            , label []
-                [ span [ css [ hide ] ] [ text "Clear input" ]
-                , input [ css [ buttonStyle ], type_ "reset", value "❌", onButtonClick (UpdateNewTask "") ] []
-                ]
+            [ iconButtonInput "submit" NoOp "Add new task" "➕"
+            , iconButtonInput "reset" (UpdateNewTask "") "Clear input" "❌"
             ]
         ]
 
@@ -379,30 +373,12 @@ viewEditAction originalAction task =
             ]
         , div
             [ css [ displayFlex, justifyContent center ] ]
-            [ label []
-                [ span
-                    [ css [ hide ]
-                    ]
-                    [ text "Undo changes" ]
-                , input
-                    [ css [ buttonStyle ]
-                    , Html.Styled.Attributes.disabled (originalAction == Tasks.getAction task)
-                    , onButtonClick CancelEdit
-                    , type_ "reset"
-                    , value "️↩️"
-                    ]
-                    []
-                ]
-            , label []
-                [ span [ css [ hide ] ] [ text "Delete task" ]
-                , input
-                    [ css [ buttonStyle ]
-                    , onButtonClick (DeleteTask <| Tasks.getId task)
-                    , type_ "button"
-                    , value "🗑️"
-                    ]
-                    []
-                ]
+            [ iconButtonInputDisable (originalAction == Tasks.getAction task)
+                "reset"
+                CancelEdit
+                "Undo changes"
+                "️↩️"
+            , iconButtonInput "button" (DeleteTask <| Tasks.getId task) "Delete task" "🗑️"
             ]
         ]
 
@@ -448,6 +424,26 @@ viewDoneTask task =
 iconButton : Msg -> String -> String -> Html Msg
 iconButton msg hint icon =
     button [ onButtonClick msg, css [ buttonStyle ], title hint ] [ span [ css [ hide ] ] [ text hint ], text icon ]
+
+
+iconButtonInput =
+    iconButtonInputDisable False
+
+
+iconButtonInputDisable : Bool -> String -> Msg -> String -> String -> Html Msg
+iconButtonInputDisable isDisabled inputType msg hint icon =
+    label []
+        [ span [ css [ hide ] ] [ text hint ]
+        , input
+            [ css [ buttonStyle ]
+            , title hint
+            , Html.Styled.Attributes.disabled isDisabled
+            , type_ inputType
+            , value icon
+            , onButtonClick msg
+            ]
+            []
+        ]
 
 
 
