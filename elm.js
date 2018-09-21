@@ -5488,16 +5488,8 @@ var author$project$Main$update = F2(
 		}
 	});
 var author$project$Main$BackgroundClicked = {$: 11};
-var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
-	});
-var elm$json$Json$Decode$fail = _Json_fail;
-var elm$json$Json$Decode$string = _Json_decodeString;
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 0, a: a};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 1, a: a};
 };
 var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var rtfeldman$elm_css$VirtualDom$Styled$Attribute = F3(
@@ -5512,29 +5504,20 @@ var rtfeldman$elm_css$VirtualDom$Styled$on = F2(
 			_List_Nil,
 			'');
 	});
-var rtfeldman$elm_css$Html$Styled$Events$on = F2(
+var rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn = F2(
 	function (event, decoder) {
 		return A2(
 			rtfeldman$elm_css$VirtualDom$Styled$on,
 			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
-var author$project$Main$onClickWithId = F2(
-	function (targetId, msg) {
-		return A2(
-			rtfeldman$elm_css$Html$Styled$Events$on,
-			'click',
-			A2(
-				elm$json$Json$Decode$andThen,
-				function (actualId) {
-					return _Utils_eq(actualId, targetId) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Element id was ' + (actualId + (', expected ' + (targetId + '.'))));
-				},
-				A2(
-					elm$json$Json$Decode$at,
-					_List_fromArray(
-						['target', 'id']),
-					elm$json$Json$Decode$string)));
-	});
+var author$project$Main$onButtonClick = function (msg) {
+	return A2(
+		rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
+		'click',
+		elm$json$Json$Decode$succeed(
+			_Utils_Tuple2(msg, true)));
+};
 var author$project$Main$AddNewTask = {$: 3};
 var author$project$Main$UpdateNewTask = function (a) {
 	return {$: 2, a: a};
@@ -7733,25 +7716,15 @@ var rtfeldman$elm_css$Html$Styled$Attributes$stringProperty = F2(
 	});
 var rtfeldman$elm_css$Html$Styled$Attributes$type_ = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('type');
 var rtfeldman$elm_css$Html$Styled$Attributes$value = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('value');
-var rtfeldman$elm_css$Html$Styled$Events$onClick = function (msg) {
-	return A2(
-		rtfeldman$elm_css$Html$Styled$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
-};
 var rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
-var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 1, a: a};
-};
-var rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			rtfeldman$elm_css$VirtualDom$Styled$on,
-			event,
-			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
 	});
+var elm$json$Json$Decode$string = _Json_decodeString;
 var rtfeldman$elm_css$Html$Styled$Events$targetValue = A2(
 	elm$json$Json$Decode$at,
 	_List_fromArray(
@@ -7907,7 +7880,7 @@ var author$project$Main$viewActionInput = function (currentAction) {
 											[author$project$Main$buttonStyle])),
 										rtfeldman$elm_css$Html$Styled$Attributes$type_('reset'),
 										rtfeldman$elm_css$Html$Styled$Attributes$value('❌'),
-										rtfeldman$elm_css$Html$Styled$Events$onClick(
+										author$project$Main$onButtonClick(
 										author$project$Main$UpdateNewTask(''))
 									]),
 								_List_Nil)
@@ -7947,13 +7920,6 @@ var author$project$Main$DoTask = function (a) {
 	return {$: 4, a: a};
 };
 var author$project$Main$StopEdit = {$: 8};
-var author$project$Main$onButtonClick = function (msg) {
-	return A2(
-		rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
-		'click',
-		elm$json$Json$Decode$succeed(
-			_Utils_Tuple2(msg, true)));
-};
 var rtfeldman$elm_css$Html$Styled$button = rtfeldman$elm_css$Html$Styled$node('button');
 var rtfeldman$elm_css$Html$Styled$Attributes$title = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('title');
 var author$project$Main$iconButton = F3(
@@ -8158,7 +8124,7 @@ var author$project$Main$viewTaskBase = F3(
 var author$project$Main$viewEditTask = function (task) {
 	return A3(
 		author$project$Main$viewTaskBase,
-		rtfeldman$elm_css$Html$Styled$Events$onClick(author$project$Main$StopEdit),
+		author$project$Main$onButtonClick(author$project$Main$StopEdit),
 		A2(
 			author$project$Main$viewEditAction,
 			author$project$Tasks$getId(task),
@@ -8201,7 +8167,7 @@ var author$project$Main$viewAction = F2(
 var author$project$Main$viewTask = function (task) {
 	return A3(
 		author$project$Main$viewTaskBase,
-		rtfeldman$elm_css$Html$Styled$Events$onClick(
+		author$project$Main$onButtonClick(
 			author$project$Main$StartEdit(
 				author$project$Tasks$getId(task))),
 		A2(
@@ -8283,6 +8249,22 @@ var author$project$Main$UndoTask = function (a) {
 var rtfeldman$elm_css$Css$lineThrough = {ar: 0, B: 'line-through'};
 var rtfeldman$elm_css$Css$opacity = rtfeldman$elm_css$Css$prop1('opacity');
 var rtfeldman$elm_css$Css$textDecoration = rtfeldman$elm_css$Css$prop1('text-decoration');
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 0, a: a};
+};
+var rtfeldman$elm_css$Html$Styled$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var rtfeldman$elm_css$Html$Styled$Events$onClick = function (msg) {
+	return A2(
+		rtfeldman$elm_css$Html$Styled$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
 var author$project$Main$viewDoneTask = function (task) {
 	return A3(
 		author$project$Main$viewTaskBase,
@@ -8854,7 +8836,6 @@ var rtfeldman$elm_css$VirtualDom$Styled$toUnstyled = function (vdom) {
 	}
 };
 var rtfeldman$elm_css$Html$Styled$toUnstyled = rtfeldman$elm_css$VirtualDom$Styled$toUnstyled;
-var rtfeldman$elm_css$Html$Styled$Attributes$id = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('id');
 var author$project$Main$view = function (model) {
 	return {
 		b9: A2(
@@ -8901,8 +8882,7 @@ var author$project$Main$view = function (model) {
 									rtfeldman$elm_css$Css$em(1)),
 									rtfeldman$elm_css$Css$fontFamily(rtfeldman$elm_css$Css$sansSerif)
 								])),
-							rtfeldman$elm_css$Html$Styled$Attributes$id('background'),
-							A2(author$project$Main$onClickWithId, 'background', author$project$Main$BackgroundClicked)
+							author$project$Main$onButtonClick(author$project$Main$BackgroundClicked)
 						]),
 					_List_fromArray(
 						[
