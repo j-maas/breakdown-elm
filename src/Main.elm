@@ -74,7 +74,7 @@ type Msg
     | UndoTask (Tasks.TaskId Done)
     | StartEdit (Tasks.TaskId Current)
     | Edit (Tasks.TaskId Current) String
-    | ApplyEdit
+    | StopEdit
     | CancelEdit
     | DeleteTask (Tasks.TaskId Current)
 
@@ -145,24 +145,10 @@ update msg model =
             in
             simply { model | editing = Just ( id, taskAction ) }
 
-        ApplyEdit ->
-            let
-                newCurrentTasks =
-                    case model.editing of
-                        Just ( id, rawAction ) ->
-                            Maybe.withDefault model.currentTasks
-                                (Tasks.actionFromString rawAction
-                                    |> Maybe.andThen
-                                        (\action -> Just <| Tasks.editTask id action model.currentTasks)
-                                )
-
-                        Nothing ->
-                            model.currentTasks
-            in
+        StopEdit ->
             simply
                 { model
-                    | currentTasks = newCurrentTasks
-                    , editing = Nothing
+                    | editing = Nothing
                 }
 
         CancelEdit ->
@@ -170,15 +156,18 @@ update msg model =
 
         Edit id newRawAction ->
             let
-                sanitizedAction =
-                    case Tasks.actionFromString newRawAction of
-                        Just action ->
-                            Tasks.stringFromAction action
+                maybeNewAction =
+                    Tasks.actionFromString newRawAction
+
+                updatedCurrentTasks =
+                    case maybeNewAction of
+                        Just newAction ->
+                            Tasks.editTask id newAction model.currentTasks
 
                         Nothing ->
-                            ""
+                            model.currentTasks
             in
-            simply { model | editing = Just ( id, sanitizedAction ) }
+            simply { model | currentTasks = updatedCurrentTasks }
 
         DeleteTask id ->
             let
@@ -229,25 +218,8 @@ view model =
                     [ minWidth (em 20) ]
                 ]
                 [ viewActionInput model.newTask
-                , let
-                    renderTask =
-                        case model.editing of
-                            Nothing ->
-                                \task -> viewTask Nothing task
-
-                            Just ( id, editAction ) ->
-                                \task ->
-                                    viewTask
-                                        (if id == Tasks.getId task then
-                                            Just editAction
-
-                                         else
-                                            Nothing
-                                        )
-                                        task
-                  in
-                  viewTaskList [ marginTop (em 1.5) ] <| List.map renderTask <| Tasks.toList model.currentTasks
-                , viewTaskList [ marginTop (em 1.5) ] <| List.map viewDoneTasks <| Tasks.toList model.doneTasks
+                , viewCurrentTaskList model.editing model.currentTasks
+                , viewDoneTaskList model.doneTasks
                 ]
             ]
     }
@@ -286,9 +258,9 @@ viewActionInput currentAction =
         ]
 
 
-viewTaskList : List Style -> List (Html Msg) -> Html Msg
-viewTaskList styles =
-    ol [ css ([ listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ++ styles) ]
+viewCurrentTaskList : Maybe ( Tasks.TaskId Current, String ) -> Tasks.Collection Current -> Html Msg
+viewCurrentTaskList editing =
+    ol [ css [ marginTop (em 1.5), listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
         << List.map
             (\task ->
                 li
@@ -299,46 +271,35 @@ viewTaskList styles =
                             ]
                         ]
                     ]
-                    [ task ]
+                    [ case editing of
+                        Nothing ->
+                            viewTask task
+
+                        Just ( id, editAction ) ->
+                            if Tasks.getId task == id then
+                                viewEditTask task
+
+                            else
+                                viewTask task
+                    ]
             )
+        << Tasks.toList
 
 
-viewTask : Maybe String -> Tasks.Task Current -> Html Msg
-viewTask maybeEditAction task =
+viewTask : Tasks.Task Current -> Html Msg
+viewTask task =
     viewTaskBase
-        (if maybeEditAction == Nothing then
-            onClick (StartEdit <| Tasks.getId task)
-
-         else
-            onClick ApplyEdit
-        )
-        (case maybeEditAction of
-            Nothing ->
-                viewAction [] <| Tasks.readAction task
-
-            Just editAction ->
-                viewEditAction (Tasks.getId task) editAction
-        )
+        (onClick (StartEdit <| Tasks.getId task))
+        (viewAction [] <| Tasks.readAction task)
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
-idForTask : Int -> String
-idForTask index =
-    "task-" ++ String.fromInt index
-
-
-viewDoneTasks : Tasks.Task Done -> Html Msg
-viewDoneTasks task =
+viewEditTask : Tasks.Task Current -> Html Msg
+viewEditTask task =
     viewTaskBase
-        (onClick NoOp)
-        (viewAction
-            [ textDecoration lineThrough
-            , opacity (num 0.6)
-            ]
-         <|
-            Tasks.readAction task
-        )
-        (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
+        (onClick StopEdit)
+        (viewEditAction (Tasks.getId task) (Tasks.readAction task))
+        (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
 viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
@@ -375,7 +336,7 @@ viewAction textStyles action =
 viewEditAction : Tasks.TaskId Current -> String -> Html Msg
 viewEditAction id currentAction =
     form
-        [ onSubmit ApplyEdit
+        [ onSubmit StopEdit
         ]
         [ label []
             [ span [ css [ hide ] ] [ text "Action" ]
@@ -402,9 +363,41 @@ viewEditAction id currentAction =
         ]
 
 
-stopPropagation : Attribute Msg
-stopPropagation =
-    stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
+viewDoneTaskList : Tasks.Collection Done -> Html Msg
+viewDoneTaskList =
+    ol [ css [ marginTop (em 1.5), listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
+        << List.map
+            (\task ->
+                li
+                    [ css
+                        [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
+                        , pseudoClass "not(:last-child)"
+                            [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
+                            ]
+                        ]
+                    ]
+                    [ viewDoneTask task
+                    ]
+            )
+        << Tasks.toList
+
+
+viewDoneTask : Tasks.Task Done -> Html Msg
+viewDoneTask task =
+    viewTaskBase
+        (onClick NoOp)
+        (viewAction
+            [ textDecoration lineThrough
+            , opacity (num 0.6)
+            ]
+         <|
+            Tasks.readAction task
+        )
+        (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
+
+
+
+-- ELEMENTS
 
 
 iconButton : Msg -> String -> String -> Html Msg
@@ -412,29 +405,8 @@ iconButton msg hint icon =
     button [ onButtonClick msg, css [ buttonStyle ], title hint ] [ span [ css [ hide ] ] [ text hint ], text icon ]
 
 
-onButtonClick : Msg -> Attribute Msg
-onButtonClick msg =
-    stopPropagationOn "click" (Decode.succeed ( msg, True ))
 
-
-{-| Only fires for clicks exactly on the element.
-
-See <https://javascript.info/bubbling-and-capturing#event-target> for further information.
-
--}
-onClickWithId : String -> Msg -> Attribute Msg
-onClickWithId targetId msg =
-    on "click"
-        (Decode.at [ "target", "id" ] Decode.string
-            |> Decode.andThen
-                (\actualId ->
-                    if actualId == targetId then
-                        Decode.succeed msg
-
-                    else
-                        Decode.fail <| "Element id was " ++ actualId ++ ", expected " ++ targetId ++ "."
-                )
-        )
+-- STYLES
 
 
 buttonStyle : Style
@@ -474,3 +446,37 @@ hide =
         , whiteSpace noWrap
         , width (px 1)
         ]
+
+
+
+-- EVENTS
+
+
+stopPropagation : Attribute Msg
+stopPropagation =
+    stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
+
+
+onButtonClick : Msg -> Attribute Msg
+onButtonClick msg =
+    stopPropagationOn "click" (Decode.succeed ( msg, True ))
+
+
+{-| Only fires for clicks exactly on the element.
+
+See <https://javascript.info/bubbling-and-capturing#event-target> for further information.
+
+-}
+onClickWithId : String -> Msg -> Attribute Msg
+onClickWithId targetId msg =
+    on "click"
+        (Decode.at [ "target", "id" ] Decode.string
+            |> Decode.andThen
+                (\actualId ->
+                    if actualId == targetId then
+                        Decode.succeed msg
+
+                    else
+                        Decode.fail <| "Element id was " ++ actualId ++ ", expected " ++ targetId ++ "."
+                )
+        )
