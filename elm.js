@@ -5529,18 +5529,15 @@ var author$project$Main$AddNewTask = {$: 3};
 var author$project$Main$UpdateNewTask = function (a) {
 	return {$: 2, a: a};
 };
-var rtfeldman$elm_css$Css$Preprocess$ExtendSelector = F2(
-	function (a, b) {
-		return {$: 1, a: a, b: b};
-	});
-var rtfeldman$elm_css$Css$Structure$PseudoClassSelector = function (a) {
-	return {$: 2, a: a};
+var elm$core$Basics$negate = function (n) {
+	return -n;
 };
-var rtfeldman$elm_css$Css$pseudoClass = function (_class) {
-	return rtfeldman$elm_css$Css$Preprocess$ExtendSelector(
-		rtfeldman$elm_css$Css$Structure$PseudoClassSelector(_class));
+var rtfeldman$elm_css$Css$Structure$Compatible = 0;
+var rtfeldman$elm_css$Css$absolute = {aK: 0, C: 'absolute'};
+var rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
+	return {$: 6, a: a};
 };
-var rtfeldman$elm_css$Css$active = rtfeldman$elm_css$Css$pseudoClass('active');
+var rtfeldman$elm_css$Css$batch = rtfeldman$elm_css$Css$Preprocess$ApplyStyles;
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 0, a: a};
 };
@@ -5548,37 +5545,20 @@ var rtfeldman$elm_css$Css$property = F2(
 	function (key, value) {
 		return rtfeldman$elm_css$Css$Preprocess$AppendProperty(key + (':' + value));
 	});
-var rtfeldman$elm_css$Css$backgroundColor = function (c) {
-	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.C);
-};
-var rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
-	return {$: 6, a: a};
-};
-var rtfeldman$elm_css$Css$batch = rtfeldman$elm_css$Css$Preprocess$ApplyStyles;
 var rtfeldman$elm_css$Css$prop1 = F2(
 	function (key, arg) {
 		return A2(rtfeldman$elm_css$Css$property, key, arg.C);
 	});
 var rtfeldman$elm_css$Css$border = rtfeldman$elm_css$Css$prop1('border');
-var rtfeldman$elm_css$Css$prop5 = F6(
-	function (key, argA, argB, argC, argD, argE) {
-		return A2(
-			rtfeldman$elm_css$Css$property,
-			key,
-			A2(
-				elm$core$String$join,
-				' ',
-				_List_fromArray(
-					[argA.C, argB.C, argC.C, argD.C, argE.C])));
-	});
-var rtfeldman$elm_css$Css$boxShadow5 = rtfeldman$elm_css$Css$prop5('box-shadow');
-var rtfeldman$elm_css$Css$center = rtfeldman$elm_css$Css$prop1('center');
-var rtfeldman$elm_css$Css$color = function (c) {
-	return A2(rtfeldman$elm_css$Css$property, 'color', c.C);
-};
-var rtfeldman$elm_css$Css$EmUnits = 0;
+var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
+var rtfeldman$elm_css$Css$hidden = {q: 0, an: 0, C: 'hidden', aS: 0};
+var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
+var rtfeldman$elm_css$Css$noWrap = {aD: 0, aY: 0, C: 'nowrap', N: 0};
+var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
+var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
+var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
+var rtfeldman$elm_css$Css$PxUnits = 0;
 var elm$core$String$fromFloat = _String_fromNumber;
-var rtfeldman$elm_css$Css$Structure$Compatible = 0;
 var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 	function (units, unitLabel, numericValue) {
 		return {
@@ -5603,11 +5583,62 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 				unitLabel)
 		};
 	});
+var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
+var rtfeldman$elm_css$Css$whiteSpace = rtfeldman$elm_css$Css$prop1('white-space');
+var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
+var rtfeldman$elm_css$Css$UnitlessInteger = 0;
+var rtfeldman$elm_css$Css$zero = {aF: 0, aj: 0, I: 0, ak: 0, al: 0, R: 0, S: 0, aH: 0, L: 0, a1: 0, av: '', aR: 0, C: '0'};
+var author$project$Main$hide = rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			rtfeldman$elm_css$Css$border(rtfeldman$elm_css$Css$zero),
+			A2(rtfeldman$elm_css$Css$property, 'clip', 'rect(0 0 0 0)'),
+			rtfeldman$elm_css$Css$height(
+			rtfeldman$elm_css$Css$px(1)),
+			rtfeldman$elm_css$Css$margin(
+			rtfeldman$elm_css$Css$px(-1)),
+			rtfeldman$elm_css$Css$overflow(rtfeldman$elm_css$Css$hidden),
+			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero),
+			rtfeldman$elm_css$Css$position(rtfeldman$elm_css$Css$absolute),
+			rtfeldman$elm_css$Css$whiteSpace(rtfeldman$elm_css$Css$noWrap),
+			rtfeldman$elm_css$Css$width(
+			rtfeldman$elm_css$Css$px(1))
+		]));
+var rtfeldman$elm_css$Css$Preprocess$ExtendSelector = F2(
+	function (a, b) {
+		return {$: 1, a: a, b: b};
+	});
+var rtfeldman$elm_css$Css$Structure$PseudoClassSelector = function (a) {
+	return {$: 2, a: a};
+};
+var rtfeldman$elm_css$Css$pseudoClass = function (_class) {
+	return rtfeldman$elm_css$Css$Preprocess$ExtendSelector(
+		rtfeldman$elm_css$Css$Structure$PseudoClassSelector(_class));
+};
+var rtfeldman$elm_css$Css$active = rtfeldman$elm_css$Css$pseudoClass('active');
+var rtfeldman$elm_css$Css$backgroundColor = function (c) {
+	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.C);
+};
+var rtfeldman$elm_css$Css$prop5 = F6(
+	function (key, argA, argB, argC, argD, argE) {
+		return A2(
+			rtfeldman$elm_css$Css$property,
+			key,
+			A2(
+				elm$core$String$join,
+				' ',
+				_List_fromArray(
+					[argA.C, argB.C, argC.C, argD.C, argE.C])));
+	});
+var rtfeldman$elm_css$Css$boxShadow5 = rtfeldman$elm_css$Css$prop5('box-shadow');
+var rtfeldman$elm_css$Css$center = rtfeldman$elm_css$Css$prop1('center');
+var rtfeldman$elm_css$Css$color = function (c) {
+	return A2(rtfeldman$elm_css$Css$property, 'color', c.C);
+};
+var rtfeldman$elm_css$Css$EmUnits = 0;
 var rtfeldman$elm_css$Css$em = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'em');
-var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
 var rtfeldman$elm_css$Css$hover = rtfeldman$elm_css$Css$pseudoClass('hover');
 var rtfeldman$elm_css$Css$inset = {q: 0, C: 'inset'};
-var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
 var rtfeldman$elm_css$Css$UnitlessFloat = 0;
 var rtfeldman$elm_css$Css$num = function (val) {
 	return {
@@ -5621,7 +5652,6 @@ var rtfeldman$elm_css$Css$num = function (val) {
 	};
 };
 var rtfeldman$elm_css$Css$opacity = rtfeldman$elm_css$Css$prop1('opacity');
-var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
 var rtfeldman$elm_css$Css$cssFunction = F2(
 	function (funcName, args) {
 		return funcName + ('(' + (A2(elm$core$String$join, ', ', args) + ')'));
@@ -5745,9 +5775,6 @@ var rtfeldman$elm_css$Css$textAlign = function (fn) {
 		'text-align',
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
-var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
-var rtfeldman$elm_css$Css$UnitlessInteger = 0;
-var rtfeldman$elm_css$Css$zero = {aF: 0, aj: 0, I: 0, ak: 0, al: 0, R: 0, S: 0, aH: 0, L: 0, a1: 0, av: '', aR: 0, C: '0'};
 var author$project$Main$buttonStyle = function () {
 	var size = rtfeldman$elm_css$Css$em(2);
 	return rtfeldman$elm_css$Css$batch(
@@ -5791,56 +5818,12 @@ var author$project$Main$buttonStyle = function () {
 					]))
 			]));
 }();
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var rtfeldman$elm_css$Css$absolute = {aK: 0, C: 'absolute'};
-var rtfeldman$elm_css$Css$hidden = {q: 0, an: 0, C: 'hidden', aS: 0};
-var rtfeldman$elm_css$Css$noWrap = {aD: 0, aY: 0, C: 'nowrap', N: 0};
-var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
-var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
-var rtfeldman$elm_css$Css$PxUnits = 0;
-var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
-var rtfeldman$elm_css$Css$whiteSpace = rtfeldman$elm_css$Css$prop1('white-space');
-var author$project$Main$hide = rtfeldman$elm_css$Css$batch(
-	_List_fromArray(
-		[
-			rtfeldman$elm_css$Css$border(rtfeldman$elm_css$Css$zero),
-			A2(rtfeldman$elm_css$Css$property, 'clip', 'rect(0 0 0 0)'),
-			rtfeldman$elm_css$Css$height(
-			rtfeldman$elm_css$Css$px(1)),
-			rtfeldman$elm_css$Css$margin(
-			rtfeldman$elm_css$Css$px(-1)),
-			rtfeldman$elm_css$Css$overflow(rtfeldman$elm_css$Css$hidden),
-			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero),
-			rtfeldman$elm_css$Css$position(rtfeldman$elm_css$Css$absolute),
-			rtfeldman$elm_css$Css$whiteSpace(rtfeldman$elm_css$Css$noWrap),
-			rtfeldman$elm_css$Css$width(
-			rtfeldman$elm_css$Css$px(1))
-		]));
-var rtfeldman$elm_css$Css$borderBox = {bb: 0, aU: 0, C: 'border-box'};
-var rtfeldman$elm_css$Css$boxSizing = rtfeldman$elm_css$Css$prop1('box-sizing');
-var rtfeldman$elm_css$Css$displayFlex = A2(rtfeldman$elm_css$Css$property, 'display', 'flex');
-var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
-var rtfeldman$elm_css$Css$flexDirection = rtfeldman$elm_css$Css$prop1('flex-direction');
-var rtfeldman$elm_css$Css$justifyContent = function (fn) {
-	return A3(
-		rtfeldman$elm_css$Css$Internal$getOverloadedProperty,
-		'justifyContent',
-		'justify-content',
-		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
-};
-var rtfeldman$elm_css$Css$PercentageUnits = 0;
-var rtfeldman$elm_css$Css$pct = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, '%');
-var rtfeldman$elm_css$Css$row = {bd: 0, aD: 0, C: 'row'};
 var rtfeldman$elm_css$VirtualDom$Styled$Node = F3(
 	function (a, b, c) {
 		return {$: 0, a: a, b: b, c: c};
 	});
 var rtfeldman$elm_css$VirtualDom$Styled$node = rtfeldman$elm_css$VirtualDom$Styled$Node;
 var rtfeldman$elm_css$Html$Styled$node = rtfeldman$elm_css$VirtualDom$Styled$node;
-var rtfeldman$elm_css$Html$Styled$div = rtfeldman$elm_css$Html$Styled$node('div');
-var rtfeldman$elm_css$Html$Styled$form = rtfeldman$elm_css$Html$Styled$node('form');
 var rtfeldman$elm_css$Html$Styled$input = rtfeldman$elm_css$Html$Styled$node('input');
 var rtfeldman$elm_css$Html$Styled$label = rtfeldman$elm_css$Html$Styled$node('label');
 var rtfeldman$elm_css$Html$Styled$span = rtfeldman$elm_css$Html$Styled$node('span');
@@ -5853,7 +5836,7 @@ var rtfeldman$elm_css$VirtualDom$Styled$text = function (str) {
 		elm$virtual_dom$VirtualDom$text(str));
 };
 var rtfeldman$elm_css$Html$Styled$text = rtfeldman$elm_css$VirtualDom$Styled$text;
-var elm$json$Json$Encode$bool = _Json_wrap;
+var elm$json$Json$Encode$string = _Json_wrap;
 var elm$virtual_dom$VirtualDom$property = F2(
 	function (key, value) {
 		return A2(
@@ -5861,23 +5844,6 @@ var elm$virtual_dom$VirtualDom$property = F2(
 			_VirtualDom_noInnerHtmlOrFormAction(key),
 			_VirtualDom_noJavaScriptOrHtmlUri(value));
 	});
-var rtfeldman$elm_css$VirtualDom$Styled$property = F2(
-	function (key, value) {
-		return A3(
-			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
-			A2(elm$virtual_dom$VirtualDom$property, key, value),
-			_List_Nil,
-			'');
-	});
-var rtfeldman$elm_css$Html$Styled$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			rtfeldman$elm_css$VirtualDom$Styled$property,
-			key,
-			elm$json$Json$Encode$bool(bool));
-	});
-var rtfeldman$elm_css$Html$Styled$Attributes$autofocus = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('autofocus');
-var elm$json$Json$Encode$string = _Json_wrap;
 var Skinney$murmur3$Murmur3$HashData = F4(
 	function (shift, seed, hash, charsProcessed) {
 		return {ab: charsProcessed, ah: hash, V: seed, aq: shift};
@@ -7746,6 +7712,23 @@ var rtfeldman$elm_css$Html$Styled$Internal$css = function (styles) {
 	return A3(rtfeldman$elm_css$VirtualDom$Styled$Attribute, classProperty, styles, classname);
 };
 var rtfeldman$elm_css$Html$Styled$Attributes$css = rtfeldman$elm_css$Html$Styled$Internal$css;
+var elm$json$Json$Encode$bool = _Json_wrap;
+var rtfeldman$elm_css$VirtualDom$Styled$property = F2(
+	function (key, value) {
+		return A3(
+			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
+			A2(elm$virtual_dom$VirtualDom$property, key, value),
+			_List_Nil,
+			'');
+	});
+var rtfeldman$elm_css$Html$Styled$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$property,
+			key,
+			elm$json$Json$Encode$bool(bool));
+	});
+var rtfeldman$elm_css$Html$Styled$Attributes$disabled = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('disabled');
 var rtfeldman$elm_css$Html$Styled$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -7753,8 +7736,63 @@ var rtfeldman$elm_css$Html$Styled$Attributes$stringProperty = F2(
 			key,
 			elm$json$Json$Encode$string(string));
 	});
+var rtfeldman$elm_css$Html$Styled$Attributes$title = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('title');
 var rtfeldman$elm_css$Html$Styled$Attributes$type_ = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('type');
 var rtfeldman$elm_css$Html$Styled$Attributes$value = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('value');
+var author$project$Main$iconButtonInputDisable = F5(
+	function (isDisabled, inputType, msg, hint, icon) {
+		return A2(
+			rtfeldman$elm_css$Html$Styled$label,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					rtfeldman$elm_css$Html$Styled$span,
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[author$project$Main$hide]))
+						]),
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Html$Styled$text(hint)
+						])),
+					A2(
+					rtfeldman$elm_css$Html$Styled$input,
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[author$project$Main$buttonStyle])),
+							rtfeldman$elm_css$Html$Styled$Attributes$title(hint),
+							rtfeldman$elm_css$Html$Styled$Attributes$disabled(isDisabled),
+							rtfeldman$elm_css$Html$Styled$Attributes$type_(inputType),
+							rtfeldman$elm_css$Html$Styled$Attributes$value(icon),
+							author$project$Main$onButtonClick(msg)
+						]),
+					_List_Nil)
+				]));
+	});
+var author$project$Main$iconButtonInput = author$project$Main$iconButtonInputDisable(false);
+var rtfeldman$elm_css$Css$borderBox = {bb: 0, aU: 0, C: 'border-box'};
+var rtfeldman$elm_css$Css$boxSizing = rtfeldman$elm_css$Css$prop1('box-sizing');
+var rtfeldman$elm_css$Css$displayFlex = A2(rtfeldman$elm_css$Css$property, 'display', 'flex');
+var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
+var rtfeldman$elm_css$Css$flexDirection = rtfeldman$elm_css$Css$prop1('flex-direction');
+var rtfeldman$elm_css$Css$justifyContent = function (fn) {
+	return A3(
+		rtfeldman$elm_css$Css$Internal$getOverloadedProperty,
+		'justifyContent',
+		'justify-content',
+		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
+};
+var rtfeldman$elm_css$Css$PercentageUnits = 0;
+var rtfeldman$elm_css$Css$pct = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, '%');
+var rtfeldman$elm_css$Css$row = {bd: 0, aD: 0, C: 'row'};
+var rtfeldman$elm_css$Html$Styled$div = rtfeldman$elm_css$Html$Styled$node('div');
+var rtfeldman$elm_css$Html$Styled$form = rtfeldman$elm_css$Html$Styled$node('form');
+var rtfeldman$elm_css$Html$Styled$Attributes$autofocus = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('autofocus');
 var rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -7864,66 +7902,13 @@ var author$project$Main$viewActionInput = function (currentAction) {
 					]),
 				_List_fromArray(
 					[
-						A2(
-						rtfeldman$elm_css$Html$Styled$label,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								rtfeldman$elm_css$Html$Styled$span,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$Attributes$css(
-										_List_fromArray(
-											[author$project$Main$hide]))
-									]),
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$text('Add new task')
-									])),
-								A2(
-								rtfeldman$elm_css$Html$Styled$input,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$Attributes$css(
-										_List_fromArray(
-											[author$project$Main$buttonStyle])),
-										rtfeldman$elm_css$Html$Styled$Attributes$type_('submit'),
-										rtfeldman$elm_css$Html$Styled$Attributes$value('➕')
-									]),
-								_List_Nil)
-							])),
-						A2(
-						rtfeldman$elm_css$Html$Styled$label,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								rtfeldman$elm_css$Html$Styled$span,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$Attributes$css(
-										_List_fromArray(
-											[author$project$Main$hide]))
-									]),
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$text('Clear input')
-									])),
-								A2(
-								rtfeldman$elm_css$Html$Styled$input,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$Attributes$css(
-										_List_fromArray(
-											[author$project$Main$buttonStyle])),
-										rtfeldman$elm_css$Html$Styled$Attributes$type_('reset'),
-										rtfeldman$elm_css$Html$Styled$Attributes$value('❌'),
-										author$project$Main$onButtonClick(
-										author$project$Main$UpdateNewTask(''))
-									]),
-								_List_Nil)
-							]))
+						A4(author$project$Main$iconButtonInput, 'submit', author$project$Main$NoOp, 'Add new task', '➕'),
+						A4(
+						author$project$Main$iconButtonInput,
+						'reset',
+						author$project$Main$UpdateNewTask(''),
+						'Clear input',
+						'❌')
 					]))
 			]));
 };
@@ -7960,7 +7945,6 @@ var author$project$Main$DoTask = function (a) {
 };
 var author$project$Main$StopEdit = {$: 8};
 var rtfeldman$elm_css$Html$Styled$button = rtfeldman$elm_css$Html$Styled$node('button');
-var rtfeldman$elm_css$Html$Styled$Attributes$title = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('title');
 var author$project$Main$iconButton = F3(
 	function (msg, hint, icon) {
 		return A2(
@@ -8011,7 +7995,6 @@ var author$project$Tasks$readAction = function (_n0) {
 	var task = _n0;
 	return author$project$Tasks$stringFromAction(task.Z);
 };
-var rtfeldman$elm_css$Html$Styled$Attributes$disabled = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('disabled');
 var author$project$Main$viewEditAction = F2(
 	function (originalAction, task) {
 		return A2(
@@ -8079,72 +8062,22 @@ var author$project$Main$viewEditAction = F2(
 						]),
 					_List_fromArray(
 						[
-							A2(
-							rtfeldman$elm_css$Html$Styled$label,
-							_List_Nil,
-							_List_fromArray(
-								[
-									A2(
-									rtfeldman$elm_css$Html$Styled$span,
-									_List_fromArray(
-										[
-											rtfeldman$elm_css$Html$Styled$Attributes$css(
-											_List_fromArray(
-												[author$project$Main$hide]))
-										]),
-									_List_fromArray(
-										[
-											rtfeldman$elm_css$Html$Styled$text('Undo changes')
-										])),
-									A2(
-									rtfeldman$elm_css$Html$Styled$input,
-									_List_fromArray(
-										[
-											rtfeldman$elm_css$Html$Styled$Attributes$css(
-											_List_fromArray(
-												[author$project$Main$buttonStyle])),
-											rtfeldman$elm_css$Html$Styled$Attributes$disabled(
-											_Utils_eq(
-												originalAction,
-												author$project$Tasks$getAction(task))),
-											author$project$Main$onButtonClick(author$project$Main$CancelEdit),
-											rtfeldman$elm_css$Html$Styled$Attributes$type_('reset'),
-											rtfeldman$elm_css$Html$Styled$Attributes$value('️↩️')
-										]),
-									_List_Nil)
-								])),
-							A2(
-							rtfeldman$elm_css$Html$Styled$label,
-							_List_Nil,
-							_List_fromArray(
-								[
-									A2(
-									rtfeldman$elm_css$Html$Styled$span,
-									_List_fromArray(
-										[
-											rtfeldman$elm_css$Html$Styled$Attributes$css(
-											_List_fromArray(
-												[author$project$Main$hide]))
-										]),
-									_List_fromArray(
-										[
-											rtfeldman$elm_css$Html$Styled$text('Delete task')
-										])),
-									A2(
-									rtfeldman$elm_css$Html$Styled$input,
-									_List_fromArray(
-										[
-											rtfeldman$elm_css$Html$Styled$Attributes$css(
-											_List_fromArray(
-												[author$project$Main$buttonStyle])),
-											author$project$Main$onButtonClick(
-											author$project$Main$DeleteTask(
-												author$project$Tasks$getId(task))),
-											rtfeldman$elm_css$Html$Styled$Attributes$type_('button'),
-											rtfeldman$elm_css$Html$Styled$Attributes$value('🗑️')
-										]),
-									_List_Nil)
-								]))
+							A5(
+							author$project$Main$iconButtonInputDisable,
+							_Utils_eq(
+								originalAction,
+								author$project$Tasks$getAction(task)),
+							'reset',
+							author$project$Main$CancelEdit,
+							'Undo changes',
+							'️↩️'),
+							A4(
+							author$project$Main$iconButtonInput,
+							'button',
+							author$project$Main$DeleteTask(
+								author$project$Tasks$getId(task)),
+							'Delete task',
+							'🗑️')
 						]))
 				]));
 	});
