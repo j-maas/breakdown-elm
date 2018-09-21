@@ -226,8 +226,7 @@ view model =
                     , padding (em 1)
                     , fontFamily sansSerif
                     ]
-                , id "background"
-                , onClickWithId "background" BackgroundClicked
+                , onButtonClick BackgroundClicked
                 ]
                 [ main_
                     [ css [ minWidth (em 20) ]
@@ -268,7 +267,7 @@ viewActionInput currentAction =
                 ]
             , label []
                 [ span [ css [ hide ] ] [ text "Clear input" ]
-                , input [ css [ buttonStyle ], type_ "reset", value "❌", onClick (UpdateNewTask "") ] []
+                , input [ css [ buttonStyle ], type_ "reset", value "❌", onButtonClick (UpdateNewTask "") ] []
                 ]
             ]
         ]
@@ -305,7 +304,7 @@ viewCurrentTaskList editing =
 viewTask : Tasks.Task Current -> Html Msg
 viewTask task =
     viewTaskBase
-        (onClick (StartEdit <| Tasks.getId task))
+        (onButtonClick (StartEdit <| Tasks.getId task))
         (viewAction noStyle (Tasks.readAction task))
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
@@ -313,7 +312,7 @@ viewTask task =
 viewEditTask : Tasks.Task Current -> Html Msg
 viewEditTask task =
     viewTaskBase
-        (onClick StopEdit)
+        (onButtonClick StopEdit)
         (viewEditAction (Tasks.getId task) (Tasks.readAction task))
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
