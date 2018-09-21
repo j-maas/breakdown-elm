@@ -306,7 +306,7 @@ viewTask : Tasks.Task Current -> Html Msg
 viewTask task =
     viewTaskBase
         (onClick (StartEdit <| Tasks.getId task))
-        (viewAction [] <| Tasks.readAction task)
+        (viewAction noStyle (Tasks.readAction task))
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
@@ -334,17 +334,16 @@ viewTaskBase whenClicked action btn =
         ]
 
 
-viewAction : List Style -> String -> Html Msg
-viewAction textStyles action =
+viewAction : Style -> String -> Html Msg
+viewAction customStyle action =
     span
         [ css
-            ([ whiteSpace noWrap
-             , overflow hidden
-             , textOverflow ellipsis
-             , flex (num 1)
-             ]
-                ++ textStyles
-            )
+            [ whiteSpace noWrap
+            , overflow hidden
+            , textOverflow ellipsis
+            , flex (num 1)
+            , customStyle
+            ]
         ]
         [ text action ]
 
@@ -404,11 +403,12 @@ viewDoneTask task =
     viewTaskBase
         (onClick NoOp)
         (viewAction
-            [ textDecoration lineThrough
-            , opacity (num 0.6)
-            ]
-         <|
-            Tasks.readAction task
+            (batch
+                [ textDecoration lineThrough
+                , opacity (num 0.6)
+                ]
+            )
+            (Tasks.readAction task)
         )
         (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
 
@@ -424,6 +424,13 @@ iconButton msg hint icon =
 
 
 -- STYLES
+
+
+{-| Shortcut for no style.
+-}
+noStyle : Style
+noStyle =
+    batch []
 
 
 taskListStyle : Style
