@@ -276,7 +276,7 @@ viewActionInput currentAction =
 
 viewCurrentTaskList : Maybe ( Tasks.TaskId Current, String ) -> Tasks.Collection Current -> Html Msg
 viewCurrentTaskList editing =
-    ol [ css [ marginTop (em 1.5), listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
+    ol [ css [ taskListStyle ] ]
         << List.map
             (\task ->
                 li
@@ -352,7 +352,8 @@ viewAction textStyles action =
 viewEditAction : Tasks.TaskId Current -> String -> Html Msg
 viewEditAction id currentAction =
     form
-        [ onSubmit StopEdit
+        [ css [ flex (num 1) ]
+        , onSubmit StopEdit
         ]
         [ label []
             [ span [ css [ hide ] ] [ text "Action" ]
@@ -366,7 +367,7 @@ viewEditAction id currentAction =
                 []
             ]
         , div
-            []
+            [ css [ displayFlex, justifyContent center ] ]
             [ label []
                 [ span [ css [ hide ] ] [ text "Undo changes" ]
                 , input [ css [ buttonStyle ], onButtonClick CancelEdit, type_ "reset", value "️↩️" ] []
@@ -381,7 +382,7 @@ viewEditAction id currentAction =
 
 viewDoneTaskList : Tasks.Collection Done -> Html Msg
 viewDoneTaskList =
-    ol [ css [ marginTop (em 1.5), listStyleType none, margin zero, padding zero, maxWidth (em 20) ] ]
+    ol [ css [ taskListStyle ] ]
         << List.map
             (\task ->
                 li
@@ -423,6 +424,16 @@ iconButton msg hint icon =
 
 
 -- STYLES
+
+
+taskListStyle : Style
+taskListStyle =
+    batch
+        [ listStyleType none
+        , margin3 (em 1.5) zero zero
+        , padding zero
+        , maxWidth (em 20)
+        ]
 
 
 buttonStyle : Style
