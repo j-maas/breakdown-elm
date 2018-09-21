@@ -77,6 +77,7 @@ type Msg
     | StopEdit
     | CancelEdit
     | DeleteTask (Tasks.TaskId Current)
+    | BackgroundClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -176,6 +177,9 @@ update msg model =
             in
             simply { model | currentTasks = newCurrentTasks }
 
+        BackgroundClicked ->
+            simply { model | editing = Nothing }
+
 
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
 addTask rawAction currentTasks =
@@ -206,20 +210,32 @@ view model =
     , body =
         List.map toUnstyled
             [ global
-                [ selector "body"
-                    [ displayFlex
-                    , justifyContent center
-                    , margin (em 1)
-                    , fontFamily sansSerif
+                [ selector "html" [ height (pct 100) ]
+                , selector "body"
+                    [ margin zero
+                    , height (pct 100)
                     ]
                 ]
-            , main_
+            , div
                 [ css
-                    [ minWidth (em 20) ]
+                    [ boxSizing borderBox
+                    , width (pct 100)
+                    , height (pct 100)
+                    , displayFlex
+                    , justifyContent center
+                    , padding (em 1)
+                    , fontFamily sansSerif
+                    ]
+                , id "background"
+                , onClickWithId "background" BackgroundClicked
                 ]
-                [ viewActionInput model.newTask
-                , viewCurrentTaskList model.editing model.currentTasks
-                , viewDoneTaskList model.doneTasks
+                [ main_
+                    [ css [ minWidth (em 20) ]
+                    ]
+                    [ viewActionInput model.newTask
+                    , viewCurrentTaskList model.editing model.currentTasks
+                    , viewDoneTaskList model.doneTasks
+                    ]
                 ]
             ]
     }
