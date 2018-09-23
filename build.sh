@@ -1,5 +1,11 @@
+# Cleanup
 rm -rf dist/
 
+# Setup
 cp -a static/. dist/
-cp -a favicon/. dist/
+## Setup favicon
+mv dist/favicon/* dist/
+rm -r dist/favicon
+
+# Build
 elm make --optimize --output=dist/elm.js src/Main.elm
