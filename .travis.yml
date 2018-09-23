@@ -2,8 +2,11 @@ language: node_js
 node_js:
   - lts/*
 
+before_install:
+  - mv ci/package.json .
+  - mv ci/yarn.lock .
 install:
-  - yarn add --dev elm elm-test@0.19.0-beta8
+  - yarn install
 cache:
   yarn: true
   directories:
