@@ -21,8 +21,7 @@ cache:
   directories:
     - sysconfcpus
     - node_modules
-    - elm-stuff/build-artifacts
-    - elm-stuff/packages
+    - elm-stuff
 
 script:
   - yarn run elm-test
