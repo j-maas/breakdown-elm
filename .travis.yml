@@ -22,6 +22,7 @@ cache:
     - sysconfcpus
     - node_modules
     - elm-stuff
+    - /home/travis/.elm
 
 script:
   - yarn run elm-test
