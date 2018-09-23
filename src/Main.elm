@@ -42,7 +42,7 @@ type alias Model =
     , newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
-    , editing : Maybe ( Tasks.TaskId Current, Tasks.Action )
+    , editing : Maybe ( Tasks.TaskId Current, String )
     }
 
 
@@ -74,7 +74,7 @@ type Msg
     | UndoTask (Tasks.TaskId Done)
     | StartEdit (Tasks.TaskId Current)
     | Edit (Tasks.TaskId Current) String
-    | StopEdit
+    | ApplyEdit
     | CancelEdit
     | DeleteTask (Tasks.TaskId Current)
     | BackgroundClicked
@@ -133,55 +133,33 @@ update msg model =
 
         StartEdit id ->
             let
+                -- We might already be editing.
+                updatedModel = applyEdit model
+
                 editing =
                     case
                         Tasks.toList model.currentTasks
                             |> List.find (Tasks.getId >> (==) id)
                     of
                         Just task ->
-                            Just ( id, Tasks.getAction task )
+                            Just ( id, Tasks.readAction task )
 
                         Nothing ->
                             Nothing
             in
-            simply { model | editing = editing }
+            simply { updatedModel | editing = editing }
 
-        StopEdit ->
+        ApplyEdit ->
+            simply <| applyEdit model
+
+        CancelEdit ->
             simply
                 { model
                     | editing = Nothing
                 }
 
-        CancelEdit ->
-            let
-                updatedCurrentTasks =
-                    case model.editing of
-                        Just ( id, oldAction ) ->
-                            Tasks.editTask id oldAction model.currentTasks
-
-                        Nothing ->
-                            model.currentTasks
-            in
-            simply
-                { model
-                    | currentTasks = updatedCurrentTasks
-                    , editing = Nothing
-                }
-
         Edit id newRawAction ->
-            let
-                maybeNewAction =
-                    Tasks.actionFromString newRawAction
-
-                updatedCurrentTasks =
-                    case maybeNewAction of
-                        Just newAction ->
-                            Tasks.editTask id newAction model.currentTasks
-
-                        Nothing ->
-                            model.currentTasks
-            in
-            simply { model | currentTasks = updatedCurrentTasks }
+            simply { model | editing = Just ( id, newRawAction ) }
 
         DeleteTask id ->
             let
@@ -191,7 +169,7 @@ update msg model =
             simply { model | currentTasks = newCurrentTasks }
 
         BackgroundClicked ->
-            simply { model | editing = Nothing }
+            simply <| applyEdit model
 
 
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
@@ -202,6 +180,36 @@ addTask rawAction currentTasks =
 
         Nothing ->
             currentTasks
+
+
+type alias EditModel a =
+    { a
+        | currentTasks : Tasks.Collection Current
+        , editing : Maybe ( Tasks.TaskId Current, String )
+    }
+
+
+applyEdit : EditModel a -> EditModel a
+applyEdit ({ editing } as current) =
+    case editing of
+        Just ( id, editedAction ) ->
+            { current
+                | currentTasks = editTask id editedAction current.currentTasks
+                , editing = Nothing
+            }
+
+        Nothing ->
+            current
+
+
+editTask : Tasks.TaskId Current -> String -> Tasks.Collection Current -> Tasks.Collection Current
+editTask id editedAction currentCollection =
+    case Tasks.actionFromString editedAction of
+        Just newAction ->
+            Tasks.editTask id newAction currentCollection
+
+        Nothing ->
+            currentCollection
 
 
 
@@ -280,7 +288,7 @@ viewActionInput currentAction =
         ]
 
 
-viewCurrentTaskList : Maybe ( Tasks.TaskId Current, Tasks.Action ) -> Tasks.Collection Current -> Html Msg
+viewCurrentTaskList : Maybe ( Tasks.TaskId Current, String ) -> Tasks.Collection Current -> Html Msg
 viewCurrentTaskList editing =
     ol [ css [ taskListStyle ] ]
         << List.map
@@ -316,11 +324,11 @@ viewTask task =
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
-viewEditTask : Tasks.Action -> Tasks.Task Current -> Html Msg
-viewEditTask originalAction task =
+viewEditTask : String -> Tasks.Task Current -> Html Msg
+viewEditTask editedAction task =
     viewTaskBase
-        (onButtonClick StopEdit)
-        (viewEditAction originalAction task)
+        (onButtonClick ApplyEdit)
+        (viewEditAction editedAction task)
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
@@ -354,17 +362,17 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : Tasks.Action -> Tasks.Task Current -> Html Msg
-viewEditAction originalAction task =
+viewEditAction : String -> Tasks.Task Current -> Html Msg
+viewEditAction editedAction task =
     form
         [ css [ flex (num 1) ]
-        , onSubmit StopEdit
+        , onSubmit ApplyEdit
         ]
         [ label []
             [ span [ css [ hide ] ] [ text "Action" ]
             , input
                 [ type_ "text"
-                , value <| Tasks.readAction task
+                , value editedAction
                 , onInput (Edit <| Tasks.getId task)
                 , stopPropagation
                 , css [ boxSizing borderBox, width (pct 100) ]
@@ -373,7 +381,7 @@ viewEditAction originalAction task =
             ]
         , div
             [ css [ displayFlex, justifyContent center ] ]
-            [ iconButtonInputDisable (originalAction == Tasks.getAction task)
+            [ iconButtonInputDisable (editedAction == Tasks.readAction task)
                 "reset"
                 CancelEdit
                 "Undo changes"
