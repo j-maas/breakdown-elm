@@ -4528,22 +4528,22 @@ var elm$core$Array$builderToArray = F2(
 		if (!builder.g) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.j),
+				elm$core$Elm$JsArray$length(builder.i),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.j);
+				builder.i);
 		} else {
 			var treeLen = builder.g * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.k) : builder.k;
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.j) : builder.j;
 			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.g);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.j) + treeLen,
+				elm$core$Elm$JsArray$length(builder.i) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.j);
+				builder.i);
 		}
 	});
 var elm$core$Basics$idiv = _Basics_idiv;
@@ -4557,7 +4557,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{k: nodeList, g: (len / elm$core$Array$branchFactor) | 0, j: tail});
+					{j: nodeList, g: (len / elm$core$Array$branchFactor) | 0, i: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -4819,7 +4819,7 @@ var author$project$Main$init = F3(
 	function (flags, url, key) {
 		return author$project$Main$simply(
 			{
-				h: author$project$Tasks$empty(0),
+				m: author$project$Tasks$empty(0),
 				O: author$project$Tasks$empty(0),
 				z: elm$core$Maybe$Nothing,
 				be: key,
@@ -5000,9 +5000,31 @@ var author$project$Tasks$editTask = F3(
 			},
 			list);
 	});
-var author$project$Tasks$getAction = function (_n0) {
-	var task = _n0;
-	return task.Z;
+var author$project$Main$editTask = F3(
+	function (id, editedAction, currentCollection) {
+		var _n0 = author$project$Tasks$actionFromString(editedAction);
+		if (!_n0.$) {
+			var newAction = _n0.a;
+			return A3(author$project$Tasks$editTask, id, newAction, currentCollection);
+		} else {
+			return currentCollection;
+		}
+	});
+var author$project$Main$applyEdit = function (current) {
+	var editing = current.z;
+	if (!editing.$) {
+		var _n1 = editing.a;
+		var id = _n1.a;
+		var editedAction = _n1.b;
+		return _Utils_update(
+			current,
+			{
+				m: A3(author$project$Main$editTask, id, editedAction, current.m),
+				z: elm$core$Maybe$Nothing
+			});
+	} else {
+		return current;
+	}
 };
 var author$project$Tasks$insertTask = F2(
 	function (_n0, into) {
@@ -5081,6 +5103,14 @@ var author$project$Tasks$moveTask = F3(
 			return _Utils_Tuple2(from, to);
 		}
 	});
+var author$project$Tasks$stringFromAction = function (_n0) {
+	var rawAction = _n0;
+	return rawAction;
+};
+var author$project$Tasks$readAction = function (_n0) {
+	var task = _n0;
+	return author$project$Tasks$stringFromAction(task.Z);
+};
 var author$project$Tasks$toList = function (_n0) {
 	var list = _n0;
 	return list;
@@ -5396,31 +5426,32 @@ var author$project$Main$update = F2(
 						model,
 						{am: action}));
 			case 3:
-				var newTasks = A2(author$project$Main$addTask, model.am, model.h);
+				var newTasks = A2(author$project$Main$addTask, model.am, model.m);
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{h: newTasks, am: ''}));
+						{m: newTasks, am: ''}));
 			case 4:
 				var id = msg.a;
-				var _n2 = A3(author$project$Tasks$moveTask, id, model.h, model.O);
+				var _n2 = A3(author$project$Tasks$moveTask, id, model.m, model.O);
 				var newCurrentTasks = _n2.a;
 				var newDoneTasks = _n2.b;
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{h: newCurrentTasks, O: newDoneTasks, z: elm$core$Maybe$Nothing}));
+						{m: newCurrentTasks, O: newDoneTasks, z: elm$core$Maybe$Nothing}));
 			case 5:
 				var id = msg.a;
-				var _n3 = A3(author$project$Tasks$moveTask, id, model.O, model.h);
+				var _n3 = A3(author$project$Tasks$moveTask, id, model.O, model.m);
 				var newDoneTasks = _n3.a;
 				var newCurrentTasks = _n3.b;
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{h: newCurrentTasks, O: newDoneTasks}));
+						{m: newCurrentTasks, O: newDoneTasks}));
 			case 6:
 				var id = msg.a;
+				var updatedModel = author$project$Main$applyEdit(model);
 				var editing = function () {
 					var _n4 = A2(
 						elm_community$list_extra$List$Extra$find,
@@ -5428,70 +5459,49 @@ var author$project$Main$update = F2(
 							elm$core$Basics$composeR,
 							author$project$Tasks$getId,
 							elm$core$Basics$eq(id)),
-						author$project$Tasks$toList(model.h));
+						author$project$Tasks$toList(model.m));
 					if (!_n4.$) {
 						var task = _n4.a;
 						return elm$core$Maybe$Just(
 							_Utils_Tuple2(
 								id,
-								author$project$Tasks$getAction(task)));
+								author$project$Tasks$readAction(task)));
 					} else {
 						return elm$core$Maybe$Nothing;
 					}
 				}();
 				return author$project$Main$simply(
 					_Utils_update(
-						model,
+						updatedModel,
 						{z: editing}));
 			case 8:
 				return author$project$Main$simply(
-					_Utils_update(
-						model,
-						{z: elm$core$Maybe$Nothing}));
+					author$project$Main$applyEdit(model));
 			case 9:
-				var updatedCurrentTasks = function () {
-					var _n5 = model.z;
-					if (!_n5.$) {
-						var _n6 = _n5.a;
-						var id = _n6.a;
-						var oldAction = _n6.b;
-						return A3(author$project$Tasks$editTask, id, oldAction, model.h);
-					} else {
-						return model.h;
-					}
-				}();
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{h: updatedCurrentTasks, z: elm$core$Maybe$Nothing}));
+						{z: elm$core$Maybe$Nothing}));
 			case 7:
 				var id = msg.a;
 				var newRawAction = msg.b;
-				var maybeNewAction = author$project$Tasks$actionFromString(newRawAction);
-				var updatedCurrentTasks = function () {
-					if (!maybeNewAction.$) {
-						var newAction = maybeNewAction.a;
-						return A3(author$project$Tasks$editTask, id, newAction, model.h);
-					} else {
-						return model.h;
-					}
-				}();
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{h: updatedCurrentTasks}));
+						{
+							z: elm$core$Maybe$Just(
+								_Utils_Tuple2(id, newRawAction))
+						}));
 			case 10:
 				var id = msg.a;
-				var newCurrentTasks = A2(author$project$Tasks$removeTask, id, model.h);
+				var newCurrentTasks = A2(author$project$Tasks$removeTask, id, model.m);
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{h: newCurrentTasks}));
+						{m: newCurrentTasks}));
 			default:
 				return author$project$Main$simply(
-					_Utils_update(
-						model,
-						{z: elm$core$Maybe$Nothing}));
+					author$project$Main$applyEdit(model));
 		}
 	});
 var author$project$Main$BackgroundClicked = {$: 11};
@@ -7940,10 +7950,10 @@ var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 			rtfeldman$elm_css$Css$maxWidth(
 			rtfeldman$elm_css$Css$em(20))
 		]));
+var author$project$Main$ApplyEdit = {$: 8};
 var author$project$Main$DoTask = function (a) {
 	return {$: 4, a: a};
 };
-var author$project$Main$StopEdit = {$: 8};
 var rtfeldman$elm_css$Html$Styled$button = rtfeldman$elm_css$Html$Styled$node('button');
 var author$project$Main$iconButton = F3(
 	function (msg, hint, icon) {
@@ -7987,16 +7997,8 @@ var author$project$Main$stopPropagation = A2(
 	'click',
 	elm$json$Json$Decode$succeed(
 		_Utils_Tuple2(author$project$Main$NoOp, true)));
-var author$project$Tasks$stringFromAction = function (_n0) {
-	var rawAction = _n0;
-	return rawAction;
-};
-var author$project$Tasks$readAction = function (_n0) {
-	var task = _n0;
-	return author$project$Tasks$stringFromAction(task.Z);
-};
 var author$project$Main$viewEditAction = F2(
-	function (originalAction, task) {
+	function (editedAction, task) {
 		return A2(
 			rtfeldman$elm_css$Html$Styled$form,
 			_List_fromArray(
@@ -8007,7 +8009,7 @@ var author$project$Main$viewEditAction = F2(
 							rtfeldman$elm_css$Css$flex(
 							rtfeldman$elm_css$Css$num(1))
 						])),
-					rtfeldman$elm_css$Html$Styled$Events$onSubmit(author$project$Main$StopEdit)
+					rtfeldman$elm_css$Html$Styled$Events$onSubmit(author$project$Main$ApplyEdit)
 				]),
 			_List_fromArray(
 				[
@@ -8033,8 +8035,7 @@ var author$project$Main$viewEditAction = F2(
 							_List_fromArray(
 								[
 									rtfeldman$elm_css$Html$Styled$Attributes$type_('text'),
-									rtfeldman$elm_css$Html$Styled$Attributes$value(
-									author$project$Tasks$readAction(task)),
+									rtfeldman$elm_css$Html$Styled$Attributes$value(editedAction),
 									rtfeldman$elm_css$Html$Styled$Events$onInput(
 									author$project$Main$Edit(
 										author$project$Tasks$getId(task))),
@@ -8065,8 +8066,8 @@ var author$project$Main$viewEditAction = F2(
 							A5(
 							author$project$Main$iconButtonInputDisable,
 							_Utils_eq(
-								originalAction,
-								author$project$Tasks$getAction(task)),
+								editedAction,
+								author$project$Tasks$readAction(task)),
 							'reset',
 							author$project$Main$CancelEdit,
 							'Undo changes',
@@ -8110,11 +8111,11 @@ var author$project$Main$viewTaskBase = F3(
 				[action, btn]));
 	});
 var author$project$Main$viewEditTask = F2(
-	function (originalAction, task) {
+	function (editedAction, task) {
 		return A3(
 			author$project$Main$viewTaskBase,
-			author$project$Main$onButtonClick(author$project$Main$StopEdit),
-			A2(author$project$Main$viewEditAction, originalAction, task),
+			author$project$Main$onButtonClick(author$project$Main$ApplyEdit),
+			A2(author$project$Main$viewEditAction, editedAction, task),
 			A3(
 				author$project$Main$iconButton,
 				author$project$Main$DoTask(
@@ -8885,7 +8886,7 @@ var author$project$Main$view = function (model) {
 							_List_fromArray(
 								[
 									author$project$Main$viewActionInput(model.am),
-									A2(author$project$Main$viewCurrentTaskList, model.z, model.h),
+									A2(author$project$Main$viewCurrentTaskList, model.z, model.m),
 									author$project$Main$viewDoneTaskList(model.O)
 								]))
 						]))
