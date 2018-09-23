@@ -6,10 +6,20 @@ before_install:
   - mv ci/package.json .
   - mv ci/yarn.lock .
 install:
+  - | # Build time improvement. See https://github.com/elm/compiler/issues/1473#issuecomment-245704142
+    if [ ! -d sysconfcpus/bin ];
+    then
+      git clone https://github.com/obmarg/libsysconfcpus.git; 
+      cd libsysconfcpus;
+      ./configure --prefix=$TRAVIS_BUILD_DIR/sysconfcpus;
+      make && make install;
+      cd ..;
+    fi
   - yarn install
 cache:
   yarn: true
   directories:
+    - sysconfcpus
     - node_modules
     - elm-stuff/build-artifacts
     - elm-stuff/packages
