@@ -42,7 +42,14 @@ type alias Model =
     , newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
-    , editing : Maybe ( Tasks.TaskId Current, String )
+    , editing : Maybe Editing
+    }
+
+
+type alias Editing =
+    { id : Tasks.TaskId Current
+    , newRawAction : String
+    , previousAction : Tasks.Action
     }
 
 
@@ -138,15 +145,15 @@ update msg model =
                     applyEdit model
 
                 editing =
-                    case
-                        Tasks.toList model.currentTasks
-                            |> List.find (Tasks.getId >> (==) id)
-                    of
-                        Just task ->
-                            Just ( id, Tasks.readAction task )
-
-                        Nothing ->
-                            Nothing
+                    Tasks.toList model.currentTasks
+                        |> List.find (Tasks.getId >> (==) id)
+                        |> Maybe.map
+                            (\task ->
+                                { id = id
+                                , newRawAction = Tasks.readAction task
+                                , previousAction = Tasks.getAction task
+                                }
+                            )
             in
             simply { updatedModel | editing = editing }
 
@@ -154,13 +161,38 @@ update msg model =
             simply <| applyEdit model
 
         CancelEdit ->
+            let
+                updatedCurrentTasks =
+                    Maybe.map
+                        (\{ id, previousAction } ->
+                            Tasks.editTask id previousAction model.currentTasks
+                        )
+                        model.editing
+                        |> Maybe.withDefault model.currentTasks
+            in
             simply
                 { model
                     | editing = Nothing
+                    , currentTasks = updatedCurrentTasks
                 }
 
         Edit id newRawAction ->
-            simply { model | editing = Just ( id, newRawAction ) }
+            let
+                updatedCurrentTasks =
+                    editTask id newRawAction model.currentTasks
+
+                editing =
+                    Maybe.map
+                        (\currentEditing ->
+                            { currentEditing | newRawAction = newRawAction }
+                        )
+                        model.editing
+            in
+            simply
+                { model
+                    | editing = editing
+                    , currentTasks = updatedCurrentTasks
+                }
 
         DeleteTask id ->
             let
@@ -170,7 +202,7 @@ update msg model =
             simply { model | currentTasks = newCurrentTasks }
 
         BackgroundClicked ->
-            simply <| applyEdit model
+            simply <| { model | editing = Nothing }
 
 
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
@@ -186,16 +218,16 @@ addTask rawAction currentTasks =
 type alias EditModel a =
     { a
         | currentTasks : Tasks.Collection Current
-        , editing : Maybe ( Tasks.TaskId Current, String )
+        , editing : Maybe Editing
     }
 
 
 applyEdit : EditModel a -> EditModel a
 applyEdit ({ editing } as current) =
     case editing of
-        Just ( id, editedAction ) ->
+        Just { id, newRawAction, previousAction } ->
             { current
-                | currentTasks = editTask id editedAction current.currentTasks
+                | currentTasks = editTask id newRawAction current.currentTasks
                 , editing = Nothing
             }
 
@@ -203,7 +235,7 @@ applyEdit ({ editing } as current) =
             current
 
 
-editTask : Tasks.TaskId Current -> String -> Tasks.Collection Current -> Tasks.Collection Current
+editTask : Tasks.TaskId c -> String -> Tasks.Collection c -> Tasks.Collection c
 editTask id editedAction currentCollection =
     case Tasks.actionFromString editedAction of
         Just newAction ->
@@ -293,7 +325,7 @@ viewActionInput currentAction =
         ]
 
 
-viewCurrentTaskList : Maybe ( Tasks.TaskId Current, String ) -> Tasks.Collection Current -> Html Msg
+viewCurrentTaskList : Maybe Editing -> Tasks.Collection Current -> Html Msg
 viewCurrentTaskList editing =
     ol [ css [ taskListStyle ] ]
         << List.map
@@ -310,9 +342,9 @@ viewCurrentTaskList editing =
                         Nothing ->
                             viewTask task
 
-                        Just ( id, originalAction ) ->
+                        Just { id, newRawAction, previousAction } ->
                             if Tasks.getId task == id then
-                                viewEditTask originalAction task
+                                viewEditTask newRawAction previousAction task
 
                             else
                                 viewTask task
@@ -329,11 +361,11 @@ viewTask task =
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
-viewEditTask : String -> Tasks.Task Current -> Html Msg
-viewEditTask editedAction task =
+viewEditTask : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
+viewEditTask editedAction previousAction task =
     viewTaskBase
         (onButtonClick ApplyEdit)
-        (viewEditAction editedAction task)
+        (viewEditAction editedAction previousAction task)
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
@@ -367,8 +399,8 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : String -> Tasks.Task Current -> Html Msg
-viewEditAction editedAction task =
+viewEditAction : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
+viewEditAction editedAction previousAction task =
     form
         [ css [ flex (num 1) ]
         , onSubmit ApplyEdit
@@ -386,7 +418,7 @@ viewEditAction editedAction task =
             ]
         , div
             [ css [ displayFlex, justifyContent center ] ]
-            [ iconButtonInputDisable (editedAction == Tasks.readAction task)
+            [ iconButtonInputDisable (editedAction == Tasks.stringFromAction previousAction)
                 "reset"
                 CancelEdit
                 "Undo changes"
