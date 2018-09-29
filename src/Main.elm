@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -8,12 +8,13 @@ import Html.Styled exposing (Attribute, Html, button, div, form, input, label, l
 import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
+import Json.Encode as Encode
 import List.Extra as List
 import Tasks
-import Url
+import Url exposing (Url)
 
 
-main : Program () Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = init
@@ -53,14 +54,40 @@ type alias Editing =
     }
 
 
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
+    let
+        ( actualCurrentTasks, actualDoneTasks ) =
+            decodeFlags flags
+    in
     simply
         { key = key
         , newTask = ""
-        , currentTasks = Tasks.empty Current
-        , doneTasks = Tasks.empty Done
+        , currentTasks = actualCurrentTasks
+        , doneTasks = actualDoneTasks
         , editing = Nothing
         }
+
+
+decodeFlags : Decode.Value -> ( Tasks.Collection Current, Tasks.Collection Done )
+decodeFlags flags =
+    Decode.decodeValue
+        (Decode.map2
+            (let
+                collectionFromList c rawActions =
+                    List.filterMap Tasks.actionFromString rawActions
+                        |> List.foldl (\action collection -> Tasks.addTask action collection) (Tasks.empty c)
+             in
+             \current done ->
+                ( collectionFromList Current current
+                , collectionFromList Done done
+                )
+            )
+            (Decode.field "currentTasks" <| Decode.list Decode.string)
+            (Decode.field "doneTasks" <| Decode.list Decode.string)
+        )
+        flags
+        |> Result.withDefault ( Tasks.empty Current, Tasks.empty Done )
 
 
 simply : Model -> ( Model, Cmd Msg )
@@ -89,7 +116,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    (case msg of
         NoOp ->
             simply model
 
@@ -212,6 +239,25 @@ update msg model =
 
         BackgroundClicked ->
             simply <| { model | editing = Nothing }
+    )
+        |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
+
+
+save : Model -> Cmd msg
+save model =
+    saveRaw <|
+        Encode.object
+            [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
+            , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
+            ]
+
+
+encodeTask : Tasks.Task a -> Encode.Value
+encodeTask =
+    Tasks.readAction >> Encode.string
+
+
+port saveRaw : Encode.Value -> Cmd msg
 
 
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
