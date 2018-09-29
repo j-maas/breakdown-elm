@@ -770,11 +770,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.bn.aH === region.bC.aH)
+	if (region.bn.aI === region.bC.aI)
 	{
-		return 'on line ' + region.bn.aH;
+		return 'on line ' + region.bn.aI;
 	}
-	return 'on lines ' + region.bn.aH + ' through ' + region.bC.aH;
+	return 'on lines ' + region.bn.aI + ' through ' + region.bC.aI;
 }
 
 
@@ -4071,17 +4071,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { ck: 'hidden', aC: 'visibilitychange' }
+		? { ck: 'hidden', aD: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { ck: 'mozHidden', aC: 'mozvisibilitychange' }
+		? { ck: 'mozHidden', aD: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { ck: 'msHidden', aC: 'msvisibilitychange' }
+		? { ck: 'msHidden', aD: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { ck: 'webkitHidden', aC: 'webkitvisibilitychange' }
-		: { ck: 'hidden', aC: 'visibilitychange' };
+		? { ck: 'webkitHidden', aD: 'webkitvisibilitychange' }
+		: { ck: 'hidden', aD: 'visibilitychange' };
 }
 
 
@@ -4166,7 +4166,7 @@ function _Browser_getViewport()
 		b5: {
 			bb: _Browser_window.pageXOffset,
 			bc: _Browser_window.pageYOffset,
-			ax: _Browser_doc.documentElement.clientWidth,
+			ay: _Browser_doc.documentElement.clientWidth,
 			ai: _Browser_doc.documentElement.clientHeight
 		}
 	};
@@ -4177,7 +4177,7 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		ax: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		ay: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
 		ai: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
@@ -4202,13 +4202,13 @@ function _Browser_getViewportOf(id)
 	{
 		return {
 			b_: {
-				ax: node.scrollWidth,
+				ay: node.scrollWidth,
 				ai: node.scrollHeight
 			},
 			b5: {
 				bb: node.scrollLeft,
 				bc: node.scrollTop,
-				ax: node.clientWidth,
+				ay: node.clientWidth,
 				ai: node.clientHeight
 			}
 		};
@@ -4243,13 +4243,13 @@ function _Browser_getElement(id)
 			b5: {
 				bb: x,
 				bc: y,
-				ax: _Browser_doc.documentElement.clientWidth,
+				ay: _Browser_doc.documentElement.clientWidth,
 				ai: _Browser_doc.documentElement.clientHeight
 			},
 			cf: {
 				bb: x + rect.left,
 				bc: y + rect.top,
-				ax: rect.width,
+				ay: rect.width,
 				ai: rect.height
 			}
 		};
@@ -4935,7 +4935,7 @@ var author$project$Tasks$nextIdForCollection = function (_n0) {
 	var highestId = function () {
 		var getIdNum = function (_n1) {
 			var task = _n1;
-			var _n2 = task.aF;
+			var _n2 = task.aG;
 			var n = _n2;
 			return n;
 		};
@@ -4955,7 +4955,7 @@ var author$project$Tasks$addTask = F2(
 			list,
 			_List_fromArray(
 				[
-					{Z: action, aF: nextId}
+					{Z: action, aG: nextId}
 				]));
 		return newList;
 	});
@@ -4970,7 +4970,7 @@ var author$project$Main$addTask = F2(
 		}
 	});
 var author$project$Tasks$getId = function (_n0) {
-	var id = _n0.aF;
+	var id = _n0.aG;
 	return id;
 };
 var elm_community$list_extra$List$Extra$updateIf = F3(
@@ -5013,9 +5013,9 @@ var author$project$Main$editTask = F3(
 var author$project$Main$applyEdit = function (current) {
 	var editing = current.s;
 	if (!editing.$) {
-		var id = editing.a.aF;
-		var newRawAction = editing.a.aI;
-		var previousAction = editing.a.aN;
+		var id = editing.a.aG;
+		var newRawAction = editing.a.aJ;
+		var previousAction = editing.a.ap;
 		return _Utils_update(
 			current,
 			{
@@ -5035,7 +5035,7 @@ var author$project$Tasks$insertTask = F2(
 		var task = _n0;
 		var list = into;
 		var newId = author$project$Tasks$nextIdForCollection(into);
-		var newTask = {Z: task.Z, aF: newId};
+		var newTask = {Z: task.Z, aG: newId};
 		return _Utils_ap(
 			list,
 			_List_fromArray(
@@ -5470,9 +5470,9 @@ var author$project$Main$update = F2(
 					elm$core$Maybe$map,
 					function (task) {
 						return {
-							aF: id,
-							aI: author$project$Tasks$readAction(task),
-							aN: author$project$Tasks$getAction(task)
+							aG: id,
+							aJ: author$project$Tasks$readAction(task),
+							ap: author$project$Tasks$getAction(task)
 						};
 					},
 					A2(
@@ -5496,8 +5496,8 @@ var author$project$Main$update = F2(
 					A2(
 						elm$core$Maybe$map,
 						function (_n4) {
-							var id = _n4.aF;
-							var previousAction = _n4.aN;
+							var id = _n4.aG;
+							var previousAction = _n4.ap;
 							return A3(author$project$Tasks$editTask, id, previousAction, model.f);
 						},
 						model.s));
@@ -5508,19 +5508,36 @@ var author$project$Main$update = F2(
 			case 7:
 				var id = msg.a;
 				var newRawAction = msg.b;
-				var updatedCurrentTasks = A3(author$project$Main$editTask, id, newRawAction, model.f);
-				var editing = A2(
-					elm$core$Maybe$map,
-					function (currentEditing) {
-						return _Utils_update(
-							currentEditing,
-							{aI: newRawAction});
-					},
-					model.s);
+				var _n5 = function () {
+					var _n6 = model.s;
+					if (!_n6.$) {
+						var currentEditing = _n6.a;
+						var previousAction = currentEditing.ap;
+						var updatedCurrentTasks = function () {
+							var _n7 = author$project$Tasks$actionFromString(newRawAction);
+							if (!_n7.$) {
+								var newAction = _n7.a;
+								return A3(author$project$Tasks$editTask, id, newAction, model.f);
+							} else {
+								return A3(author$project$Tasks$editTask, id, previousAction, model.f);
+							}
+						}();
+						return _Utils_Tuple2(
+							updatedCurrentTasks,
+							elm$core$Maybe$Just(
+								_Utils_update(
+									currentEditing,
+									{aJ: newRawAction})));
+					} else {
+						return _Utils_Tuple2(model.f, elm$core$Maybe$Nothing);
+					}
+				}();
+				var currentTasks = _n5.a;
+				var editing = _n5.b;
 				return author$project$Main$simply(
 					_Utils_update(
 						model,
-						{f: updatedCurrentTasks, s: editing}));
+						{f: currentTasks, s: editing}));
 			case 10:
 				var id = msg.a;
 				var newCurrentTasks = A2(author$project$Tasks$removeTask, id, model.f);
@@ -5597,7 +5614,7 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 			by: 0,
 			ae: 0,
 			n: 0,
-			aG: 0,
+			aH: 0,
 			aj: 0,
 			I: 0,
 			ak: 0,
@@ -5606,8 +5623,8 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 			S: 0,
 			A: 0,
 			L: numericValue,
-			at: 0,
-			av: unitLabel,
+			au: 0,
+			aw: unitLabel,
 			aU: units,
 			C: _Utils_ap(
 				elm$core$String$fromFloat(numericValue),
@@ -5631,19 +5648,19 @@ var author$project$Main$actionInputStyle = rtfeldman$elm_css$Css$batch(
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var rtfeldman$elm_css$Css$absolute = {aM: 0, C: 'absolute'};
+var rtfeldman$elm_css$Css$absolute = {aN: 0, C: 'absolute'};
 var rtfeldman$elm_css$Css$border = rtfeldman$elm_css$Css$prop1('border');
 var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
 var rtfeldman$elm_css$Css$hidden = {q: 0, an: 0, C: 'hidden', aV: 0};
 var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
-var rtfeldman$elm_css$Css$noWrap = {aD: 0, a$: 0, C: 'nowrap', N: 0};
+var rtfeldman$elm_css$Css$noWrap = {aE: 0, a$: 0, C: 'nowrap', N: 0};
 var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
 var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
 var rtfeldman$elm_css$Css$PxUnits = 0;
 var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
 var rtfeldman$elm_css$Css$whiteSpace = rtfeldman$elm_css$Css$prop1('white-space');
 var rtfeldman$elm_css$Css$UnitlessInteger = 0;
-var rtfeldman$elm_css$Css$zero = {aG: 0, aj: 0, I: 0, ak: 0, al: 0, R: 0, S: 0, aJ: 0, L: 0, a3: 0, av: '', aU: 0, C: '0'};
+var rtfeldman$elm_css$Css$zero = {aH: 0, aj: 0, I: 0, ak: 0, al: 0, R: 0, S: 0, aK: 0, L: 0, a3: 0, aw: '', aU: 0, C: '0'};
 var author$project$Main$hide = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -5699,9 +5716,9 @@ var rtfeldman$elm_css$Css$num = function (val) {
 	return {
 		S: 0,
 		A: 0,
-		aJ: 0,
+		aK: 0,
 		L: val,
-		av: '',
+		aw: '',
 		aU: 0,
 		C: elm$core$String$fromFloat(val)
 	};
@@ -5714,10 +5731,10 @@ var rtfeldman$elm_css$Css$cssFunction = F2(
 var rtfeldman$elm_css$Css$rgb = F3(
 	function (r, g, b) {
 		return {
-			az: 1,
-			aB: b,
+			aA: 1,
+			aC: b,
 			z: 0,
-			aE: g,
+			aF: g,
 			aO: r,
 			C: A2(
 				rtfeldman$elm_css$Css$cssFunction,
@@ -5732,10 +5749,10 @@ var rtfeldman$elm_css$Css$rgb = F3(
 var rtfeldman$elm_css$Css$rgba = F4(
 	function (r, g, b, alpha) {
 		return {
-			az: alpha,
-			aB: b,
+			aA: alpha,
+			aC: b,
 			z: 0,
-			aE: g,
+			aF: g,
 			aO: r,
 			C: A2(
 				rtfeldman$elm_css$Css$cssFunction,
@@ -5903,7 +5920,7 @@ var elm$virtual_dom$VirtualDom$property = F2(
 	});
 var Skinney$murmur3$Murmur3$HashData = F4(
 	function (shift, seed, hash, charsProcessed) {
-		return {ab: charsProcessed, ah: hash, V: seed, aq: shift};
+		return {ab: charsProcessed, ah: hash, V: seed, ar: shift};
 	});
 var elm$core$Bitwise$and = _Bitwise_and;
 var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
@@ -5932,14 +5949,14 @@ var Skinney$murmur3$Murmur3$step = function (acc) {
 };
 var Skinney$murmur3$Murmur3$hashFold = F2(
 	function (c, data) {
-		var res = data.ah | (c << data.aq);
-		var _n0 = data.aq;
+		var res = data.ah | (c << data.ar);
+		var _n0 = data.ar;
 		if (_n0 === 24) {
 			var newHash = Skinney$murmur3$Murmur3$step(
 				A2(Skinney$murmur3$Murmur3$mix, data.V, res));
-			return {ab: data.ab + 1, ah: 0, V: newHash, aq: 0};
+			return {ab: data.ab + 1, ah: 0, V: newHash, ar: 0};
 		} else {
-			return {ab: data.ab + 1, ah: res, V: data.V, aq: data.aq + 8};
+			return {ab: data.ab + 1, ah: res, V: data.V, ar: data.ar + 8};
 		}
 	});
 var elm$core$Basics$ge = _Utils_ge;
@@ -7831,7 +7848,7 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		'justify-content',
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
-var rtfeldman$elm_css$Css$row = {bf: 0, aD: 0, C: 'row'};
+var rtfeldman$elm_css$Css$row = {bf: 0, aE: 0, C: 'row'};
 var rtfeldman$elm_css$Html$Styled$div = rtfeldman$elm_css$Html$Styled$node('div');
 var rtfeldman$elm_css$Html$Styled$form = rtfeldman$elm_css$Html$Styled$node('form');
 var rtfeldman$elm_css$Html$Styled$Attributes$autofocus = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('autofocus');
@@ -7957,7 +7974,7 @@ var rtfeldman$elm_css$Css$prop3 = F4(
 					[argA.C, argB.C, argC.C])));
 	});
 var rtfeldman$elm_css$Css$margin3 = rtfeldman$elm_css$Css$prop3('margin');
-var rtfeldman$elm_css$Css$none = {_: 0, bw: 0, q: 0, a: 0, g: 0, cl: 0, bJ: 0, bh: 0, al: 0, R: 0, A: 0, c: 0, b: 0, bj: 0, a3: 0, cv: 0, x: 0, a5: 0, cx: 0, as: 0, X: 0, v: 0, e: 0, cC: 0, C: 'none'};
+var rtfeldman$elm_css$Css$none = {_: 0, bw: 0, q: 0, a: 0, g: 0, cl: 0, bJ: 0, bh: 0, al: 0, R: 0, A: 0, c: 0, b: 0, bj: 0, a3: 0, cv: 0, x: 0, a5: 0, cx: 0, at: 0, X: 0, v: 0, e: 0, cC: 0, C: 'none'};
 var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -8011,6 +8028,12 @@ var author$project$Main$Edit = F2(
 	function (a, b) {
 		return {$: 7, a: a, b: b};
 	});
+var author$project$Main$errorMessageStyle = rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			rtfeldman$elm_css$Css$color(
+			A3(rtfeldman$elm_css$Css$rgb, 255, 0, 0))
+		]));
 var author$project$Main$stopPropagation = A2(
 	rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
 	'click',
@@ -8033,39 +8056,59 @@ var author$project$Main$viewEditAction = F3(
 				]),
 			_List_fromArray(
 				[
-					A2(
-					rtfeldman$elm_css$Html$Styled$label,
-					_List_Nil,
-					_List_fromArray(
-						[
-							A2(
-							rtfeldman$elm_css$Html$Styled$span,
-							_List_fromArray(
-								[
-									rtfeldman$elm_css$Html$Styled$Attributes$css(
-									_List_fromArray(
-										[author$project$Main$hide]))
-								]),
-							_List_fromArray(
-								[
-									rtfeldman$elm_css$Html$Styled$text('Action')
-								])),
-							A2(
-							rtfeldman$elm_css$Html$Styled$input,
-							_List_fromArray(
-								[
-									rtfeldman$elm_css$Html$Styled$Attributes$type_('text'),
-									rtfeldman$elm_css$Html$Styled$Attributes$value(editedAction),
-									rtfeldman$elm_css$Html$Styled$Events$onInput(
-									author$project$Main$Edit(
-										author$project$Tasks$getId(task))),
-									author$project$Main$stopPropagation,
-									rtfeldman$elm_css$Html$Styled$Attributes$css(
-									_List_fromArray(
-										[author$project$Main$actionInputStyle]))
-								]),
-							_List_Nil)
-						])),
+					function () {
+					var isEmpty = _Utils_eq(
+						author$project$Tasks$actionFromString(editedAction),
+						elm$core$Maybe$Nothing);
+					return A2(
+						rtfeldman$elm_css$Html$Styled$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								rtfeldman$elm_css$Html$Styled$span,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[author$project$Main$hide]))
+									]),
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('Action')
+									])),
+								A2(
+								rtfeldman$elm_css$Html$Styled$input,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$Attributes$type_('text'),
+										rtfeldman$elm_css$Html$Styled$Attributes$value(editedAction),
+										rtfeldman$elm_css$Html$Styled$Events$onInput(
+										author$project$Main$Edit(
+											author$project$Tasks$getId(task))),
+										author$project$Main$stopPropagation,
+										rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[author$project$Main$actionInputStyle]))
+									]),
+								_List_Nil),
+								A2(
+								rtfeldman$elm_css$Html$Styled$span,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_Utils_ap(
+											_List_fromArray(
+												[author$project$Main$errorMessageStyle]),
+											isEmpty ? _List_Nil : _List_fromArray(
+												[author$project$Main$hide])))
+									]),
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('The action cannot be empty.')
+									]))
+							]));
+				}(),
 					A2(
 					rtfeldman$elm_css$Html$Styled$div,
 					_List_fromArray(
@@ -8234,9 +8277,9 @@ var author$project$Main$viewCurrentTaskList = function (editing) {
 								if (editing.$ === 1) {
 									return author$project$Main$viewTask(task);
 								} else {
-									var id = editing.a.aF;
-									var newRawAction = editing.a.aI;
-									var previousAction = editing.a.aN;
+									var id = editing.a.aG;
+									var newRawAction = editing.a.aJ;
+									var previousAction = editing.a.ap;
 									return _Utils_eq(
 										author$project$Tasks$getId(task),
 										id) ? A3(author$project$Main$viewEditTask, newRawAction, previousAction, task) : author$project$Main$viewTask(task);
@@ -8249,7 +8292,7 @@ var author$project$Main$viewCurrentTaskList = function (editing) {
 var author$project$Main$UndoTask = function (a) {
 	return {$: 5, a: a};
 };
-var rtfeldman$elm_css$Css$lineThrough = {as: 0, C: 'line-through'};
+var rtfeldman$elm_css$Css$lineThrough = {at: 0, C: 'line-through'};
 var rtfeldman$elm_css$Css$textDecoration = rtfeldman$elm_css$Css$prop1('text-decoration');
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 0, a: a};
