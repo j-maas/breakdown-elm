@@ -134,7 +134,8 @@ update msg model =
         StartEdit id ->
             let
                 -- We might already be editing.
-                updatedModel = applyEdit model
+                updatedModel =
+                    applyEdit model
 
                 editing =
                     case
@@ -236,6 +237,7 @@ view model =
                     [ margin zero
                     , height (pct 100)
                     ]
+                , selector "*" [ fontSize (pct 100) ]
                 ]
             , div
                 [ css
@@ -250,7 +252,10 @@ view model =
                 , onButtonClick BackgroundClicked
                 ]
                 [ main_
-                    [ css [ minWidth (em 20) ]
+                    [ css
+                        [ width (pct 100)
+                        , maxWidth (em 25)
+                        ]
                     ]
                     [ viewActionInput model.newTask
                     , viewCurrentTaskList model.editing model.currentTasks
@@ -263,7 +268,7 @@ view model =
 
 viewActionInput : String -> Html Msg
 viewActionInput currentAction =
-    form [ onSubmit AddNewTask, css [ flex (num 1) ] ]
+    form [ onSubmit AddNewTask ]
         [ label []
             [ span [ css [ hide ] ] [ text "New task's action" ]
             , input
@@ -271,7 +276,7 @@ viewActionInput currentAction =
                 , value currentAction
                 , onInput UpdateNewTask
                 , autofocus True
-                , css [ boxSizing borderBox, width (pct 100) ]
+                , css [ actionInputStyle ]
                 ]
                 []
             ]
@@ -375,7 +380,7 @@ viewEditAction editedAction task =
                 , value editedAction
                 , onInput (Edit <| Tasks.getId task)
                 , stopPropagation
-                , css [ boxSizing borderBox, width (pct 100) ]
+                , css [ actionInputStyle ]
                 ]
                 []
             ]
@@ -471,7 +476,15 @@ taskListStyle =
         [ listStyleType none
         , margin3 (em 1.5) zero zero
         , padding zero
-        , maxWidth (em 20)
+        ]
+
+
+actionInputStyle : Style
+actionInputStyle =
+    batch
+        [ boxSizing borderBox
+        , width (pct 100)
+        , padding (em 0.75)
         ]
 
 
@@ -486,6 +499,7 @@ buttonStyle =
         , padding zero
         , width size
         , height size
+        , fontSize (pct 125)
         , textAlign center
         , backgroundColor (rgba 0 0 0 0.1)
         , hover [ backgroundColor (rgba 0 0 0 0.07) ]
@@ -493,7 +507,7 @@ buttonStyle =
         , margin (em 0.1)
         , pseudoClass "disabled"
             [ color (rgb 0 0 0)
-            , opacity (num 0.5)
+            , opacity (num 0.3)
             ]
         ]
 
