@@ -405,7 +405,11 @@ viewEditAction editedAction previousAction task =
         [ css [ flex (num 1) ]
         , onSubmit ApplyEdit
         ]
-        [ label []
+        [ let
+            isEmpty =
+                Tasks.actionFromString editedAction == Nothing
+          in
+          label []
             [ span [ css [ hide ] ] [ text "Action" ]
             , input
                 [ type_ "text"
@@ -415,6 +419,18 @@ viewEditAction editedAction previousAction task =
                 , css [ actionInputStyle ]
                 ]
                 []
+            , span
+                [ css
+                    ([ errorMessageStyle ]
+                        ++ (if isEmpty then
+                                []
+
+                            else
+                                [ hide ]
+                           )
+                    )
+                ]
+                [ text "The action cannot be empty." ]
             ]
         , div
             [ css [ displayFlex, justifyContent center ] ]
@@ -518,6 +534,12 @@ actionInputStyle =
         , width (pct 100)
         , padding (em 0.75)
         ]
+
+
+errorMessageStyle : Style
+errorMessageStyle =
+    batch
+        [ color (rgb 255 0 0) ]
 
 
 buttonStyle : Style
