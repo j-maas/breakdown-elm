@@ -14,7 +14,7 @@ import Tasks
 import Url exposing (Url)
 
 
-main : Program JsonModel Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = init
@@ -54,24 +54,11 @@ type alias Editing =
     }
 
 
-type alias JsonModel =
-    Maybe { currentTasks : List String, doneTasks : List String }
-
-
-init : JsonModel -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
-        collectionFromList c rawActions =
-            List.filterMap Tasks.actionFromString rawActions
-                |> List.foldl (\action collection -> Tasks.addTask action collection) (Tasks.empty c)
-
         ( actualCurrentTasks, actualDoneTasks ) =
-            case flags of
-                Just { currentTasks, doneTasks } ->
-                    ( collectionFromList Current currentTasks, collectionFromList Done doneTasks )
-
-                Nothing ->
-                    ( Tasks.empty Current, Tasks.empty Done )
+            decodeFlags flags
     in
     simply
         { key = key
@@ -80,6 +67,27 @@ init flags url key =
         , doneTasks = actualDoneTasks
         , editing = Nothing
         }
+
+
+decodeFlags : Decode.Value -> ( Tasks.Collection Current, Tasks.Collection Done )
+decodeFlags flags =
+    Decode.decodeValue
+        (Decode.map2
+            (let
+                collectionFromList c rawActions =
+                    List.filterMap Tasks.actionFromString rawActions
+                        |> List.foldl (\action collection -> Tasks.addTask action collection) (Tasks.empty c)
+             in
+             \current done ->
+                ( collectionFromList Current current
+                , collectionFromList Done done
+                )
+            )
+            (Decode.field "currentTasks" <| Decode.list Decode.string)
+            (Decode.field "doneTasks" <| Decode.list Decode.string)
+        )
+        flags
+        |> Result.withDefault ( Tasks.empty Current, Tasks.empty Done )
 
 
 simply : Model -> ( Model, Cmd Msg )
