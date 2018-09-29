@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -8,12 +8,13 @@ import Html.Styled exposing (Attribute, Html, button, div, form, input, label, l
 import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
+import Json.Encode as Encode
 import List.Extra as List
 import Tasks
-import Url
+import Url exposing (Url)
 
 
-main : Program () Model Msg
+main : Program JsonModel Model Msg
 main =
     Browser.application
         { init = init
@@ -53,12 +54,30 @@ type alias Editing =
     }
 
 
+type alias JsonModel =
+    Maybe { currentTasks : List String, doneTasks : List String }
+
+
+init : JsonModel -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
+    let
+        collectionFromList c rawActions =
+            List.filterMap Tasks.actionFromString rawActions
+                |> List.foldl (\action collection -> Tasks.addTask action collection) (Tasks.empty c)
+
+        ( actualCurrentTasks, actualDoneTasks ) =
+            case flags of
+                Just { currentTasks, doneTasks } ->
+                    ( collectionFromList Current currentTasks, collectionFromList Done doneTasks )
+
+                Nothing ->
+                    ( Tasks.empty Current, Tasks.empty Done )
+    in
     simply
         { key = key
         , newTask = ""
-        , currentTasks = Tasks.empty Current
-        , doneTasks = Tasks.empty Done
+        , currentTasks = actualCurrentTasks
+        , doneTasks = actualDoneTasks
         , editing = Nothing
         }
 
@@ -89,7 +108,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    (case msg of
         NoOp ->
             simply model
 
@@ -212,6 +231,25 @@ update msg model =
 
         BackgroundClicked ->
             simply <| { model | editing = Nothing }
+    )
+        |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
+
+
+save : Model -> Cmd msg
+save model =
+    saveRaw <|
+        Encode.object
+            [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
+            , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
+            ]
+
+
+encodeTask : Tasks.Task a -> Encode.Value
+encodeTask =
+    Tasks.readAction >> Encode.string
+
+
+port saveRaw : Encode.Value -> Cmd msg
 
 
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
