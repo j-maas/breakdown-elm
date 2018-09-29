@@ -178,20 +178,29 @@ update msg model =
 
         Edit id newRawAction ->
             let
-                updatedCurrentTasks =
-                    editTask id newRawAction model.currentTasks
+                ( currentTasks, editing ) =
+                    case model.editing of
+                        Just ({ previousAction } as currentEditing) ->
+                            let
+                                updatedCurrentTasks =
+                                    case Tasks.actionFromString newRawAction of
+                                        Just newAction ->
+                                            Tasks.editTask id newAction model.currentTasks
 
-                editing =
-                    Maybe.map
-                        (\currentEditing ->
-                            { currentEditing | newRawAction = newRawAction }
-                        )
-                        model.editing
+                                        Nothing ->
+                                            Tasks.editTask id previousAction model.currentTasks
+                            in
+                            ( updatedCurrentTasks
+                            , Just { currentEditing | newRawAction = newRawAction }
+                            )
+
+                        Nothing ->
+                            ( model.currentTasks, Nothing )
             in
             simply
                 { model
                     | editing = editing
-                    , currentTasks = updatedCurrentTasks
+                    , currentTasks = currentTasks
                 }
 
         DeleteTask id ->
@@ -405,7 +414,11 @@ viewEditAction editedAction previousAction task =
         [ css [ flex (num 1) ]
         , onSubmit ApplyEdit
         ]
-        [ label []
+        [ let
+            isEmpty =
+                Tasks.actionFromString editedAction == Nothing
+          in
+          label []
             [ span [ css [ hide ] ] [ text "Action" ]
             , input
                 [ type_ "text"
@@ -415,6 +428,18 @@ viewEditAction editedAction previousAction task =
                 , css [ actionInputStyle ]
                 ]
                 []
+            , span
+                [ css
+                    ([ errorMessageStyle ]
+                        ++ (if isEmpty then
+                                []
+
+                            else
+                                [ hide ]
+                           )
+                    )
+                ]
+                [ text "The action cannot be empty." ]
             ]
         , div
             [ css [ displayFlex, justifyContent center ] ]
@@ -518,6 +543,12 @@ actionInputStyle =
         , width (pct 100)
         , padding (em 0.75)
         ]
+
+
+errorMessageStyle : Style
+errorMessageStyle =
+    batch
+        [ color (rgb 255 0 0) ]
 
 
 buttonStyle : Style
