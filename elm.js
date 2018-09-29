@@ -5539,15 +5539,12 @@ var author$project$Main$AddNewTask = {$: 3};
 var author$project$Main$UpdateNewTask = function (a) {
 	return {$: 2, a: a};
 };
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var rtfeldman$elm_css$Css$Structure$Compatible = 0;
-var rtfeldman$elm_css$Css$absolute = {aK: 0, C: 'absolute'};
 var rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
 	return {$: 6, a: a};
 };
 var rtfeldman$elm_css$Css$batch = rtfeldman$elm_css$Css$Preprocess$ApplyStyles;
+var rtfeldman$elm_css$Css$Structure$Compatible = 0;
+var rtfeldman$elm_css$Css$borderBox = {bb: 0, aU: 0, C: 'border-box'};
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 0, a: a};
 };
@@ -5559,15 +5556,8 @@ var rtfeldman$elm_css$Css$prop1 = F2(
 	function (key, arg) {
 		return A2(rtfeldman$elm_css$Css$property, key, arg.C);
 	});
-var rtfeldman$elm_css$Css$border = rtfeldman$elm_css$Css$prop1('border');
-var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
-var rtfeldman$elm_css$Css$hidden = {q: 0, an: 0, C: 'hidden', aS: 0};
-var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
-var rtfeldman$elm_css$Css$noWrap = {aD: 0, aY: 0, C: 'nowrap', N: 0};
-var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
-var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
-var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
-var rtfeldman$elm_css$Css$PxUnits = 0;
+var rtfeldman$elm_css$Css$boxSizing = rtfeldman$elm_css$Css$prop1('box-sizing');
+var rtfeldman$elm_css$Css$EmUnits = 0;
 var elm$core$String$fromFloat = _String_fromNumber;
 var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 	function (units, unitLabel, numericValue) {
@@ -5593,9 +5583,34 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 				unitLabel)
 		};
 	});
+var rtfeldman$elm_css$Css$em = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'em');
+var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
+var rtfeldman$elm_css$Css$PercentageUnits = 0;
+var rtfeldman$elm_css$Css$pct = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, '%');
+var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
+var author$project$Main$actionInputStyle = rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			rtfeldman$elm_css$Css$boxSizing(rtfeldman$elm_css$Css$borderBox),
+			rtfeldman$elm_css$Css$width(
+			rtfeldman$elm_css$Css$pct(100)),
+			rtfeldman$elm_css$Css$padding(
+			rtfeldman$elm_css$Css$em(0.75))
+		]));
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var rtfeldman$elm_css$Css$absolute = {aK: 0, C: 'absolute'};
+var rtfeldman$elm_css$Css$border = rtfeldman$elm_css$Css$prop1('border');
+var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
+var rtfeldman$elm_css$Css$hidden = {q: 0, an: 0, C: 'hidden', aS: 0};
+var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
+var rtfeldman$elm_css$Css$noWrap = {aD: 0, aY: 0, C: 'nowrap', N: 0};
+var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
+var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
+var rtfeldman$elm_css$Css$PxUnits = 0;
 var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
 var rtfeldman$elm_css$Css$whiteSpace = rtfeldman$elm_css$Css$prop1('white-space');
-var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
 var rtfeldman$elm_css$Css$UnitlessInteger = 0;
 var rtfeldman$elm_css$Css$zero = {aF: 0, aj: 0, I: 0, ak: 0, al: 0, R: 0, S: 0, aH: 0, L: 0, a1: 0, av: '', aR: 0, C: '0'};
 var author$project$Main$hide = rtfeldman$elm_css$Css$batch(
@@ -5645,8 +5660,7 @@ var rtfeldman$elm_css$Css$center = rtfeldman$elm_css$Css$prop1('center');
 var rtfeldman$elm_css$Css$color = function (c) {
 	return A2(rtfeldman$elm_css$Css$property, 'color', c.C);
 };
-var rtfeldman$elm_css$Css$EmUnits = 0;
-var rtfeldman$elm_css$Css$em = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'em');
+var rtfeldman$elm_css$Css$fontSize = rtfeldman$elm_css$Css$prop1('font-size');
 var rtfeldman$elm_css$Css$hover = rtfeldman$elm_css$Css$pseudoClass('hover');
 var rtfeldman$elm_css$Css$inset = {q: 0, C: 'inset'};
 var rtfeldman$elm_css$Css$UnitlessFloat = 0;
@@ -5794,6 +5808,8 @@ var author$project$Main$buttonStyle = function () {
 				rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero),
 				rtfeldman$elm_css$Css$width(size),
 				rtfeldman$elm_css$Css$height(size),
+				rtfeldman$elm_css$Css$fontSize(
+				rtfeldman$elm_css$Css$pct(125)),
 				rtfeldman$elm_css$Css$textAlign(rtfeldman$elm_css$Css$center),
 				rtfeldman$elm_css$Css$backgroundColor(
 				A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1)),
@@ -5824,7 +5840,7 @@ var author$project$Main$buttonStyle = function () {
 						rtfeldman$elm_css$Css$color(
 						A3(rtfeldman$elm_css$Css$rgb, 0, 0, 0)),
 						rtfeldman$elm_css$Css$opacity(
-						rtfeldman$elm_css$Css$num(0.5))
+						rtfeldman$elm_css$Css$num(0.3))
 					]))
 			]));
 }();
@@ -7785,10 +7801,7 @@ var author$project$Main$iconButtonInputDisable = F5(
 				]));
 	});
 var author$project$Main$iconButtonInput = author$project$Main$iconButtonInputDisable(false);
-var rtfeldman$elm_css$Css$borderBox = {bb: 0, aU: 0, C: 'border-box'};
-var rtfeldman$elm_css$Css$boxSizing = rtfeldman$elm_css$Css$prop1('box-sizing');
 var rtfeldman$elm_css$Css$displayFlex = A2(rtfeldman$elm_css$Css$property, 'display', 'flex');
-var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
 var rtfeldman$elm_css$Css$flexDirection = rtfeldman$elm_css$Css$prop1('flex-direction');
 var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 	return A3(
@@ -7797,8 +7810,6 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		'justify-content',
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
-var rtfeldman$elm_css$Css$PercentageUnits = 0;
-var rtfeldman$elm_css$Css$pct = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, '%');
 var rtfeldman$elm_css$Css$row = {bd: 0, aD: 0, C: 'row'};
 var rtfeldman$elm_css$Html$Styled$div = rtfeldman$elm_css$Html$Styled$node('div');
 var rtfeldman$elm_css$Html$Styled$form = rtfeldman$elm_css$Html$Styled$node('form');
@@ -7853,13 +7864,7 @@ var author$project$Main$viewActionInput = function (currentAction) {
 		rtfeldman$elm_css$Html$Styled$form,
 		_List_fromArray(
 			[
-				rtfeldman$elm_css$Html$Styled$Events$onSubmit(author$project$Main$AddNewTask),
-				rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$flex(
-						rtfeldman$elm_css$Css$num(1))
-					]))
+				rtfeldman$elm_css$Html$Styled$Events$onSubmit(author$project$Main$AddNewTask)
 			]),
 		_List_fromArray(
 			[
@@ -7890,11 +7895,7 @@ var author$project$Main$viewActionInput = function (currentAction) {
 								rtfeldman$elm_css$Html$Styled$Attributes$autofocus(true),
 								rtfeldman$elm_css$Html$Styled$Attributes$css(
 								_List_fromArray(
-									[
-										rtfeldman$elm_css$Css$boxSizing(rtfeldman$elm_css$Css$borderBox),
-										rtfeldman$elm_css$Css$width(
-										rtfeldman$elm_css$Css$pct(100))
-									]))
+									[author$project$Main$actionInputStyle]))
 							]),
 						_List_Nil)
 					])),
@@ -7935,7 +7936,6 @@ var rtfeldman$elm_css$Css$prop3 = F4(
 					[argA.C, argB.C, argC.C])));
 	});
 var rtfeldman$elm_css$Css$margin3 = rtfeldman$elm_css$Css$prop3('margin');
-var rtfeldman$elm_css$Css$maxWidth = rtfeldman$elm_css$Css$prop1('max-width');
 var rtfeldman$elm_css$Css$none = {_: 0, bu: 0, q: 0, a: 0, f: 0, cj: 0, bH: 0, bf: 0, al: 0, R: 0, A: 0, c: 0, b: 0, bh: 0, a1: 0, ct: 0, w: 0, a3: 0, cv: 0, as: 0, X: 0, u: 0, e: 0, cA: 0, C: 'none'};
 var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
@@ -7946,9 +7946,7 @@ var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 			rtfeldman$elm_css$Css$em(1.5),
 			rtfeldman$elm_css$Css$zero,
 			rtfeldman$elm_css$Css$zero),
-			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero),
-			rtfeldman$elm_css$Css$maxWidth(
-			rtfeldman$elm_css$Css$em(20))
+			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero)
 		]));
 var author$project$Main$ApplyEdit = {$: 8};
 var author$project$Main$DoTask = function (a) {
@@ -7997,6 +7995,7 @@ var author$project$Main$stopPropagation = A2(
 	'click',
 	elm$json$Json$Decode$succeed(
 		_Utils_Tuple2(author$project$Main$NoOp, true)));
+var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
 var author$project$Main$viewEditAction = F2(
 	function (editedAction, task) {
 		return A2(
@@ -8042,11 +8041,7 @@ var author$project$Main$viewEditAction = F2(
 									author$project$Main$stopPropagation,
 									rtfeldman$elm_css$Html$Styled$Attributes$css(
 									_List_fromArray(
-										[
-											rtfeldman$elm_css$Css$boxSizing(rtfeldman$elm_css$Css$borderBox),
-											rtfeldman$elm_css$Css$width(
-											rtfeldman$elm_css$Css$pct(100))
-										]))
+										[author$project$Main$actionInputStyle]))
 								]),
 							_List_Nil)
 						])),
@@ -8318,7 +8313,7 @@ var author$project$Main$viewDoneTaskList = A2(
 			})),
 	author$project$Tasks$toList);
 var rtfeldman$elm_css$Css$fontFamily = rtfeldman$elm_css$Css$prop1('font-family');
-var rtfeldman$elm_css$Css$minWidth = rtfeldman$elm_css$Css$prop1('min-width');
+var rtfeldman$elm_css$Css$maxWidth = rtfeldman$elm_css$Css$prop1('max-width');
 var rtfeldman$elm_css$Css$sansSerif = {P: 0, C: 'sans-serif'};
 var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
@@ -8848,6 +8843,14 @@ var author$project$Main$view = function (model) {
 									rtfeldman$elm_css$Css$margin(rtfeldman$elm_css$Css$zero),
 									rtfeldman$elm_css$Css$height(
 									rtfeldman$elm_css$Css$pct(100))
+								])),
+							A2(
+							rtfeldman$elm_css$Css$Global$selector,
+							'*',
+							_List_fromArray(
+								[
+									rtfeldman$elm_css$Css$fontSize(
+									rtfeldman$elm_css$Css$pct(100))
 								]))
 						])),
 					A2(
@@ -8879,8 +8882,10 @@ var author$project$Main$view = function (model) {
 									rtfeldman$elm_css$Html$Styled$Attributes$css(
 									_List_fromArray(
 										[
-											rtfeldman$elm_css$Css$minWidth(
-											rtfeldman$elm_css$Css$em(20))
+											rtfeldman$elm_css$Css$width(
+											rtfeldman$elm_css$Css$pct(100)),
+											rtfeldman$elm_css$Css$maxWidth(
+											rtfeldman$elm_css$Css$em(25))
 										]))
 								]),
 							_List_fromArray(
