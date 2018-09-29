@@ -178,20 +178,29 @@ update msg model =
 
         Edit id newRawAction ->
             let
-                updatedCurrentTasks =
-                    editTask id newRawAction model.currentTasks
+                ( currentTasks, editing ) =
+                    case model.editing of
+                        Just ({ previousAction } as currentEditing) ->
+                            let
+                                updatedCurrentTasks =
+                                    case Tasks.actionFromString newRawAction of
+                                        Just newAction ->
+                                            Tasks.editTask id newAction model.currentTasks
 
-                editing =
-                    Maybe.map
-                        (\currentEditing ->
-                            { currentEditing | newRawAction = newRawAction }
-                        )
-                        model.editing
+                                        Nothing ->
+                                            Tasks.editTask id previousAction model.currentTasks
+                            in
+                            ( updatedCurrentTasks
+                            , Just { currentEditing | newRawAction = newRawAction }
+                            )
+
+                        Nothing ->
+                            ( model.currentTasks, Nothing )
             in
             simply
                 { model
                     | editing = editing
-                    , currentTasks = updatedCurrentTasks
+                    , currentTasks = currentTasks
                 }
 
         DeleteTask id ->
