@@ -110,6 +110,8 @@ decodeFlags flags =
     )
 
 
+{-| Convenience function for when no commands are sent.
+-}
 simply : Model -> ( Model, Cmd Msg )
 simply model =
     ( model, Cmd.none )
@@ -300,13 +302,15 @@ update msg model =
         |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
 
 
+{-| Command that saves the tasks collections persistently.
+-}
 save : Model -> Cmd msg
 save model =
-    saveRaw <|
-        Encode.object
-            [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
-            , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
-            ]
+    Encode.object
+        [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
+        , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
+        ]
+        |> saveRaw
 
 
 encodeTask : Tasks.Task a -> Encode.Value
@@ -314,9 +318,13 @@ encodeTask =
     Tasks.readAction >> Encode.string
 
 
+{-| Port for saving an encoded model to localStorage.
+-}
 port saveRaw : Encode.Value -> Cmd msg
 
 
+{-| Adds a task to the collection, iff the `String` is a valid `Action`.
+-}
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
 addTask rawAction currentTasks =
     case Tasks.actionFromString rawAction of
@@ -327,6 +335,38 @@ addTask rawAction currentTasks =
             currentTasks
 
 
+{-| Applies the information in the editing model to the correct collection.
+-}
+applyEdit : EditModel a -> EditModel a
+applyEdit currentModel =
+    case currentModel.editing of
+        Just { id, info } ->
+            let
+                updatedTasks =
+                    case id of
+                        CurrentId currentId ->
+                            { currentModel
+                                | currentTasks =
+                                    editTask
+                                        currentId
+                                        info.newRawAction
+                                        currentModel.currentTasks
+                            }
+
+                        DoneId doneId ->
+                            { currentModel
+                                | doneTasks =
+                                    editTask doneId
+                                        info.newRawAction
+                                        currentModel.doneTasks
+                            }
+            in
+            { updatedTasks | editing = Nothing }
+
+        Nothing ->
+            currentModel
+
+
 type alias EditModel a =
     { a
         | currentTasks : Tasks.Collection Current
@@ -335,29 +375,9 @@ type alias EditModel a =
     }
 
 
-applyEdit : EditModel a -> EditModel a
-applyEdit ({ editing } as currentModel) =
-    case editing of
-        Just { id, info } ->
-            let
-                updatedModel =
-                    case id of
-                        CurrentId currentId ->
-                            { currentModel
-                                | currentTasks = editTask currentId info.newRawAction currentModel.currentTasks
-                            }
-
-                        DoneId doneId ->
-                            { currentModel
-                                | doneTasks = editTask doneId info.newRawAction currentModel.doneTasks
-                            }
-            in
-            { updatedModel | editing = Nothing }
-
-        Nothing ->
-            currentModel
-
-
+{-| Edits the task corresponding to the `TaskId` in the collection,
+iff the `String` is a valid `Action`.
+-}
 editTask : Tasks.TaskId c -> String -> Tasks.Collection c -> Tasks.Collection c
 editTask id editedAction currentCollection =
     case Tasks.actionFromString editedAction of
@@ -462,6 +482,8 @@ viewActionInput currentAction =
         ]
 
 
+{-| Editing model for a specific collection (instead of globally unique).
+-}
 type alias EditingCollection c =
     { id : Tasks.TaskId c
     , info : EditInfo
@@ -469,9 +491,9 @@ type alias EditingCollection c =
 
 
 viewCurrentTaskList : Maybe (EditingCollection Current) -> Tasks.Collection Current -> Html Msg
-viewCurrentTaskList editing =
-    ol [ css [ taskListStyle ] ]
-        << List.map
+viewCurrentTaskList editing currentTasks =
+    ol [ css [ taskListStyle ] ] <|
+        List.map
             (\task ->
                 li
                     [ css
@@ -493,7 +515,8 @@ viewCurrentTaskList editing =
                                 viewTask task
                     ]
             )
-        << Tasks.toList
+        <|
+            Tasks.toList currentTasks
 
 
 viewTask : Tasks.Task Current -> Html Msg
