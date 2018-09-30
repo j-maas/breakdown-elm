@@ -189,13 +189,13 @@ update msg model =
 
         StartEdit id ->
             let
-                -- We might already be editing.
+                -- We might already be editing and don't want to lose those changes.
                 updatedModel =
                     applyEdit model
 
                 editing =
                     let
-                        taskToEditing task =
+                        initEditingFromTask task =
                             Maybe.map
                                 (\t ->
                                     { id = id
@@ -211,12 +211,12 @@ update msg model =
                         CurrentId currentId ->
                             Tasks.toList model.currentTasks
                                 |> List.find (Tasks.getId >> (==) currentId)
-                                |> taskToEditing
+                                |> initEditingFromTask
 
                         DoneId doneId ->
                             Tasks.toList model.doneTasks
                                 |> List.find (Tasks.getId >> (==) doneId)
-                                |> taskToEditing
+                                |> initEditingFromTask
             in
             simply { updatedModel | editing = editing }
 
@@ -225,6 +225,7 @@ update msg model =
 
         CancelEdit ->
             let
+                -- Apply the previous action, if possible.
                 updatedModel =
                     Maybe.map
                         (\{ id, info } ->
