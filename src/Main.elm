@@ -30,17 +30,21 @@ main =
 -- MODEL
 
 
-type GlobalTaskId
-    = CurrentId (Tasks.TaskId Current)
-    | DoneId (Tasks.TaskId Done)
-
-
+{-| Tags for the different types of task collections.
+-}
 type Current
     = Current
 
 
 type Done
     = Done
+
+
+{-| Wrapper to make list-locally unique TaskIds globally unique.
+-}
+type GlobalTaskId
+    = CurrentId (Tasks.TaskId Current)
+    | DoneId (Tasks.TaskId Done)
 
 
 type alias Model =
@@ -52,6 +56,8 @@ type alias Model =
     }
 
 
+{-| Model for the task currently being edited.
+-}
 type alias Editing =
     { id : GlobalTaskId
     , info : EditInfo
@@ -79,23 +85,29 @@ init flags url key =
 
 decodeFlags : Decode.Value -> ( Tasks.Collection Current, Tasks.Collection Done )
 decodeFlags flags =
-    Decode.decodeValue
-        (Decode.map2
-            (let
-                collectionFromList c rawActions =
-                    List.filterMap Tasks.actionFromString rawActions
-                        |> List.foldl (\action collection -> Tasks.addTask action collection) (Tasks.empty c)
-             in
-             \current done ->
-                ( collectionFromList Current current
-                , collectionFromList Done done
+    let
+        decodeCollection field c =
+            Result.withDefault (Tasks.empty c) <|
+                Decode.decodeValue
+                    (Decode.map (collectionFromStrings c)
+                        (Decode.field field <| Decode.list Decode.string)
+                    )
+                    flags
+
+        collectionFromStrings c rawActions =
+            List.filterMap Tasks.actionFromString rawActions
+                |> collectionFromActions c
+
+        collectionFromActions c =
+            List.foldl
+                (\action collection ->
+                    Tasks.addTask action collection
                 )
-            )
-            (Decode.field "currentTasks" <| Decode.list Decode.string)
-            (Decode.field "doneTasks" <| Decode.list Decode.string)
-        )
-        flags
-        |> Result.withDefault ( Tasks.empty Current, Tasks.empty Done )
+                (Tasks.empty c)
+    in
+    ( decodeCollection "currentTasks" Current
+    , decodeCollection "doneTasks" Done
+    )
 
 
 simply : Model -> ( Model, Cmd Msg )
