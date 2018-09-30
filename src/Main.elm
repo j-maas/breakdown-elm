@@ -115,10 +115,10 @@ type Msg
     | DoTask (Tasks.TaskId Current)
     | UndoTask (Tasks.TaskId Done)
     | StartEdit GlobalTaskId
-    | Edit (Tasks.TaskId Current) String
+    | EditTask String
     | ApplyEdit
     | CancelEdit
-    | DeleteTask (Tasks.TaskId Current)
+    | DeleteTask GlobalTaskId
     | BackgroundClicked
 
 
@@ -235,7 +235,7 @@ update msg model =
                     | editing = Nothing
                 }
 
-        Edit idToEdit newRawAction ->
+        EditTask newRawAction ->
             let
                 updatedModel =
                     case model.editing of
@@ -272,10 +272,15 @@ update msg model =
 
         DeleteTask id ->
             let
-                newCurrentTasks =
-                    Tasks.removeTask id model.currentTasks
+                updatedModel =
+                    case id of
+                        CurrentId currentId ->
+                            { model | currentTasks = Tasks.removeTask currentId model.currentTasks }
+
+                        DoneId doneId ->
+                            { model | doneTasks = Tasks.removeTask doneId model.doneTasks }
             in
-            simply { model | currentTasks = newCurrentTasks }
+            simply updatedModel
 
         BackgroundClicked ->
             simply <| { model | editing = Nothing }
@@ -411,7 +416,7 @@ view model =
                     ]
                     [ viewActionInput model.newTask
                     , viewCurrentTaskList currentEditing model.currentTasks
-                    , viewDoneTaskList model.doneTasks
+                    , viewDoneTaskList doneEditing model.doneTasks
                     ]
                 ]
             ]
@@ -491,7 +496,7 @@ viewEditTask : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
 viewEditTask editedAction previousAction task =
     viewTaskBase
         (onButtonClick ApplyEdit)
-        (viewEditAction editedAction previousAction task)
+        (viewEditAction editedAction previousAction task CurrentId)
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
@@ -525,8 +530,8 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
-viewEditAction editedAction previousAction task =
+viewEditAction : String -> Tasks.Action -> Tasks.Task a -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
+viewEditAction editedAction previousAction task toGlobalId =
     form
         [ css [ flex (num 1) ]
         , onSubmit ApplyEdit
@@ -540,7 +545,7 @@ viewEditAction editedAction previousAction task =
             , input
                 [ type_ "text"
                 , value editedAction
-                , onInput (Edit <| Tasks.getId task)
+                , onInput EditTask
                 , stopPropagation
                 , css [ actionInputStyle ]
                 ]
@@ -565,13 +570,13 @@ viewEditAction editedAction previousAction task =
                 CancelEdit
                 "Undo changes"
                 "️↩️"
-            , iconButtonInput "button" (DeleteTask <| Tasks.getId task) "Delete task" "🗑️"
+            , iconButtonInput "button" (DeleteTask <| toGlobalId <| Tasks.getId task) "Delete task" "🗑️"
             ]
         ]
 
 
-viewDoneTaskList : Tasks.Collection Done -> Html Msg
-viewDoneTaskList =
+viewDoneTaskList : Maybe (EditingCollection Done) -> Tasks.Collection Done -> Html Msg
+viewDoneTaskList editing =
     ol [ css [ taskListStyle ] ]
         << List.map
             (\task ->
@@ -583,7 +588,16 @@ viewDoneTaskList =
                             ]
                         ]
                     ]
-                    [ viewDoneTask task
+                    [ case editing of
+                        Nothing ->
+                            viewDoneTask task
+
+                        Just { id, info } ->
+                            if Tasks.getId task == id then
+                                viewEditDoneTask info.newRawAction info.previousAction task
+
+                            else
+                                viewDoneTask task
                     ]
             )
         << Tasks.toList
@@ -592,7 +606,7 @@ viewDoneTaskList =
 viewDoneTask : Tasks.Task Done -> Html Msg
 viewDoneTask task =
     viewTaskBase
-        (onClick NoOp)
+        (onButtonClick (StartEdit <| DoneId <| Tasks.getId task))
         (viewAction
             (batch
                 [ textDecoration lineThrough
@@ -601,6 +615,14 @@ viewDoneTask task =
             )
             (Tasks.readAction task)
         )
+        (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
+
+
+viewEditDoneTask : String -> Tasks.Action -> Tasks.Task Done -> Html Msg
+viewEditDoneTask editedAction previousAction task =
+    viewTaskBase
+        (onButtonClick ApplyEdit)
+        (viewEditAction editedAction previousAction task DoneId)
         (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
 
 
