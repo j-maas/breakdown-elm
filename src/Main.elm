@@ -30,12 +30,21 @@ main =
 -- MODEL
 
 
+{-| Tags for the different types of task collections.
+-}
 type Current
     = Current
 
 
 type Done
     = Done
+
+
+{-| Wrapper to make list-locally unique TaskIds globally unique.
+-}
+type GlobalTaskId
+    = CurrentId (Tasks.TaskId Current)
+    | DoneId (Tasks.TaskId Done)
 
 
 type alias Model =
@@ -47,11 +56,16 @@ type alias Model =
     }
 
 
+{-| Model for the task currently being edited.
+-}
 type alias Editing =
-    { id : Tasks.TaskId Current
-    , newRawAction : String
-    , previousAction : Tasks.Action
+    { id : GlobalTaskId
+    , info : EditInfo
     }
+
+
+type alias EditInfo =
+    { newRawAction : String, previousAction : Tasks.Action }
 
 
 init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -71,25 +85,33 @@ init flags url key =
 
 decodeFlags : Decode.Value -> ( Tasks.Collection Current, Tasks.Collection Done )
 decodeFlags flags =
-    Decode.decodeValue
-        (Decode.map2
-            (let
-                collectionFromList c rawActions =
-                    List.filterMap Tasks.actionFromString rawActions
-                        |> List.foldl (\action collection -> Tasks.addTask action collection) (Tasks.empty c)
-             in
-             \current done ->
-                ( collectionFromList Current current
-                , collectionFromList Done done
+    let
+        decodeCollection field c =
+            Result.withDefault (Tasks.empty c) <|
+                Decode.decodeValue
+                    (Decode.map (collectionFromStrings c)
+                        (Decode.field field <| Decode.list Decode.string)
+                    )
+                    flags
+
+        collectionFromStrings c rawActions =
+            List.filterMap Tasks.actionFromString rawActions
+                |> collectionFromActions c
+
+        collectionFromActions c =
+            List.foldl
+                (\action collection ->
+                    Tasks.addTask action collection
                 )
-            )
-            (Decode.field "currentTasks" <| Decode.list Decode.string)
-            (Decode.field "doneTasks" <| Decode.list Decode.string)
-        )
-        flags
-        |> Result.withDefault ( Tasks.empty Current, Tasks.empty Done )
+                (Tasks.empty c)
+    in
+    ( decodeCollection "currentTasks" Current
+    , decodeCollection "doneTasks" Done
+    )
 
 
+{-| Convenience function for when no commands are sent.
+-}
 simply : Model -> ( Model, Cmd Msg )
 simply model =
     ( model, Cmd.none )
@@ -106,11 +128,11 @@ type Msg
     | AddNewTask
     | DoTask (Tasks.TaskId Current)
     | UndoTask (Tasks.TaskId Done)
-    | StartEdit (Tasks.TaskId Current)
-    | Edit (Tasks.TaskId Current) String
+    | StartEdit GlobalTaskId
+    | EditTask String
     | ApplyEdit
     | CancelEdit
-    | DeleteTask (Tasks.TaskId Current)
+    | DeleteTask GlobalTaskId
     | BackgroundClicked
 
 
@@ -167,20 +189,34 @@ update msg model =
 
         StartEdit id ->
             let
-                -- We might already be editing.
+                -- We might already be editing and don't want to lose those changes.
                 updatedModel =
                     applyEdit model
 
                 editing =
-                    Tasks.toList model.currentTasks
-                        |> List.find (Tasks.getId >> (==) id)
-                        |> Maybe.map
-                            (\task ->
-                                { id = id
-                                , newRawAction = Tasks.readAction task
-                                , previousAction = Tasks.getAction task
-                                }
-                            )
+                    let
+                        initEditingFromTask task =
+                            Maybe.map
+                                (\t ->
+                                    { id = id
+                                    , info =
+                                        { newRawAction = Tasks.readAction t
+                                        , previousAction = Tasks.getAction t
+                                        }
+                                    }
+                                )
+                                task
+                    in
+                    case id of
+                        CurrentId currentId ->
+                            Tasks.toList model.currentTasks
+                                |> List.find (Tasks.getId >> (==) currentId)
+                                |> initEditingFromTask
+
+                        DoneId doneId ->
+                            Tasks.toList model.doneTasks
+                                |> List.find (Tasks.getId >> (==) doneId)
+                                |> initEditingFromTask
             in
             simply { updatedModel | editing = editing }
 
@@ -189,53 +225,77 @@ update msg model =
 
         CancelEdit ->
             let
-                updatedCurrentTasks =
+                -- Apply the previous action, if possible.
+                updatedModel =
                     Maybe.map
-                        (\{ id, previousAction } ->
-                            Tasks.editTask id previousAction model.currentTasks
+                        (\{ id, info } ->
+                            case id of
+                                CurrentId currentId ->
+                                    { model
+                                        | currentTasks =
+                                            Tasks.editTask currentId info.previousAction model.currentTasks
+                                    }
+
+                                DoneId doneId ->
+                                    { model
+                                        | doneTasks =
+                                            Tasks.editTask doneId info.previousAction model.doneTasks
+                                    }
                         )
                         model.editing
-                        |> Maybe.withDefault model.currentTasks
+                        |> Maybe.withDefault model
             in
             simply
-                { model
+                { updatedModel
                     | editing = Nothing
-                    , currentTasks = updatedCurrentTasks
                 }
 
-        Edit id newRawAction ->
+        EditTask newRawAction ->
             let
-                ( currentTasks, editing ) =
+                updatedModel =
                     case model.editing of
-                        Just ({ previousAction } as currentEditing) ->
-                            let
-                                updatedCurrentTasks =
-                                    case Tasks.actionFromString newRawAction of
-                                        Just newAction ->
-                                            Tasks.editTask id newAction model.currentTasks
+                        Just ({ id, info } as currentEditing) ->
+                            case id of
+                                CurrentId currentId ->
+                                    let
+                                        updatedCurrentTasks =
+                                            case Tasks.actionFromString newRawAction of
+                                                Just newAction ->
+                                                    Tasks.editTask currentId newAction model.currentTasks
 
-                                        Nothing ->
-                                            Tasks.editTask id previousAction model.currentTasks
-                            in
-                            ( updatedCurrentTasks
-                            , Just { currentEditing | newRawAction = newRawAction }
-                            )
+                                                Nothing ->
+                                                    Tasks.editTask currentId info.previousAction model.currentTasks
+                                    in
+                                    { model | currentTasks = updatedCurrentTasks, editing = Just { currentEditing | info = { info | newRawAction = newRawAction } } }
+
+                                DoneId doneId ->
+                                    let
+                                        updatedDoneTasks =
+                                            case Tasks.actionFromString newRawAction of
+                                                Just newAction ->
+                                                    Tasks.editTask doneId newAction model.doneTasks
+
+                                                Nothing ->
+                                                    Tasks.editTask doneId info.previousAction model.doneTasks
+                                    in
+                                    { model | doneTasks = updatedDoneTasks, editing = Just { currentEditing | info = { info | newRawAction = newRawAction } } }
 
                         Nothing ->
-                            ( model.currentTasks, Nothing )
+                            model
             in
-            simply
-                { model
-                    | editing = editing
-                    , currentTasks = currentTasks
-                }
+            simply updatedModel
 
         DeleteTask id ->
             let
-                newCurrentTasks =
-                    Tasks.removeTask id model.currentTasks
+                updatedModel =
+                    case id of
+                        CurrentId currentId ->
+                            { model | currentTasks = Tasks.removeTask currentId model.currentTasks }
+
+                        DoneId doneId ->
+                            { model | doneTasks = Tasks.removeTask doneId model.doneTasks }
             in
-            simply { model | currentTasks = newCurrentTasks }
+            simply updatedModel
 
         BackgroundClicked ->
             simply <| { model | editing = Nothing }
@@ -243,13 +303,15 @@ update msg model =
         |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
 
 
+{-| Command that saves the tasks collections persistently.
+-}
 save : Model -> Cmd msg
 save model =
-    saveRaw <|
-        Encode.object
-            [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
-            , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
-            ]
+    Encode.object
+        [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
+        , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
+        ]
+        |> saveRaw
 
 
 encodeTask : Tasks.Task a -> Encode.Value
@@ -257,9 +319,13 @@ encodeTask =
     Tasks.readAction >> Encode.string
 
 
+{-| Port for saving an encoded model to localStorage.
+-}
 port saveRaw : Encode.Value -> Cmd msg
 
 
+{-| Adds a task to the collection, iff the `String` is a valid `Action`.
+-}
 addTask : String -> Tasks.Collection c -> Tasks.Collection c
 addTask rawAction currentTasks =
     case Tasks.actionFromString rawAction of
@@ -270,26 +336,49 @@ addTask rawAction currentTasks =
             currentTasks
 
 
+{-| Applies the information in the editing model to the correct collection.
+-}
+applyEdit : EditModel a -> EditModel a
+applyEdit currentModel =
+    case currentModel.editing of
+        Just { id, info } ->
+            let
+                updatedTasks =
+                    case id of
+                        CurrentId currentId ->
+                            { currentModel
+                                | currentTasks =
+                                    editTask
+                                        currentId
+                                        info.newRawAction
+                                        currentModel.currentTasks
+                            }
+
+                        DoneId doneId ->
+                            { currentModel
+                                | doneTasks =
+                                    editTask doneId
+                                        info.newRawAction
+                                        currentModel.doneTasks
+                            }
+            in
+            { updatedTasks | editing = Nothing }
+
+        Nothing ->
+            currentModel
+
+
 type alias EditModel a =
     { a
         | currentTasks : Tasks.Collection Current
+        , doneTasks : Tasks.Collection Done
         , editing : Maybe Editing
     }
 
 
-applyEdit : EditModel a -> EditModel a
-applyEdit ({ editing } as current) =
-    case editing of
-        Just { id, newRawAction, previousAction } ->
-            { current
-                | currentTasks = editTask id newRawAction current.currentTasks
-                , editing = Nothing
-            }
-
-        Nothing ->
-            current
-
-
+{-| Edits the task corresponding to the `TaskId` in the collection,
+iff the `String` is a valid `Action`.
+-}
 editTask : Tasks.TaskId c -> String -> Tasks.Collection c -> Tasks.Collection c
 editTask id editedAction currentCollection =
     case Tasks.actionFromString editedAction of
@@ -338,15 +427,29 @@ view model =
                     ]
                 , onButtonClick BackgroundClicked
                 ]
-                [ main_
+                [ let
+                    ( currentEditing, doneEditing ) =
+                        case model.editing of
+                            Just { id, info } ->
+                                case id of
+                                    CurrentId currentId ->
+                                        ( Just { id = currentId, info = info }, Nothing )
+
+                                    DoneId doneId ->
+                                        ( Nothing, Just { id = doneId, info = info } )
+
+                            Nothing ->
+                                ( Nothing, Nothing )
+                  in
+                  main_
                     [ css
                         [ width (pct 100)
                         , maxWidth (em 25)
                         ]
                     ]
                     [ viewActionInput model.newTask
-                    , viewCurrentTaskList model.editing model.currentTasks
-                    , viewDoneTaskList model.doneTasks
+                    , viewCurrentTaskList currentEditing model.currentTasks
+                    , viewDoneTaskList doneEditing model.doneTasks
                     ]
                 ]
             ]
@@ -380,10 +483,18 @@ viewActionInput currentAction =
         ]
 
 
-viewCurrentTaskList : Maybe Editing -> Tasks.Collection Current -> Html Msg
-viewCurrentTaskList editing =
-    ol [ css [ taskListStyle ] ]
-        << List.map
+{-| Editing model for a specific collection (instead of globally unique).
+-}
+type alias EditingCollection c =
+    { id : Tasks.TaskId c
+    , info : EditInfo
+    }
+
+
+viewCurrentTaskList : Maybe (EditingCollection Current) -> Tasks.Collection Current -> Html Msg
+viewCurrentTaskList editing currentTasks =
+    ol [ css [ taskListStyle ] ] <|
+        List.map
             (\task ->
                 li
                     [ css
@@ -397,21 +508,22 @@ viewCurrentTaskList editing =
                         Nothing ->
                             viewTask task
 
-                        Just { id, newRawAction, previousAction } ->
+                        Just { id, info } ->
                             if Tasks.getId task == id then
-                                viewEditTask newRawAction previousAction task
+                                viewEditTask info.newRawAction info.previousAction task
 
                             else
                                 viewTask task
                     ]
             )
-        << Tasks.toList
+        <|
+            Tasks.toList currentTasks
 
 
 viewTask : Tasks.Task Current -> Html Msg
 viewTask task =
     viewTaskBase
-        (onButtonClick (StartEdit <| Tasks.getId task))
+        (onButtonClick (StartEdit <| CurrentId <| Tasks.getId task))
         (viewAction noStyle (Tasks.readAction task))
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
@@ -420,7 +532,7 @@ viewEditTask : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
 viewEditTask editedAction previousAction task =
     viewTaskBase
         (onButtonClick ApplyEdit)
-        (viewEditAction editedAction previousAction task)
+        (viewEditAction editedAction previousAction task CurrentId)
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
@@ -454,8 +566,8 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
-viewEditAction editedAction previousAction task =
+viewEditAction : String -> Tasks.Action -> Tasks.Task a -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
+viewEditAction editedAction previousAction task toGlobalId =
     form
         [ css [ flex (num 1) ]
         , onSubmit ApplyEdit
@@ -469,7 +581,7 @@ viewEditAction editedAction previousAction task =
             , input
                 [ type_ "text"
                 , value editedAction
-                , onInput (Edit <| Tasks.getId task)
+                , onInput EditTask
                 , stopPropagation
                 , css [ actionInputStyle ]
                 ]
@@ -494,13 +606,13 @@ viewEditAction editedAction previousAction task =
                 CancelEdit
                 "Undo changes"
                 "️↩️"
-            , iconButtonInput "button" (DeleteTask <| Tasks.getId task) "Delete task" "🗑️"
+            , iconButtonInput "button" (DeleteTask <| toGlobalId <| Tasks.getId task) "Delete task" "🗑️"
             ]
         ]
 
 
-viewDoneTaskList : Tasks.Collection Done -> Html Msg
-viewDoneTaskList =
+viewDoneTaskList : Maybe (EditingCollection Done) -> Tasks.Collection Done -> Html Msg
+viewDoneTaskList editing =
     ol [ css [ taskListStyle ] ]
         << List.map
             (\task ->
@@ -512,7 +624,16 @@ viewDoneTaskList =
                             ]
                         ]
                     ]
-                    [ viewDoneTask task
+                    [ case editing of
+                        Nothing ->
+                            viewDoneTask task
+
+                        Just { id, info } ->
+                            if Tasks.getId task == id then
+                                viewEditDoneTask info.newRawAction info.previousAction task
+
+                            else
+                                viewDoneTask task
                     ]
             )
         << Tasks.toList
@@ -521,7 +642,7 @@ viewDoneTaskList =
 viewDoneTask : Tasks.Task Done -> Html Msg
 viewDoneTask task =
     viewTaskBase
-        (onClick NoOp)
+        (onButtonClick (StartEdit <| DoneId <| Tasks.getId task))
         (viewAction
             (batch
                 [ textDecoration lineThrough
@@ -530,6 +651,14 @@ viewDoneTask task =
             )
             (Tasks.readAction task)
         )
+        (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
+
+
+viewEditDoneTask : String -> Tasks.Action -> Tasks.Task Done -> Html Msg
+viewEditDoneTask editedAction previousAction task =
+    viewTaskBase
+        (onButtonClick ApplyEdit)
+        (viewEditAction editedAction previousAction task DoneId)
         (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
 
 
