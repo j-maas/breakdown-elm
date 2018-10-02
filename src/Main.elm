@@ -1,4 +1,4 @@
-port module Main exposing (Model, Msg(..), main, update, initModel)
+port module Main exposing (Model, Msg(..), initModel, main, update)
 
 import Browser
 import Browser.Navigation as Nav
@@ -48,17 +48,22 @@ type GlobalTaskId
     | DoneId (Tasks.TaskId Done)
 
 
+{-| The highest-level Model, containing the Nav.Key.
+
+This extra layer is because Nav.Key prohibits testing, see <https://github.com/elm-explorations/test/issues/24>.
+
+-}
+type alias AppModel =
+    { key : Nav.Key
+    , model : Model
+    }
+
+
 type alias Model =
     { newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
     , editing : Maybe Editing
-    }
-
-
-type alias AppModel =
-    { key : Nav.Key
-    , model : Model
     }
 
 
@@ -137,6 +142,12 @@ simply model =
 -- UPDATE
 
 
+{-| Global Msg wrapper.
+
+Due to test issues with Nav.Key (see <https://github.com/elm-explorations/test/issues/24>)
+this will wrap the testable messages.
+
+-}
 type AppMsg
     = UrlRequest Browser.UrlRequest
     | Msg Msg
@@ -156,6 +167,11 @@ type Msg
     | BackgroundClicked
 
 
+{-| Wrapper to pass on and convert back from the update function to the global types.
+
+This wrapping is due to issues with testing Nav.Key (see <https://github.com/elm-explorations/test/issues/24>).
+
+-}
 updateApp : AppMsg -> AppModel -> ( AppModel, Cmd AppMsg )
 updateApp appMsg appModel =
     case appMsg of
@@ -432,12 +448,19 @@ subscriptions model =
 -- VIEW
 
 
+{-| Wrapper to pass on and convert back from the view function to the global types.
+
+This wrapping is due to issues with testing Nav.Key (see <https://github.com/elm-explorations/test/issues/24>).
+
+-}
 appView : AppModel -> Browser.Document AppMsg
 appView appModel =
     view appModel.model
         |> mapDocument Msg
 
 
+{-| Maps the msg type inside a Document.
+-}
 mapDocument : (a -> msg) -> Browser.Document a -> Browser.Document msg
 mapDocument f document =
     { title = document.title
