@@ -122,7 +122,7 @@ decodeFlags flags =
         collectionFromActions c =
             List.foldl
                 (\action collection ->
-                    Tasks.addTask action collection
+                    Tasks.appendTask action collection
                 )
                 (Tasks.empty c)
     in
@@ -376,7 +376,7 @@ addTask : String -> Tasks.Collection c -> Tasks.Collection c
 addTask rawAction currentTasks =
     case Tasks.actionFromString rawAction of
         Just action ->
-            Tasks.addTask action currentTasks
+            Tasks.appendTask action currentTasks
 
         Nothing ->
             currentTasks

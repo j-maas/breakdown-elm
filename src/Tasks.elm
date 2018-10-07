@@ -2,7 +2,7 @@ module Tasks exposing
     ( Collection(..), empty
     , Task(..), TaskId(..), Action(..), getAction, readAction, toList, getId, idToComparable
     , actionFromString, stringFromAction
-    , addTask, removeTask, moveTask
+    , appendTask, removeTask, moveTask
     , editTask
     )
 
@@ -26,7 +26,7 @@ module Tasks exposing
 
 # Modify Collection
 
-@docs addTask, removeTask, moveTask
+@docs appendTask, removeTask, moveTask
 
 
 # Edit
@@ -62,10 +62,10 @@ empty _ =
 -- BUILD
 
 
-{-| Add a new Task containing the given action to a collection.
+{-| Add a new Task containing the given action to the end of a collection.
 -}
-addTask : Action -> Collection c -> Collection c
-addTask action ((Collection list) as to) =
+appendTask : Action -> Collection c -> Collection c
+appendTask action ((Collection list) as to) =
     let
         nextId =
             nextIdForCollection to
