@@ -1,9 +1,10 @@
-port module Main exposing (main)
+port module Main exposing (Model, Msg(..), initModel, main, update)
 
 import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
+import Html
 import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
@@ -14,15 +15,15 @@ import Tasks
 import Url exposing (Url)
 
 
-main : Program Decode.Value Model Msg
+main : Program Decode.Value AppModel AppMsg
 main =
     Browser.application
         { init = init
-        , view = view
-        , update = update
+        , view = appView
+        , update = updateApp
         , subscriptions = subscriptions
         , onUrlRequest = UrlRequest
-        , onUrlChange = \_ -> NoOp
+        , onUrlChange = \_ -> Msg NoOp
         }
 
 
@@ -47,9 +48,19 @@ type GlobalTaskId
     | DoneId (Tasks.TaskId Done)
 
 
-type alias Model =
+{-| The highest-level Model, containing the Nav.Key.
+
+This extra layer is because Nav.Key prohibits testing, see <https://github.com/elm-explorations/test/issues/24>.
+
+-}
+type alias AppModel =
     { key : Nav.Key
-    , newTask : String
+    , model : Model
+    }
+
+
+type alias Model =
+    { newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
     , editing : Maybe Editing
@@ -68,7 +79,7 @@ type alias EditInfo =
     { newRawAction : String, previousAction : Tasks.Action }
 
 
-init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init : Decode.Value -> Url -> Nav.Key -> ( AppModel, Cmd AppMsg )
 init flags url key =
     let
         ( actualCurrentTasks, actualDoneTasks ) =
@@ -76,11 +87,21 @@ init flags url key =
     in
     simply
         { key = key
-        , newTask = ""
-        , currentTasks = actualCurrentTasks
-        , doneTasks = actualDoneTasks
-        , editing = Nothing
+        , model =
+            { initModel
+                | currentTasks = actualCurrentTasks
+                , doneTasks = actualDoneTasks
+            }
         }
+
+
+initModel : Model
+initModel =
+    { newTask = ""
+    , currentTasks = Tasks.empty Current
+    , doneTasks = Tasks.empty Done
+    , editing = Nothing
+    }
 
 
 decodeFlags : Decode.Value -> ( Tasks.Collection Current, Tasks.Collection Done )
@@ -101,7 +122,7 @@ decodeFlags flags =
         collectionFromActions c =
             List.foldl
                 (\action collection ->
-                    Tasks.addTask action collection
+                    Tasks.appendTask action collection
                 )
                 (Tasks.empty c)
     in
@@ -112,7 +133,7 @@ decodeFlags flags =
 
 {-| Convenience function for when no commands are sent.
 -}
-simply : Model -> ( Model, Cmd Msg )
+simply : model -> ( model, Cmd msg )
 simply model =
     ( model, Cmd.none )
 
@@ -121,9 +142,19 @@ simply model =
 -- UPDATE
 
 
+{-| Global Msg wrapper.
+
+Due to test issues with Nav.Key (see <https://github.com/elm-explorations/test/issues/24>)
+this will wrap the testable messages.
+
+-}
+type AppMsg
+    = UrlRequest Browser.UrlRequest
+    | Msg Msg
+
+
 type Msg
     = NoOp
-    | UrlRequest Browser.UrlRequest
     | UpdateNewTask String
     | AddNewTask
     | DoTask (Tasks.TaskId Current)
@@ -136,19 +167,34 @@ type Msg
     | BackgroundClicked
 
 
+{-| Wrapper to pass on and convert back from the update function to the global types.
+
+This wrapping is due to issues with testing Nav.Key (see <https://github.com/elm-explorations/test/issues/24>).
+
+-}
+updateApp : AppMsg -> AppModel -> ( AppModel, Cmd AppMsg )
+updateApp appMsg appModel =
+    case appMsg of
+        UrlRequest request ->
+            case request of
+                Browser.Internal url ->
+                    ( appModel, Nav.pushUrl appModel.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( appModel, Nav.load href )
+
+        Msg msg ->
+            update msg appModel.model
+                |> Tuple.mapBoth
+                    (\model -> { appModel | model = model })
+                    (Cmd.map Msg)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     (case msg of
         NoOp ->
             simply model
-
-        UrlRequest request ->
-            case request of
-                Browser.Internal url ->
-                    ( model, Nav.pushUrl model.key (Url.toString url) )
-
-                Browser.External href ->
-                    ( model, Nav.load href )
 
         UpdateNewTask action ->
             simply { model | newTask = action }
@@ -330,7 +376,7 @@ addTask : String -> Tasks.Collection c -> Tasks.Collection c
 addTask rawAction currentTasks =
     case Tasks.actionFromString rawAction of
         Just action ->
-            Tasks.addTask action currentTasks
+            Tasks.appendTask action currentTasks
 
         Nothing ->
             currentTasks
@@ -393,13 +439,33 @@ editTask id editedAction currentCollection =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Model -> Sub Msg
+subscriptions : AppModel -> Sub AppMsg
 subscriptions model =
     Sub.none
 
 
 
 -- VIEW
+
+
+{-| Wrapper to pass on and convert back from the view function to the global types.
+
+This wrapping is due to issues with testing Nav.Key (see <https://github.com/elm-explorations/test/issues/24>).
+
+-}
+appView : AppModel -> Browser.Document AppMsg
+appView appModel =
+    view appModel.model
+        |> mapDocument Msg
+
+
+{-| Maps the msg type inside a Document.
+-}
+mapDocument : (a -> msg) -> Browser.Document a -> Browser.Document msg
+mapDocument f document =
+    { title = document.title
+    , body = List.map (Html.map f) document.body
+    }
 
 
 view : Model -> Browser.Document Msg

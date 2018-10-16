@@ -16,7 +16,7 @@ suite : Test
 suite =
     let
         fromList collection =
-            List.filterMap actionFromString >> List.foldl addTask (empty collection)
+            List.filterMap actionFromString >> List.foldl appendTask (empty collection)
 
         length =
             toList >> List.length
@@ -41,7 +41,7 @@ suite =
                     in
                     case mayBeAction of
                         Just action ->
-                            addTask action (empty Current)
+                            appendTask action (empty Current)
                                 |> readActionsList
                                 |> Expect.equal [ stringFromAction action ]
 
@@ -56,7 +56,7 @@ suite =
                     in
                     case mayBeAction of
                         Just action ->
-                            addTask action (empty Current)
+                            appendTask action (empty Current)
                                 |> toList
                                 |> List.map getAction
                                 |> Expect.equal [ action ]
