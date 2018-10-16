@@ -39,6 +39,16 @@ suite =
                     update AddNewTask { initModel | newTask = "   " }
                         |> expectModelEquals { initModel | newTask = "" }
             ]
+        , todo "DoTask moves current task to done list"
+        , todo "UndoTask moves done task to current list"
+        , describe "StartEdit"
+            [ todo "sets up edit mode with the correct information"
+            , todo "applies edit in progress"
+            ]
+        , todo "ApplyEdit applies the edit in progress"
+        , todo "CancelEdit restores state before edit"
+        , todo "DeleteTask removes a task"
+        , todo "BackgroundClicked applies the current edit and stops editing"
         ]
 
 
