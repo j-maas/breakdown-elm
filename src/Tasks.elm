@@ -2,7 +2,7 @@ module Tasks exposing
     ( Collection(..), empty
     , Task(..), TaskId(..), Action(..), getAction, readAction, toList, getId, idToComparable
     , actionFromString, stringFromAction
-    , appendTask, removeTask, moveTask
+    , appendTask, appendAndGetTask, removeTask, moveTask
     , editTask
     )
 
@@ -26,7 +26,7 @@ module Tasks exposing
 
 # Modify Collection
 
-@docs appendTask, removeTask, moveTask
+@docs appendTask, appendAndGetTask, removeTask, moveTask
 
 
 # Edit
@@ -65,15 +65,25 @@ empty _ =
 {-| Add a new Task containing the given action to the end of a collection.
 -}
 appendTask : Action -> Collection c -> Collection c
-appendTask action ((Collection list) as to) =
+appendTask action collection =
+    appendAndGetTask action collection |> Tuple.second
+
+
+{-| Appends a Task to a collection and returns that new Task.
+-}
+appendAndGetTask : Action -> Collection c -> ( Task c, Collection c )
+appendAndGetTask action ((Collection list) as to) =
     let
         nextId =
             nextIdForCollection to
 
+        newTask =
+            Task { id = nextId, action = action }
+
         newList =
-            list ++ [ Task { id = nextId, action = action } ]
+            list ++ [ newTask ]
     in
-    Collection newList
+    ( newTask, Collection newList )
 
 
 {-| Calculates a suitable id with which a new task can be added to the collection.
