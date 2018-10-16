@@ -39,8 +39,40 @@ suite =
                     update AddNewTask { initModel | newTask = "   " }
                         |> expectModelEquals { initModel | newTask = "" }
             ]
-        , todo "DoTask moves current task to done list"
-        , todo "UndoTask moves done task to current list"
+        , test "DoTask moves task from current collection to done" <|
+            \_ ->
+                testWithAction "Do me"
+                    (\action ->
+                        let
+                            ( task, currentTasks ) =
+                                Tasks.appendAndGetTask action initModel.currentTasks
+
+                            init =
+                                { initModel | currentTasks = currentTasks }
+                        in
+                        update (DoTask <| Tasks.getId task) init
+                            |> Expect.all
+                                [ \( model, _ ) -> Expect.equal initModel.currentTasks model.currentTasks
+                                , \( model, _ ) -> Expect.equal (Tasks.appendTask action initModel.doneTasks) model.doneTasks
+                                ]
+                    )
+        , test "UndoTask moves task from done collection to current" <|
+            \_ ->
+                testWithAction "Undo me"
+                    (\action ->
+                        let
+                            ( task, doneTasks ) =
+                                Tasks.appendAndGetTask action initModel.doneTasks
+
+                            init =
+                                { initModel | doneTasks = doneTasks }
+                        in
+                        update (UndoTask <| Tasks.getId task) init
+                            |> Expect.all
+                                [ \( model, _ ) -> expectEquivalentCollections initModel.doneTasks model.doneTasks
+                                , \( model, _ ) -> expectEquivalentCollections (Tasks.appendTask action initModel.currentTasks) model.currentTasks
+                                ]
+                    )
         , describe "StartEdit"
             [ todo "sets up edit mode with the correct information"
             , todo "applies edit in progress"
@@ -65,3 +97,15 @@ testWithAction rawAction test =
 
         Nothing ->
             Expect.fail "Expected test string to be valid action."
+
+
+expectEquivalentCollections : Tasks.Collection a -> Tasks.Collection b -> Expectation
+expectEquivalentCollections first second =
+    Expect.equalLists (toActionList first) (toActionList second)
+
+
+{-| Used for comparing whether two collections compare the same actions, disregarding their ids.
+-}
+toActionList : Tasks.Collection c -> List String
+toActionList =
+    Tasks.toList >> List.map Tasks.readAction
