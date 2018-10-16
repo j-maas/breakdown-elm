@@ -1,4 +1,4 @@
-port module Main exposing (Model, Msg(..), initModel, main, update)
+port module Main exposing (GlobalTaskId(..), Model, Msg(..), initModel, main, update)
 
 import Browser
 import Browser.Navigation as Nav

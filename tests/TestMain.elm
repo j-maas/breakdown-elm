@@ -2,7 +2,7 @@ module TestMain exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (..)
-import Main exposing (Model, Msg(..), initModel, update)
+import Main exposing (GlobalTaskId(..), Model, Msg(..), initModel, update)
 import Tasks
 import Test exposing (..)
 
@@ -73,13 +73,26 @@ suite =
                                 , \( model, _ ) -> expectEquivalentCollections (Tasks.appendTask action initModel.currentTasks) model.currentTasks
                                 ]
                     )
+        , test "DeleteTask removes a task" <|
+            \_ ->
+                testWithAction "Delete me"
+                    (\action ->
+                        let
+                            ( task, currentTasks ) =
+                                Tasks.appendAndGetTask action initModel.currentTasks
+
+                            init =
+                                { initModel | currentTasks = currentTasks }
+                        in
+                        update (DeleteTask <| CurrentId <| Tasks.getId task) init
+                            |> expectModelEquals initModel
+                    )
         , describe "StartEdit"
             [ todo "sets up edit mode with the correct information"
             , todo "applies edit in progress"
             ]
         , todo "ApplyEdit applies the edit in progress"
         , todo "CancelEdit restores state before edit"
-        , todo "DeleteTask removes a task"
         , todo "BackgroundClicked applies the current edit and stops editing"
         ]
 
