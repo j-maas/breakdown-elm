@@ -8449,17 +8449,24 @@ var author$project$Tasks$nextIdForCollection = function (_n0) {
 	}();
 	return highestId + 1;
 };
-var author$project$Tasks$appendTask = F2(
+var author$project$Tasks$appendAndGetTask = F2(
 	function (action, to) {
 		var list = to;
 		var nextId = author$project$Tasks$nextIdForCollection(to);
+		var newTask = {ab: action, y: nextId};
 		var newList = _Utils_ap(
 			list,
 			_List_fromArray(
-				[
-					{ab: action, y: nextId}
-				]));
-		return newList;
+				[newTask]));
+		return _Utils_Tuple2(newTask, newList);
+	});
+var elm$core$Tuple$second = function (_n0) {
+	var y = _n0.b;
+	return y;
+};
+var author$project$Tasks$appendTask = F2(
+	function (action, collection) {
+		return A2(author$project$Tasks$appendAndGetTask, action, collection).b;
 	});
 var author$project$Tasks$empty = function (_n0) {
 	return _List_Nil;
