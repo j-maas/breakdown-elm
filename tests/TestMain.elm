@@ -170,7 +170,33 @@ suite =
                             >> toActionList
                             |> Expect.equal [ "I am edited" ]
                     )
-        , todo "CancelEdit restores state before edit"
+        , test "CancelEdit restores state before edit" <|
+            \_ ->
+                testWithAction "Cancel my edit"
+                    (\action ->
+                        let
+                            ( task, currentTasks ) =
+                                Tasks.appendAndGetTask action initModel.currentTasks
+
+                            globalId =
+                                CurrentId <| Tasks.getId task
+
+                            init =
+                                { initModel
+                                    | currentTasks = currentTasks
+                                    , editing =
+                                        Just
+                                            { id = globalId
+                                            , info = { newRawAction = "I am edited", previousAction = action }
+                                            }
+                                }
+                        in
+                        update CancelEdit init
+                            |> Tuple.first
+                            >> .currentTasks
+                            >> toActionList
+                            |> Expect.equal [ "Cancel my edit" ]
+                    )
         , todo "BackgroundClicked applies the current edit and stops editing"
         ]
 
