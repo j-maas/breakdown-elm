@@ -108,11 +108,40 @@ suite =
                                         | editing =
                                             Just
                                                 { id = globalId
-                                                , info = { newRawAction = "Edit me", previousAction = action }
+                                                , info =
+                                                    { newRawAction = "Edit me"
+                                                    , previousAction = action
+                                                    }
                                                 }
                                     }
                         )
-            , todo "applies edit in progress"
+            , test "applies edit in progress" <|
+                \_ ->
+                    testWithAction "Apply my edit"
+                        (\action ->
+                            let
+                                ( task, currentTasks ) =
+                                    Tasks.appendAndGetTask action initModel.currentTasks
+
+                                globalId =
+                                    CurrentId <| Tasks.getId task
+
+                                init =
+                                    { initModel
+                                        | currentTasks = currentTasks
+                                        , editing =
+                                            Just
+                                                { id = globalId
+                                                , info = { newRawAction = "I am edited", previousAction = action }
+                                                }
+                                    }
+                            in
+                            update (StartEdit globalId) init
+                                |> Tuple.first
+                                >> .currentTasks
+                                >> toActionList
+                                |> Expect.equal [ "I am edited" ]
+                        )
             ]
         , todo "ApplyEdit applies the edit in progress"
         , todo "CancelEdit restores state before edit"
