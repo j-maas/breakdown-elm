@@ -88,7 +88,30 @@ suite =
                             |> expectModelEquals initModel
                     )
         , describe "StartEdit"
-            [ todo "sets up edit mode with the correct information"
+            [ test "sets up edit mode with the correct information" <|
+                \_ ->
+                    testWithAction "Edit me"
+                        (\action ->
+                            let
+                                ( task, currentTasks ) =
+                                    Tasks.appendAndGetTask action initModel.currentTasks
+
+                                init =
+                                    { initModel | currentTasks = currentTasks }
+
+                                globalId =
+                                    CurrentId <| Tasks.getId task
+                            in
+                            update (StartEdit globalId) init
+                                |> expectModelEquals
+                                    { init
+                                        | editing =
+                                            Just
+                                                { id = globalId
+                                                , info = { newRawAction = "Edit me", previousAction = action }
+                                                }
+                                    }
+                        )
             , todo "applies edit in progress"
             ]
         , todo "ApplyEdit applies the edit in progress"
