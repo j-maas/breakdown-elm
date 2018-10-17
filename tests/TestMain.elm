@@ -68,9 +68,10 @@ suite =
                                 { initModel | doneTasks = doneTasks }
                         in
                         update (UndoTask <| Tasks.getId task) init
+                            |> Tuple.first
                             |> Expect.all
-                                [ \( model, _ ) -> expectEquivalentCollections initModel.doneTasks model.doneTasks
-                                , \( model, _ ) -> expectEquivalentCollections (Tasks.appendTask action initModel.currentTasks) model.currentTasks
+                                [ \model -> expectEquivalentCollections initModel.doneTasks model.doneTasks
+                                , \model -> expectEquivalentCollections (Tasks.appendTask action initModel.currentTasks) model.currentTasks
                                 ]
                     )
         , test "DeleteTask removes a task" <|
@@ -166,8 +167,8 @@ suite =
                         in
                         update ApplyEdit init
                             |> Tuple.first
-                            >> .currentTasks
-                            >> toActionList
+                            |> .currentTasks
+                            |> toActionList
                             |> Expect.equal [ "I am edited" ]
                     )
         , test "CancelEdit restores state before edit" <|
@@ -197,7 +198,34 @@ suite =
                             >> toActionList
                             |> Expect.equal [ "Cancel my edit" ]
                     )
-        , todo "BackgroundClicked applies the current edit and stops editing"
+        , test "BackgroundClicked applies the current edit and stops editing" <|
+            \_ ->
+                testWithAction "Edit me"
+                    (\action ->
+                        let
+                            ( task, currentTasks ) =
+                                Tasks.appendAndGetTask action initModel.currentTasks
+
+                            globalId =
+                                CurrentId <| Tasks.getId task
+
+                            init =
+                                { initModel
+                                    | currentTasks = currentTasks
+                                    , editing =
+                                        Just
+                                            { id = globalId
+                                            , info = { newRawAction = "I am edited", previousAction = action }
+                                            }
+                                }
+                        in
+                        update BackgroundClicked init
+                            |> Tuple.first
+                            |> Expect.all
+                                [ \model -> model.currentTasks |> toActionList |> Expect.equal [ "I am edited" ]
+                                , \model -> model.editing |> Expect.equal Nothing
+                                ]
+                    )
         ]
 
 

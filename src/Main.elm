@@ -301,30 +301,7 @@ update msg model =
                 updatedModel =
                     case model.editing of
                         Just ({ id, info } as currentEditing) ->
-                            case id of
-                                CurrentId currentId ->
-                                    let
-                                        updatedCurrentTasks =
-                                            case Tasks.actionFromString newRawAction of
-                                                Just newAction ->
-                                                    Tasks.editTask currentId newAction model.currentTasks
-
-                                                Nothing ->
-                                                    Tasks.editTask currentId info.previousAction model.currentTasks
-                                    in
-                                    { model | currentTasks = updatedCurrentTasks, editing = Just { currentEditing | info = { info | newRawAction = newRawAction } } }
-
-                                DoneId doneId ->
-                                    let
-                                        updatedDoneTasks =
-                                            case Tasks.actionFromString newRawAction of
-                                                Just newAction ->
-                                                    Tasks.editTask doneId newAction model.doneTasks
-
-                                                Nothing ->
-                                                    Tasks.editTask doneId info.previousAction model.doneTasks
-                                    in
-                                    { model | doneTasks = updatedDoneTasks, editing = Just { currentEditing | info = { info | newRawAction = newRawAction } } }
+                            { model | editing = Just { currentEditing | info = { info | newRawAction = newRawAction } } }
 
                         Nothing ->
                             model
@@ -344,7 +321,39 @@ update msg model =
             simply updatedModel
 
         BackgroundClicked ->
-            simply <| { model | editing = Nothing }
+            let
+                updatedModel =
+                    case model.editing of
+                        Just ({ id, info } as currentEditing) ->
+                            case id of
+                                CurrentId currentId ->
+                                    let
+                                        updatedCurrentTasks =
+                                            case Tasks.actionFromString info.newRawAction of
+                                                Just newAction ->
+                                                    Tasks.editTask currentId newAction model.currentTasks
+
+                                                Nothing ->
+                                                    Tasks.editTask currentId info.previousAction model.currentTasks
+                                    in
+                                    { model | currentTasks = updatedCurrentTasks }
+
+                                DoneId doneId ->
+                                    let
+                                        updatedDoneTasks =
+                                            case Tasks.actionFromString info.newRawAction of
+                                                Just newAction ->
+                                                    Tasks.editTask doneId newAction model.doneTasks
+
+                                                Nothing ->
+                                                    Tasks.editTask doneId info.previousAction model.doneTasks
+                                    in
+                                    { model | doneTasks = updatedDoneTasks }
+
+                        Nothing ->
+                            model
+            in
+            simply { updatedModel | editing = Nothing }
     )
         |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
 
