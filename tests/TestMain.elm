@@ -117,7 +117,7 @@ suite =
                         )
             , test "applies edit in progress" <|
                 \_ ->
-                    testWithAction "Apply my edit"
+                    testWithAction "Apply the edit to me"
                         (\action ->
                             let
                                 ( task, currentTasks ) =
@@ -143,7 +143,33 @@ suite =
                                 |> Expect.equal [ "I am edited" ]
                         )
             ]
-        , todo "ApplyEdit applies the edit in progress"
+        , test "ApplyEdit applies the edit in progress" <|
+            \_ ->
+                testWithAction "Apply the edit to me"
+                    (\action ->
+                        let
+                            ( task, currentTasks ) =
+                                Tasks.appendAndGetTask action initModel.currentTasks
+
+                            globalId =
+                                CurrentId <| Tasks.getId task
+
+                            init =
+                                { initModel
+                                    | currentTasks = currentTasks
+                                    , editing =
+                                        Just
+                                            { id = globalId
+                                            , info = { newRawAction = "I am edited", previousAction = action }
+                                            }
+                                }
+                        in
+                        update ApplyEdit init
+                            |> Tuple.first
+                            >> .currentTasks
+                            >> toActionList
+                            |> Expect.equal [ "I am edited" ]
+                    )
         , todo "CancelEdit restores state before edit"
         , todo "BackgroundClicked applies the current edit and stops editing"
         ]
