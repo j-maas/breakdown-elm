@@ -37,7 +37,20 @@ suite =
                     IdCollection.fromList Tag list
                         |> toListWithoutIds
                         |> Expect.equal list
-            , fuzz2 (list string) percentage "removes item by id" <|
+            ]
+        , describe "Query"
+            [ fuzz2 (list string) percentage "gets item by id" <|
+                \list offset ->
+                    testEntryInCollection
+                        (\index collection entry ->
+                            IdCollection.get entry.id collection
+                                |> Expect.equal (Just entry.item)
+                        )
+                        list
+                        offset
+            ]
+        , describe "Manipulate"
+            [ fuzz2 (list string) percentage "removes item by id" <|
                 \list offset ->
                     testEntryInCollection
                         (\index collection entry ->
@@ -80,15 +93,6 @@ suite =
                 in
                 hasUniqueIds collection
                     |> Expect.true ("Detected duplicate ids in:\n" ++ Debug.toString collection)
-        , fuzz2 (list string) percentage "gets item by id" <|
-            \list offset ->
-                testEntryInCollection
-                    (\index collection entry ->
-                        IdCollection.get entry.id collection
-                            |> Expect.equal (Just entry.item)
-                    )
-                    list
-                    offset
         ]
 
 
