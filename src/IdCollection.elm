@@ -1,4 +1,4 @@
-module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, remove, removeAndGet, set, toList, update)
+module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, move, remove, removeAndGet, set, toList, update)
 
 import List.Extra as List
 
@@ -96,3 +96,20 @@ get id (IdCollection collection) =
 toList : IdCollection tag item -> List (Entry tag item)
 toList (IdCollection collection) =
     collection
+
+
+move : Id from -> IdCollection from item -> IdCollection to item -> ( IdCollection from item, IdCollection to item )
+move id from to =
+    let
+        ( maybeEntry, newFrom ) =
+            removeAndGet id from
+
+        newTo =
+            case maybeEntry of
+                Just entry ->
+                    append entry to
+
+                Nothing ->
+                    to
+    in
+    ( newFrom, newTo )
