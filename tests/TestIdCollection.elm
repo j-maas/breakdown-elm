@@ -78,7 +78,7 @@ suite =
                 \list newItem offset ->
                     testEntryInCollection
                         (\index collection entry ->
-                            IdCollection.set newItem entry.id collection
+                            IdCollection.set entry.id newItem collection
                                 |> toListWithoutIds
                                 |> Expect.equal (List.setAt index newItem list)
                         )
@@ -88,7 +88,7 @@ suite =
                 \list newItem offset ->
                     testEntryInCollection
                         (\index collection entry ->
-                            IdCollection.update (\item -> item ++ newItem) entry.id collection
+                            IdCollection.update entry.id (\item -> item ++ newItem) collection
                                 |> toListWithoutIds
                                 |> Expect.equal (List.updateAt index (\item -> item ++ newItem) list)
                         )

@@ -176,8 +176,8 @@ The `Task` with the given `TaskId` in the `Collection` will have its `Action` re
 editTask : TaskId c -> Action -> Collection c -> Collection c
 editTask id action collection =
     IdCollection.update
-        (\_ -> action)
         id
+        (\_ -> action)
         collection
 
 

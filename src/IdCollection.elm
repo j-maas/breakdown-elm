@@ -69,13 +69,13 @@ removeAndGet id (IdCollection collection) =
     ( removed, newCollection |> IdCollection )
 
 
-set : item -> Id tag -> IdCollection tag item -> IdCollection tag item
-set newItem =
-    update (\_ -> newItem)
+set : Id tag -> item -> IdCollection tag item -> IdCollection tag item
+set id newItem =
+    update id (\_ -> newItem)
 
 
-update : (item -> item) -> Id tag -> IdCollection tag item -> IdCollection tag item
-update newItem id (IdCollection collection) =
+update : Id tag -> (item -> item) -> IdCollection tag item -> IdCollection tag item
+update id newItem (IdCollection collection) =
     let
         updateEntry entry =
             { entry | item = newItem entry.item }
