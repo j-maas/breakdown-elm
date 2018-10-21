@@ -113,14 +113,30 @@ suite =
             hasUniqueIds =
                 IdCollection.toList >> List.allDifferentBy (.id >> IdCollection.idToComparable)
           in
-          fuzz (list string) "items have different ids" <|
-            \list ->
-                let
-                    collection =
-                        IdCollection.fromList Tag list
-                in
-                hasUniqueIds collection
-                    |> Expect.true ("Detected duplicate ids in:\n" ++ Debug.toString collection)
+          describe "IDs"
+            [ fuzz (list string) "items have different ids" <|
+                \list ->
+                    let
+                        collection =
+                            IdCollection.fromList Tag list
+                    in
+                    hasUniqueIds collection
+                        |> Expect.true ("Detected duplicate ids in:\n" ++ Debug.toString collection)
+            , fuzz3 (list string) percentage (list string) "moving items keeps unique ids" <|
+                \from offset to ->
+                    testEntryInCollection
+                        (\index collection entry ->
+                            let
+                                toCollection =
+                                    IdCollection.fromList Other to
+                            in
+                            IdCollection.move entry.id collection toCollection
+                                |> Tuple.mapBoth hasUniqueIds hasUniqueIds
+                                |> Expect.equal ( True, True )
+                        )
+                        from
+                        offset
+            ]
         ]
 
 
