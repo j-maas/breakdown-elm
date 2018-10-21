@@ -1,4 +1,4 @@
-module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, remove, set, toList, update)
+module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, remove, removeAndGet, set, toList, update)
 
 import List.Extra as List
 
@@ -45,8 +45,28 @@ appendAndGetEntry item (IdCollection collection) =
 
 
 remove : Id tag -> IdCollection tag item -> IdCollection tag item
-remove id (IdCollection collection) =
-    List.filter (\entry -> entry.id /= id) collection |> IdCollection
+remove id collection =
+    removeAndGet id collection |> Tuple.second
+
+
+removeAndGet : Id tag -> IdCollection tag item -> ( Maybe item, IdCollection tag item )
+removeAndGet id (IdCollection collection) =
+    let
+        toRemove =
+            List.find (\entry -> entry.id == id) collection
+
+        removed =
+            Maybe.map .item toRemove
+
+        newCollection =
+            case toRemove of
+                Just entry ->
+                    List.remove entry collection
+
+                Nothing ->
+                    collection
+    in
+    ( removed, newCollection |> IdCollection )
 
 
 set : item -> Id tag -> IdCollection tag item -> IdCollection tag item
