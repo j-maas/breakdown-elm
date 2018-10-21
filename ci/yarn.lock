@@ -385,9 +385,9 @@ ecc-jsbn@~0.1.1:
     jsbn "~0.1.0"
     safer-buffer "^2.1.0"
 
-elm-test@0.19.0-beta8:
-  version "0.19.0-beta8"
-  resolved "https://registry.yarnpkg.com/elm-test/-/elm-test-0.19.0-beta8.tgz#64c15292fbbe93818afbbcb88f5882f9a3184b50"
+elm-test@^0.19.0-beta10:
+  version "0.19.0-beta10"
+  resolved "https://registry.yarnpkg.com/elm-test/-/elm-test-0.19.0-beta10.tgz#129d090bf1f95cffad05afd09e4027fe155a488f"
   dependencies:
     chalk "2.1.0"
     chokidar "1.7.0"
@@ -408,9 +408,9 @@ elm-test@0.19.0-beta8:
   optionalDependencies:
     fsevents "1.2.4"
 
-elm@^0.19.0-bugfix2:
-  version "0.19.0-bugfix2"
-  resolved "https://registry.yarnpkg.com/elm/-/elm-0.19.0-bugfix2.tgz#b2b7ad4dbeb89edf997759330b3694f419f9f1b3"
+elm@0.19.0:
+  version "0.19.0"
+  resolved "https://registry.yarnpkg.com/elm/-/elm-0.19.0.tgz#c6ad86afea9e971424ebe75e36c9d03412a787fa"
   dependencies:
     binwrap "0.1.4"
 
