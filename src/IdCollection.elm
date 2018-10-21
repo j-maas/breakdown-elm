@@ -1,4 +1,4 @@
-module IdCollection exposing (Entry, IdCollection, append, appendAndGetEntry, empty, fromList, idToComparable, remove, set, toList, update)
+module IdCollection exposing (Entry, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, remove, set, toList, update)
 
 import List.Extra as List
 
@@ -66,6 +66,11 @@ update newItem id (IdCollection collection) =
 fromList : tag -> List item -> IdCollection tag item
 fromList tag list =
     List.foldl (\item collection -> append item collection) (empty tag) list
+
+
+get : Id tag -> IdCollection tag item -> Maybe item
+get id (IdCollection collection) =
+    List.find (\entry -> entry.id == id) collection |> Maybe.map .item
 
 
 toList : IdCollection tag item -> List (Entry tag item)
