@@ -1,4 +1,4 @@
-module IdCollection exposing (Entry, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, remove, set, toList, update)
+module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, remove, set, toList, update)
 
 import List.Extra as List
 
