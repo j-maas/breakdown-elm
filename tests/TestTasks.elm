@@ -14,23 +14,6 @@ type Collection
 
 suite : Test
 suite =
-    let
-        fromList collection =
-            List.filterMap actionFromString >> List.foldl appendTask (empty collection)
-
-        length =
-            toList >> List.length
-
-        readActionsList =
-            toList >> List.map readAction
-
-        indexFromShift shift max =
-            if shift == 1 then
-                0
-
-            else
-                max |> toFloat |> (*) shift |> floor
-    in
     describe "Tasks"
         [ describe "Actions"
             [ test "creates valid action" <|
