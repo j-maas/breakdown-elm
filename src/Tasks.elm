@@ -75,6 +75,7 @@ appendTask action collection =
 appendAndGetTask : Action -> Collection c -> ( Task c, Collection c )
 appendAndGetTask action to =
     IdCollection.appendAndGetEntry action to
+        |> Tuple.mapFirst Task
 
 
 
@@ -83,8 +84,8 @@ appendAndGetTask action to =
 
 {-| A task belonging to a specified collection.
 -}
-type alias Task collection =
-    IdCollection.Entry collection Action
+type Task collection
+    = Task (IdCollection.Entry collection Action)
 
 
 {-| A token to uniquely identify a task in the specified collection.
@@ -102,22 +103,22 @@ type Action
 {-| Extracts the `Action` from a `Task`.
 -}
 getAction : Task c -> Action
-getAction task =
+getAction (Task task) =
     task.item
 
 
 {-| Extracts a `Task`'s `Action` as a `String`.
 -}
 readAction : Task c -> String
-readAction task =
-    stringFromAction task.item
+readAction =
+    getAction >> stringFromAction
 
 
 {-| Converts a `Collection` to a `List` for further manipulation.
 -}
 toList : Collection c -> List (Task c)
 toList =
-    IdCollection.toList
+    IdCollection.toList >> List.map Task
 
 
 
@@ -127,7 +128,7 @@ toList =
 {-| Extracts the `TaskId` from a `Task`.
 -}
 getId : Task c -> TaskId c
-getId task =
+getId (Task task) =
     task.id
 
 
