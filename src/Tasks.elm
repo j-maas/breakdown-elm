@@ -1,6 +1,6 @@
 module Tasks exposing
     ( Collection, empty
-    , Task, TaskId, Action(..), getAction, readAction, toList, getId, idToComparable
+    , TaskEntry, Task, TaskId, Action(..), getAction, readAction, toList, getId, idToComparable
     , actionFromString, stringFromAction
     , appendTask, appendAndGetTask, removeTask, moveTask
     , editTask
@@ -16,7 +16,7 @@ module Tasks exposing
 
 # Tasks
 
-@docs Task, TaskId, Action, getAction, readAction, toList, getId, idToComparable
+@docs TaskEntry, Task, TaskId, Action, getAction, readAction, toList, getId, idToComparable
 
 
 # Actions
@@ -49,7 +49,7 @@ The name prevents tasks from different `Collection`s to be inadvertently mixed.
 
 -}
 type alias Collection name =
-    IdCollection name Action
+    IdCollection name Task
 
 
 {-| A `Collection` containing no tasks.
@@ -63,19 +63,22 @@ empty =
 -- BUILD
 
 
-{-| Add a new Task containing the given action to the end of a collection.
+{-| Add a new TaskEntry containing the given action to the end of a collection.
 -}
 appendTask : Action -> Collection c -> Collection c
 appendTask action collection =
     appendAndGetTask action collection |> Tuple.second
 
 
-{-| Appends a Task to a collection and returns that new Task.
+{-| Appends a TaskEntry to a collection and returns that new TaskEntry.
 -}
-appendAndGetTask : Action -> Collection c -> ( Task c, Collection c )
+appendAndGetTask : Action -> Collection c -> ( TaskEntry c, Collection c )
 appendAndGetTask action to =
-    IdCollection.appendAndGetEntry action to
-        |> Tuple.mapFirst Task
+    let
+        task =
+            taskFromAction action
+    in
+    IdCollection.appendAndGetEntry task to
 
 
 
@@ -84,8 +87,19 @@ appendAndGetTask action to =
 
 {-| A task belonging to a specified collection.
 -}
-type Task collection
-    = Task (IdCollection.Entry collection Action)
+type alias TaskEntry collection =
+    IdCollection.Entry collection Task
+
+
+type alias Task =
+    { action : Action
+    , editing : Maybe EditingInfo
+    }
+
+
+taskFromAction : Action -> Task
+taskFromAction action =
+    { action = action, editing = Nothing }
 
 
 {-| A token to uniquely identify a task in the specified collection.
@@ -100,36 +114,36 @@ type Action
     = Action String
 
 
-{-| Extracts the `Action` from a `Task`.
+{-| Extracts the `Action` from a `TaskEntry`.
 -}
-getAction : Task c -> Action
-getAction (Task task) =
-    task.item
+getAction : TaskEntry c -> Action
+getAction =
+    .item >> .action
 
 
-{-| Extracts a `Task`'s `Action` as a `String`.
+{-| Extracts a `TaskEntry`'s `Action` as a `String`.
 -}
-readAction : Task c -> String
+readAction : TaskEntry c -> String
 readAction =
     getAction >> stringFromAction
 
 
 {-| Converts a `Collection` to a `List` for further manipulation.
 -}
-toList : Collection c -> List (Task c)
+toList : Collection c -> List (TaskEntry c)
 toList =
-    IdCollection.toList >> List.map Task
+    IdCollection.toList
 
 
 
 -- ID
 
 
-{-| Extracts the `TaskId` from a `Task`.
+{-| Extracts the `TaskId` from a `TaskEntry`.
 -}
-getId : Task c -> TaskId c
-getId (Task task) =
-    task.id
+getId : TaskEntry c -> TaskId c
+getId =
+    .id
 
 
 {-| Only for use in tests. Allows for uniqueness checks on IDs.
@@ -169,20 +183,20 @@ stringFromAction (Action rawAction) =
 -- EDIT
 
 
-{-| Replaces the `Action` of the specified `Task`.
+{-| Replaces the `Action` of the specified `TaskEntry`.
 
-The `Task` with the given `TaskId` in the `Collection` will have its `Action` replaced with the provided one.
+The `TaskEntry` with the given `TaskId` in the `Collection` will have its `Action` replaced with the provided one.
 
 -}
 editTask : TaskId c -> Action -> Collection c -> Collection c
 editTask id action collection =
-    IdCollection.update
+    IdCollection.set
         id
-        (\_ -> action)
+        (taskFromAction action)
         collection
 
 
-{-| Removes the `Task` with the given `TaskId` from the `Collection`.
+{-| Removes the `TaskEntry` with the given `TaskId` from the `Collection`.
 -}
 removeTask : TaskId c -> Collection c -> Collection c
 removeTask =
@@ -191,7 +205,7 @@ removeTask =
 
 {-| Moves a task between different `Collection`s, ensuring unique IDs.
 
-The `Task` with the given `TaskId` from `Collection a` will be moved to `Collection b` and its `TaskId` updated.
+The `TaskEntry` with the given `TaskId` from `Collection a` will be moved to `Collection b` and its `TaskId` updated.
 
 -}
 moveTask : TaskId a -> Collection a -> Collection b -> ( Collection a, Collection b )
@@ -209,3 +223,4 @@ moveTask id from to =
 
         Nothing ->
             ( from, to )
+
