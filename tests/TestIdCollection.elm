@@ -60,6 +60,16 @@ suite =
                         )
                         list
                         offset
+            , fuzz2 (list string) percentage "removes and gets item by id" <|
+                \list offset ->
+                    testEntryInCollection
+                        (\index collection entry ->
+                            IdCollection.removeAndGet entry.id collection
+                                |> Tuple.mapSecond toListWithoutIds
+                                |> Expect.equal ( Just entry.item, List.removeAt index list )
+                        )
+                        list
+                        offset
             , fuzz3 (list string) string percentage "sets item by id" <|
                 \list newItem offset ->
                     testEntryInCollection
