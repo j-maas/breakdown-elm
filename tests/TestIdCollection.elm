@@ -133,6 +133,13 @@ suite =
                             IdCollection.move entry.id collection toCollection
                                 |> Tuple.mapBoth hasUniqueIds hasUniqueIds
                                 |> Expect.equal ( True, True )
+                                |> Expect.onFail
+                                    ("Detected duplicate ids in:\n("
+                                        ++ Debug.toString collection
+                                        ++ ", "
+                                        ++ Debug.toString toCollection
+                                        ++ ")"
+                                    )
                         )
                         from
                         offset
