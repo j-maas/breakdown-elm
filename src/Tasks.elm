@@ -1,6 +1,6 @@
 module Tasks exposing
-    ( Collection(..), empty
-    , Task(..), TaskId(..), Action(..), getAction, readAction, toList, getId, idToComparable
+    ( Collection, empty
+    , Task, TaskId, Action(..), getAction, readAction, toList, getId, idToComparable
     , actionFromString, stringFromAction
     , appendTask, appendAndGetTask, removeTask, moveTask
     , editTask
@@ -35,6 +35,7 @@ module Tasks exposing
 
 -}
 
+import IdCollection exposing (IdCollection)
 import List.Extra as List
 
 
@@ -47,15 +48,15 @@ import List.Extra as List
 The name prevents tasks from different `Collection`s to be inadvertently mixed.
 
 -}
-type Collection name
-    = Collection (List (Task name))
+type alias Collection name =
+    IdCollection name Action
 
 
 {-| A `Collection` containing no tasks.
 -}
 empty : name -> Collection name
-empty _ =
-    Collection []
+empty =
+    IdCollection.empty
 
 
 
@@ -72,36 +73,8 @@ appendTask action collection =
 {-| Appends a Task to a collection and returns that new Task.
 -}
 appendAndGetTask : Action -> Collection c -> ( Task c, Collection c )
-appendAndGetTask action ((Collection list) as to) =
-    let
-        nextId =
-            nextIdForCollection to
-
-        newTask =
-            Task { id = nextId, action = action }
-
-        newList =
-            list ++ [ newTask ]
-    in
-    ( newTask, Collection newList )
-
-
-{-| Calculates a suitable id with which a new task can be added to the collection.
--}
-nextIdForCollection : Collection c -> TaskId c
-nextIdForCollection (Collection list) =
-    let
-        highestId =
-            let
-                getIdNum =
-                    \(Task task) ->
-                        case task.id of
-                            TaskId n ->
-                                n
-            in
-            List.map getIdNum list |> List.maximum |> Maybe.withDefault 0
-    in
-    TaskId (highestId + 1)
+appendAndGetTask action to =
+    IdCollection.appendAndGetEntry action to
 
 
 
@@ -110,17 +83,14 @@ nextIdForCollection (Collection list) =
 
 {-| A task belonging to a specified collection.
 -}
-type Task collection
-    = Task
-        { id : TaskId collection
-        , action : Action
-        }
+type alias Task collection =
+    IdCollection.Entry collection Action
 
 
 {-| A token to uniquely identify a task in the specified collection.
 -}
-type TaskId collection
-    = TaskId Int
+type alias TaskId collection =
+    IdCollection.Id collection
 
 
 {-| A special string which cannot be empty or have leading or trailing spaces.
@@ -132,22 +102,22 @@ type Action
 {-| Extracts the `Action` from a `Task`.
 -}
 getAction : Task c -> Action
-getAction (Task task) =
-    task.action
+getAction task =
+    task.item
 
 
 {-| Extracts a `Task`'s `Action` as a `String`.
 -}
 readAction : Task c -> String
-readAction (Task task) =
-    stringFromAction task.action
+readAction task =
+    stringFromAction task.item
 
 
 {-| Converts a `Collection` to a `List` for further manipulation.
 -}
 toList : Collection c -> List (Task c)
-toList (Collection list) =
-    list
+toList =
+    IdCollection.toList
 
 
 
@@ -157,15 +127,15 @@ toList (Collection list) =
 {-| Extracts the `TaskId` from a `Task`.
 -}
 getId : Task c -> TaskId c
-getId (Task { id }) =
-    id
+getId task =
+    task.id
 
 
 {-| Only for use in tests. Allows for uniqueness checks on IDs.
 -}
 idToComparable : TaskId c -> Int
-idToComparable (TaskId id) =
-    id
+idToComparable =
+    IdCollection.idToComparable
 
 
 
@@ -204,18 +174,18 @@ The `Task` with the given `TaskId` in the `Collection` will have its `Action` re
 
 -}
 editTask : TaskId c -> Action -> Collection c -> Collection c
-editTask id action (Collection list) =
-    List.updateIf (\task -> getId task == id)
-        (\(Task task) -> Task { task | action = action })
-        list
-        |> Collection
+editTask id action collection =
+    IdCollection.update
+        (\_ -> action)
+        id
+        collection
 
 
 {-| Removes the `Task` with the given `TaskId` from the `Collection`.
 -}
 removeTask : TaskId c -> Collection c -> Collection c
-removeTask id (Collection list) =
-    List.filter (\task -> getId task /= id) list |> Collection
+removeTask =
+    IdCollection.remove
 
 
 {-| Moves a task between different `Collection`s, ensuring unique IDs.
@@ -224,34 +194,17 @@ The `Task` with the given `TaskId` from `Collection a` will be moved to `Collect
 
 -}
 moveTask : TaskId a -> Collection a -> Collection b -> ( Collection a, Collection b )
-moveTask id ((Collection listFrom) as from) to =
+moveTask id from to =
     let
         mayBeTask =
-            List.find (\candidate -> getId candidate == id) listFrom
+            IdCollection.get id from
 
         newFrom =
             removeTask id from
     in
     case mayBeTask of
         Just task ->
-            ( newFrom, insertTask task to )
+            ( newFrom, IdCollection.append task to )
 
         Nothing ->
             ( from, to )
-
-
-{-| Inserts a possibly foreign `Task` into a `Collection` by manipulating its `ID`.
--}
-insertTask : Task a -> Collection b -> Collection b
-insertTask (Task task) ((Collection list) as into) =
-    let
-        newId =
-            nextIdForCollection into
-
-        newTask =
-            Task
-                { id = newId
-                , action = task.action
-                }
-    in
-    Collection (list ++ [ newTask ])
