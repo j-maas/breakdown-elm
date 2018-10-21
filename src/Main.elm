@@ -369,7 +369,7 @@ save model =
         |> saveRaw
 
 
-encodeTask : Tasks.Task a -> Encode.Value
+encodeTask : Tasks.TaskEntry a -> Encode.Value
 encodeTask =
     Tasks.readAction >> Encode.string
 
@@ -595,7 +595,7 @@ viewCurrentTaskList editing currentTasks =
             Tasks.toList currentTasks
 
 
-viewTask : Tasks.Task Current -> Html Msg
+viewTask : Tasks.TaskEntry Current -> Html Msg
 viewTask task =
     viewTaskBase
         (onButtonClick (StartEdit <| CurrentId <| Tasks.getId task))
@@ -603,7 +603,7 @@ viewTask task =
         (iconButton (DoTask <| Tasks.getId task) "Mark as done" "✔️")
 
 
-viewEditTask : String -> Tasks.Action -> Tasks.Task Current -> Html Msg
+viewEditTask : String -> Tasks.Action -> Tasks.TaskEntry Current -> Html Msg
 viewEditTask editedAction previousAction task =
     viewTaskBase
         (onButtonClick ApplyEdit)
@@ -641,7 +641,7 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : String -> Tasks.Action -> Tasks.Task a -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
+viewEditAction : String -> Tasks.Action -> Tasks.TaskEntry a -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
 viewEditAction editedAction previousAction task toGlobalId =
     form
         [ css [ flex (num 1) ]
@@ -714,7 +714,7 @@ viewDoneTaskList editing =
         << Tasks.toList
 
 
-viewDoneTask : Tasks.Task Done -> Html Msg
+viewDoneTask : Tasks.TaskEntry Done -> Html Msg
 viewDoneTask task =
     viewTaskBase
         (onButtonClick (StartEdit <| DoneId <| Tasks.getId task))
@@ -729,7 +729,7 @@ viewDoneTask task =
         (iconButton (UndoTask <| Tasks.getId task) "Mark as to do" "🔄")
 
 
-viewEditDoneTask : String -> Tasks.Action -> Tasks.Task Done -> Html Msg
+viewEditDoneTask : String -> Tasks.Action -> Tasks.TaskEntry Done -> Html Msg
 viewEditDoneTask editedAction previousAction task =
     viewTaskBase
         (onButtonClick ApplyEdit)
