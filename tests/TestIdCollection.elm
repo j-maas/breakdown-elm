@@ -11,6 +11,10 @@ type CollectionTag
     = Tag
 
 
+type OtherTag
+    = Other
+
+
 suite : Test
 suite =
     let
@@ -90,6 +94,20 @@ suite =
                         )
                         list
                         offset
+            , fuzz3 (list string) percentage (list string) "moves items between collections" <|
+                \from offset to ->
+                    testEntryInCollection
+                        (\index collection entry ->
+                            let
+                                toCollection =
+                                    IdCollection.fromList Other to
+                            in
+                            IdCollection.move entry.id collection toCollection
+                                |> Tuple.mapBoth toListWithoutIds toListWithoutIds
+                                |> Expect.equal ( List.removeAt index from, to ++ [ entry.item ] )
+                        )
+                        from
+                        offset
             ]
         , let
             hasUniqueIds =
@@ -106,7 +124,7 @@ suite =
         ]
 
 
-toListWithoutIds : IdCollection CollectionTag item -> List item
+toListWithoutIds : IdCollection tag item -> List item
 toListWithoutIds =
     IdCollection.toList >> List.map .item
 
