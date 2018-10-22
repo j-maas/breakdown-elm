@@ -4,6 +4,7 @@ module Tasks exposing
     , actionFromString, stringFromAction
     , appendTask, appendAndGetTask, removeTask, moveTask
     , editTask
+    , applyEdit, cancelEdit, edit, notEditing, startEdit, taskFromAction
     )
 
 {-| Tasks and collection of tasks.
@@ -93,13 +94,13 @@ type alias TaskEntry collection =
 
 type alias Task =
     { action : Action
-    , editing : Maybe EditingInfo
+    , editing : Editing
     }
 
 
 taskFromAction : Action -> Task
 taskFromAction action =
-    { action = action, editing = Nothing }
+    { action = action, editing = notEditing }
 
 
 {-| A token to uniquely identify a task in the specified collection.
@@ -224,3 +225,80 @@ moveTask id from to =
         Nothing ->
             ( from, to )
 
+
+
+-- EDITING
+
+
+type Editing
+    = Editing (Maybe EditingInfo)
+
+
+type EditingInfo
+    = EditingInfo
+        { edited : String
+        , previousAction : Action
+        }
+
+
+{-| The Editing state for when the task is not being edited.
+-}
+notEditing : Editing
+notEditing =
+    Editing Nothing
+
+
+{-| Initiates editing.
+-}
+startEdit : Task -> Task
+startEdit task =
+    { task
+        | editing = Editing (Just (initEditingInfo task))
+    }
+
+
+{-| Helper function to initialize the EditingInfo when starting to edit a task.
+-}
+initEditingInfo : Task -> EditingInfo
+initEditingInfo { action } =
+    EditingInfo
+        { edited = stringFromAction action
+        , previousAction = action
+        }
+
+
+{-| Stores the new action in the current edit.
+-}
+edit : String -> Task -> Task
+edit newAction task =
+    let
+        (Editing editing) =
+            task.editing
+
+        newEditing =
+            Editing (Maybe.map (\(EditingInfo info) -> EditingInfo { info | edited = newAction }) editing)
+    in
+    { task | editing = newEditing }
+
+
+{-| Cancels the current edit and leaves the Task as is.
+-}
+cancelEdit : Task -> Task
+cancelEdit task =
+    { task | editing = notEditing }
+
+
+{-| Applies the current edit to the task. If the edit is valid, the task will be returned. Otherwise, Nothing is returned.
+-}
+applyEdit : Task -> Maybe Task
+applyEdit task =
+    case task.editing of
+        Editing editing ->
+            Maybe.andThen (\(EditingInfo info) -> actionFromString info.edited) editing
+                |> Maybe.map
+                    (\newAction ->
+                        { task
+                            | action = newAction
+                            , editing = notEditing
+                        }
+                    )
