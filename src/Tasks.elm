@@ -1,23 +1,12 @@
 module Tasks exposing
-    ( Collection, empty
-    , TaskEntry, Task, TaskId, Action(..), getAction, readAction, toList, getId, idToComparable
-    , actionFromString, stringFromAction
-    , appendTask, appendAndGetTask, removeTask, moveTask
-    , editTask
-    , applyEdit, cancelEdit, edit, notEditing, startEdit, taskFromAction
+    ( actionFromString, stringFromAction
+    , TaskEntry, Task, TaskId, Action, taskFromAction, getAction, readAction
+    , notEditing, startEdit, edit, applyEdit, cancelEdit
+    , Collection, empty, toList, getId, idToComparable
+    , appendTask, appendAndGetTask, removeTask, moveTask, editTask
     )
 
 {-| Tasks and collection of tasks.
-
-
-# Collections
-
-@docs Collection, empty
-
-
-# Tasks
-
-@docs TaskEntry, Task, TaskId, Action, getAction, readAction, toList, getId, idToComparable
 
 
 # Actions
@@ -25,61 +14,29 @@ module Tasks exposing
 @docs actionFromString, stringFromAction
 
 
-# Modify Collection
+# Tasks
 
-@docs appendTask, appendAndGetTask, removeTask, moveTask
+@docs TaskEntry, Task, TaskId, Action, taskFromAction, getAction, readAction
 
 
-# Edit
+# Editing
 
-@docs editTask
+@docs notEditing, startEdit, edit, applyEdit, cancelEdit
+
+
+# Collections
+
+@docs Collection, empty, toList, getId, idToComparable
+
+
+## Modify Collection
+
+@docs appendTask, appendAndGetTask, removeTask, moveTask, editTask
 
 -}
 
 import IdCollection exposing (IdCollection)
 import List.Extra as List
-
-
-
--- COLLECTIONS
-
-
-{-| A collection of tasks identified by a `name`.
-
-The name prevents tasks from different `Collection`s to be inadvertently mixed.
-
--}
-type alias Collection name =
-    IdCollection name Task
-
-
-{-| A `Collection` containing no tasks.
--}
-empty : name -> Collection name
-empty =
-    IdCollection.empty
-
-
-
--- BUILD
-
-
-{-| Add a new TaskEntry containing the given action to the end of a collection.
--}
-appendTask : Action -> Collection c -> Collection c
-appendTask action collection =
-    appendAndGetTask action collection |> Tuple.second
-
-
-{-| Appends a TaskEntry to a collection and returns that new TaskEntry.
--}
-appendAndGetTask : Action -> Collection c -> ( TaskEntry c, Collection c )
-appendAndGetTask action to =
-    let
-        task =
-            taskFromAction action
-    in
-    IdCollection.appendAndGetEntry task to
 
 
 
@@ -127,31 +84,6 @@ getAction =
 readAction : TaskEntry c -> String
 readAction =
     getAction >> stringFromAction
-
-
-{-| Converts a `Collection` to a `List` for further manipulation.
--}
-toList : Collection c -> List (TaskEntry c)
-toList =
-    IdCollection.toList
-
-
-
--- ID
-
-
-{-| Extracts the `TaskId` from a `TaskEntry`.
--}
-getId : TaskEntry c -> TaskId c
-getId =
-    .id
-
-
-{-| Only for use in tests. Allows for uniqueness checks on IDs.
--}
-idToComparable : TaskId c -> Int
-idToComparable =
-    IdCollection.idToComparable
 
 
 
@@ -302,3 +234,73 @@ applyEdit task =
                             , editing = notEditing
                         }
                     )
+
+
+
+-- COLLECTIONS
+
+
+{-| A collection of tasks identified by a `name`.
+
+The name prevents tasks from different `Collection`s to be inadvertently mixed.
+
+-}
+type alias Collection name =
+    IdCollection name Task
+
+
+{-| A `Collection` containing no tasks.
+-}
+empty : name -> Collection name
+empty =
+    IdCollection.empty
+
+
+{-| Add a new TaskEntry containing the given action to the end of a collection.
+-}
+appendTask : Action -> Collection c -> Collection c
+appendTask action collection =
+    let
+        task =
+            taskFromAction action
+    in
+    IdCollection.append task collection
+
+
+{-| Appends a TaskEntry to a collection and returns that new TaskEntry.
+-}
+appendAndGetTask : Action -> Collection c -> ( TaskEntry c, Collection c )
+appendAndGetTask action to =
+    let
+        task =
+            taskFromAction action
+    in
+    IdCollection.appendAndGetEntry task to
+
+
+{-| Builds a collection from a list of tasks.
+-}
+fromList : tag -> List Task -> Collection tag
+fromList tag list =
+    IdCollection.fromList tag list
+
+
+{-| Converts a `Collection` to a `List` for further manipulation.
+-}
+toList : Collection c -> List (TaskEntry c)
+toList =
+    IdCollection.toList
+
+
+{-| Extracts the `TaskId` from a `TaskEntry`.
+-}
+getId : TaskEntry c -> TaskId c
+getId =
+    .id
+
+
+{-| Only for use in tests. Allows for uniqueness checks on IDs.
+-}
+idToComparable : TaskId c -> Int
+idToComparable =
+    IdCollection.idToComparable
