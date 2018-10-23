@@ -1,22 +1,12 @@
 module Tasks exposing
-    ( Collection(..), empty
-    , Task(..), TaskId(..), Action(..), getAction, readAction, toList, getId, idToComparable
-    , actionFromString, stringFromAction
-    , appendTask, appendAndGetTask, removeTask, moveTask
-    , editTask
+    ( actionFromString, stringFromAction
+    , TaskEntry, Task(..), TaskInfo, TaskEditInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
+    , startEdit, edit, applyEdit, cancelEdit
+    , Collection, empty, toList, getId, idToComparable
+    , appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
     )
 
 {-| Tasks and collection of tasks.
-
-
-# Collections
-
-@docs Collection, empty
-
-
-# Tasks
-
-@docs Task, TaskId, Action, getAction, readAction, toList, getId, idToComparable
 
 
 # Actions
@@ -24,84 +14,29 @@ module Tasks exposing
 @docs actionFromString, stringFromAction
 
 
-# Modify Collection
+# Tasks
 
-@docs appendTask, appendAndGetTask, removeTask, moveTask
+@docs TaskEntry, Task, TaskInfo, TaskEditInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
 
 
-# Edit
+# Editing
 
-@docs editTask
+@docs startEdit, edit, applyEdit, cancelEdit
+
+
+# Collections
+
+@docs Collection, empty, toList, getId, idToComparable
+
+
+## Modify Collection
+
+@docs appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
 
 -}
 
+import IdCollection exposing (IdCollection)
 import List.Extra as List
-
-
-
--- COLLECTIONS
-
-
-{-| A collection of tasks identified by a `name`.
-
-The name prevents tasks from different `Collection`s to be inadvertently mixed.
-
--}
-type Collection name
-    = Collection (List (Task name))
-
-
-{-| A `Collection` containing no tasks.
--}
-empty : name -> Collection name
-empty _ =
-    Collection []
-
-
-
--- BUILD
-
-
-{-| Add a new Task containing the given action to the end of a collection.
--}
-appendTask : Action -> Collection c -> Collection c
-appendTask action collection =
-    appendAndGetTask action collection |> Tuple.second
-
-
-{-| Appends a Task to a collection and returns that new Task.
--}
-appendAndGetTask : Action -> Collection c -> ( Task c, Collection c )
-appendAndGetTask action ((Collection list) as to) =
-    let
-        nextId =
-            nextIdForCollection to
-
-        newTask =
-            Task { id = nextId, action = action }
-
-        newList =
-            list ++ [ newTask ]
-    in
-    ( newTask, Collection newList )
-
-
-{-| Calculates a suitable id with which a new task can be added to the collection.
--}
-nextIdForCollection : Collection c -> TaskId c
-nextIdForCollection (Collection list) =
-    let
-        highestId =
-            let
-                getIdNum =
-                    \(Task task) ->
-                        case task.id of
-                            TaskId n ->
-                                n
-            in
-            List.map getIdNum list |> List.maximum |> Maybe.withDefault 0
-    in
-    TaskId (highestId + 1)
 
 
 
@@ -110,17 +45,56 @@ nextIdForCollection (Collection list) =
 
 {-| A task belonging to a specified collection.
 -}
-type Task collection
-    = Task
-        { id : TaskId collection
-        , action : Action
-        }
+type alias TaskEntry collection =
+    IdCollection.Entry collection Task
+
+
+{-| Information about the task. Either it is a simple task with only `TaskInfo`
+or it is being edited with additional information.
+-}
+type Task
+    = Task TaskInfo
+    | TaskInEdit TaskEditInfo
+
+
+{-| The basic information every task possesses.
+-}
+type alias TaskInfo =
+    { action : Action
+    }
+
+
+{-| All information about a task currently being edited.
+-}
+type alias TaskEditInfo =
+    { info : TaskInfo
+    , editing : Editing
+    }
+
+
+{-| Minimal constructor for a task.
+-}
+taskFromAction : Action -> Task
+taskFromAction action =
+    Task { action = action }
+
+
+{-| Extracts the information that all tasks have in common.
+-}
+getTaskInfo : Task -> TaskInfo
+getTaskInfo task =
+    case task of
+        Task info ->
+            info
+
+        TaskInEdit editInfo ->
+            editInfo.info
 
 
 {-| A token to uniquely identify a task in the specified collection.
 -}
-type TaskId collection
-    = TaskId Int
+type alias TaskId collection =
+    IdCollection.Id collection
 
 
 {-| A special string which cannot be empty or have leading or trailing spaces.
@@ -129,43 +103,18 @@ type Action
     = Action String
 
 
-{-| Extracts the `Action` from a `Task`.
+{-| Extracts the `Action` from a `TaskEntry`.
 -}
-getAction : Task c -> Action
-getAction (Task task) =
-    task.action
+getAction : TaskEntry c -> Action
+getAction =
+    .item >> getTaskInfo >> .action
 
 
-{-| Extracts a `Task`'s `Action` as a `String`.
+{-| Extracts a `TaskEntry`'s `Action` as a `String`.
 -}
-readAction : Task c -> String
-readAction (Task task) =
-    stringFromAction task.action
-
-
-{-| Converts a `Collection` to a `List` for further manipulation.
--}
-toList : Collection c -> List (Task c)
-toList (Collection list) =
-    list
-
-
-
--- ID
-
-
-{-| Extracts the `TaskId` from a `Task`.
--}
-getId : Task c -> TaskId c
-getId (Task { id }) =
-    id
-
-
-{-| Only for use in tests. Allows for uniqueness checks on IDs.
--}
-idToComparable : TaskId c -> Int
-idToComparable (TaskId id) =
-    id
+readAction : TaskEntry c -> String
+readAction =
+    getAction >> stringFromAction
 
 
 
@@ -195,63 +144,219 @@ stringFromAction (Action rawAction) =
 
 
 
--- EDIT
+-- EDITING
 
 
-{-| Replaces the `Action` of the specified `Task`.
+{-| Obscure type that holds the information of the current edit.
+-}
+type Editing
+    = Editing EditingInfo
 
-The `Task` with the given `TaskId` in the `Collection` will have its `Action` replaced with the provided one.
+
+{-| The actual data for the current edit.
+-}
+type alias EditingInfo =
+    { edited : String
+    , previousAction : Action
+    }
+
+
+getEdited : Editing -> String
+getEdited (Editing info) =
+    info.edited
+
+
+readPrevious : Editing -> String
+readPrevious (Editing info) =
+    info.previousAction |> stringFromAction
+
+
+{-| Initiates editing.
+-}
+startEdit : Task -> TaskEditInfo
+startEdit task =
+    { info = getTaskInfo task
+    , editing = Editing (initEditingInfo task)
+    }
+
+
+{-| Helper function to initialize the EditingInfo when starting to edit a task.
+-}
+initEditingInfo : Task -> EditingInfo
+initEditingInfo task =
+    let
+        action =
+            getTaskInfo task |> .action
+    in
+    { edited = stringFromAction action
+    , previousAction = action
+    }
+
+
+{-| Stores the new action in the current edit.
+-}
+edit : String -> TaskEditInfo -> TaskEditInfo
+edit newAction task =
+    let
+        (Editing editing) =
+            task.editing
+
+        newEditing =
+            Editing { editing | edited = newAction }
+    in
+    { task | editing = newEditing }
+
+
+{-| Cancels the current edit and leaves the Task as is.
+-}
+cancelEdit : TaskEditInfo -> Task
+cancelEdit task =
+    Task task.info
+
+
+{-| Applies the current edit to the task.
+If the edit is valid, the task will be returned.
+Otherwise, Nothing is returned.
+-}
+applyEdit : TaskEditInfo -> Maybe Task
+applyEdit task =
+    case task.editing of
+        Editing editing ->
+            actionFromString editing.edited
+                |> Maybe.map
+                    (\newAction ->
+                        let
+                            info =
+                                task.info
+
+                            newInfo =
+                                { info | action = newAction }
+                        in
+                        Task newInfo
+                    )
+
+
+
+-- COLLECTIONS
+
+
+{-| A collection of tasks identified by a `name`.
+
+The name prevents tasks from different `Collection`s to be inadvertently mixed.
+
+-}
+type alias Collection name =
+    IdCollection name Task
+
+
+{-| A `Collection` containing no tasks.
+-}
+empty : name -> Collection name
+empty =
+    IdCollection.empty
+
+
+{-| Add a new TaskEntry containing the given action to the end of a collection.
+-}
+appendTask : Action -> Collection c -> Collection c
+appendTask action collection =
+    let
+        task =
+            taskFromAction action
+    in
+    IdCollection.append task collection
+
+
+{-| Appends a TaskEntry to a collection and returns that new TaskEntry.
+-}
+appendAndGetTask : Action -> Collection c -> ( TaskEntry c, Collection c )
+appendAndGetTask action to =
+    let
+        task =
+            taskFromAction action
+    in
+    IdCollection.appendAndGetEntry task to
+
+
+{-| Builds a collection from a list of tasks.
+-}
+fromList : tag -> List Task -> Collection tag
+fromList tag list =
+    IdCollection.fromList tag list
+
+
+{-| Converts a `Collection` to a `List` for further manipulation.
+-}
+toList : Collection c -> List (TaskEntry c)
+toList =
+    IdCollection.toList
+
+
+{-| Extracts the `TaskId` from a `TaskEntry`.
+-}
+getId : TaskEntry c -> TaskId c
+getId =
+    .id
+
+
+{-| Only for use in tests. Allows for uniqueness checks on IDs.
+-}
+idToComparable : TaskId c -> Int
+idToComparable =
+    IdCollection.idToComparable
+
+
+
+-- Modify Collections
+
+
+{-| Replaces the `Action` of the specified `TaskEntry`.
+
+The `TaskEntry` with the given `TaskId` in the `Collection` will have its `Action` replaced with the provided one.
 
 -}
 editTask : TaskId c -> Action -> Collection c -> Collection c
-editTask id action (Collection list) =
-    List.updateIf (\task -> getId task == id)
-        (\(Task task) -> Task { task | action = action })
-        list
-        |> Collection
+editTask id action collection =
+    IdCollection.set
+        id
+        (taskFromAction action)
+        collection
 
 
-{-| Removes the `Task` with the given `TaskId` from the `Collection`.
+map : (Task -> Task) -> Collection c -> Collection c
+map =
+    IdCollection.map
+
+
+{-| Removes the `TaskEntry` with the given `TaskId` from the `Collection`.
 -}
 removeTask : TaskId c -> Collection c -> Collection c
-removeTask id (Collection list) =
-    List.filter (\task -> getId task /= id) list |> Collection
+removeTask =
+    IdCollection.remove
+
+
+updateTask : TaskId c -> (Task -> Task) -> Collection c -> Collection c
+updateTask =
+    IdCollection.update
 
 
 {-| Moves a task between different `Collection`s, ensuring unique IDs.
 
-The `Task` with the given `TaskId` from `Collection a` will be moved to `Collection b` and its `TaskId` updated.
+The `TaskEntry` with the given `TaskId` from `Collection a` will be moved to `Collection b` and its `TaskId` updated.
 
 -}
 moveTask : TaskId a -> Collection a -> Collection b -> ( Collection a, Collection b )
-moveTask id ((Collection listFrom) as from) to =
+moveTask id from to =
     let
         mayBeTask =
-            List.find (\candidate -> getId candidate == id) listFrom
+            IdCollection.get id from
 
         newFrom =
             removeTask id from
     in
     case mayBeTask of
         Just task ->
-            ( newFrom, insertTask task to )
+            ( newFrom, IdCollection.append task to )
 
         Nothing ->
             ( from, to )
-
-
-{-| Inserts a possibly foreign `Task` into a `Collection` by manipulating its `ID`.
--}
-insertTask : Task a -> Collection b -> Collection b
-insertTask (Task task) ((Collection list) as into) =
-    let
-        newId =
-            nextIdForCollection into
-
-        newTask =
-            Task
-                { id = newId
-                , action = task.action
-                }
-    in
-    Collection (list ++ [ newTask ])
