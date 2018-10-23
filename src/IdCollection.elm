@@ -1,4 +1,4 @@
-module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, move, remove, removeAndGet, set, toList, update)
+module IdCollection exposing (Entry, Id, IdCollection, append, appendAndGetEntry, empty, fromList, get, idToComparable, map, move, remove, removeAndGet, set, toList, update)
 
 import List.Extra as List
 
@@ -81,6 +81,11 @@ update id newItem (IdCollection collection) =
             { entry | item = newItem entry.item }
     in
     List.updateIf (\entry -> entry.id == id) updateEntry collection |> IdCollection
+
+
+map : (item -> item) -> IdCollection tag item -> IdCollection tag item
+map mapFunction (IdCollection collection) =
+    IdCollection (List.map (\entry -> { entry | item = mapFunction entry.item }) collection)
 
 
 fromList : tag -> List item -> IdCollection tag item
