@@ -1,6 +1,6 @@
 module Tasks exposing
     ( actionFromString, stringFromAction
-    , TaskEntry, Task(..), TaskInfo, TaskId, getTaskInfo, Action, taskFromAction, getAction, readAction
+    , TaskEntry, Task(..), TaskInfo, TaskEditInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
     , startEdit, edit, applyEdit, cancelEdit
     , Collection, empty, toList, getId, idToComparable
     , appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
@@ -16,7 +16,7 @@ module Tasks exposing
 
 # Tasks
 
-@docs TaskEntry, Task, TaskInfo, TaskId, getTaskInfo, Action, taskFromAction, getAction, readAction
+@docs TaskEntry, Task, TaskInfo, TaskEditInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
 
 
 # Editing
@@ -159,6 +159,16 @@ type alias EditingInfo =
     { edited : String
     , previousAction : Action
     }
+
+
+getEdited : Editing -> String
+getEdited (Editing info) =
+    info.edited
+
+
+readPrevious : Editing -> String
+readPrevious (Editing info) =
+    info.previousAction |> stringFromAction
 
 
 {-| Initiates editing.
