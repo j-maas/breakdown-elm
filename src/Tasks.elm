@@ -4,6 +4,7 @@ module Tasks exposing
     , notEditing, startEdit, edit, applyEdit, cancelEdit
     , Collection, empty, toList, getId, idToComparable
     , appendTask, appendAndGetTask, removeTask, moveTask, editTask
+    , getTaskInfo
     )
 
 {-| Tasks and collection of tasks.
@@ -49,15 +50,35 @@ type alias TaskEntry collection =
     IdCollection.Entry collection Task
 
 
-type alias Task =
+type Task
+    = Task TaskInfo
+    | TaskInEdit Edit
+
+
+type alias TaskInfo =
     { action : Action
+    }
+
+
+type alias Edit =
+    { info : TaskInfo
     , editing : Editing
     }
 
 
 taskFromAction : Action -> Task
 taskFromAction action =
-    { action = action, editing = notEditing }
+    Task { action = action }
+
+
+getTaskInfo : Task -> TaskInfo
+getTaskInfo task =
+    case task of
+        Task info ->
+            info
+
+        TaskInEdit editInfo ->
+            editInfo.info
 
 
 {-| A token to uniquely identify a task in the specified collection.
@@ -76,7 +97,7 @@ type Action
 -}
 getAction : TaskEntry c -> Action
 getAction =
-    .item >> .action
+    .item >> getTaskInfo >> .action
 
 
 {-| Extracts a `TaskEntry`'s `Action` as a `String`.
@@ -182,17 +203,21 @@ notEditing =
 
 {-| Initiates editing.
 -}
-startEdit : Task -> Task
+startEdit : Task -> Edit
 startEdit task =
-    { task
-        | editing = Editing (Just (initEditingInfo task))
+    { info = getTaskInfo task
+    , editing = Editing (Just (initEditingInfo task))
     }
 
 
 {-| Helper function to initialize the EditingInfo when starting to edit a task.
 -}
 initEditingInfo : Task -> EditingInfo
-initEditingInfo { action } =
+initEditingInfo task =
+    let
+        action =
+            getTaskInfo task |> .action
+    in
     EditingInfo
         { edited = stringFromAction action
         , previousAction = action
@@ -201,7 +226,7 @@ initEditingInfo { action } =
 
 {-| Stores the new action in the current edit.
 -}
-edit : String -> Task -> Task
+edit : String -> Edit -> Edit
 edit newAction task =
     let
         (Editing editing) =
@@ -215,24 +240,28 @@ edit newAction task =
 
 {-| Cancels the current edit and leaves the Task as is.
 -}
-cancelEdit : Task -> Task
+cancelEdit : Edit -> Task
 cancelEdit task =
-    { task | editing = notEditing }
+    Task task.info
 
 
 {-| Applies the current edit to the task. If the edit is valid, the task will be returned. Otherwise, Nothing is returned.
 -}
-applyEdit : Task -> Maybe Task
+applyEdit : Edit -> Maybe Task
 applyEdit task =
     case task.editing of
         Editing editing ->
             Maybe.andThen (\(EditingInfo info) -> actionFromString info.edited) editing
                 |> Maybe.map
                     (\newAction ->
-                        { task
-                            | action = newAction
-                            , editing = notEditing
-                        }
+                        let
+                            info =
+                                task.info
+
+                            newInfo =
+                                { info | action = newAction }
+                        in
+                        Task newInfo
                     )
 
 

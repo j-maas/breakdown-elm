@@ -51,10 +51,11 @@ suite =
                             >> Tasks.edit "I have been edited"
                             >> Tasks.applyEdit
                             >> Maybe.map
-                                (Expect.all
-                                    [ .action >> stringFromAction >> Expect.equal "I have been edited"
-                                    , .editing >> Expect.equal notEditing
-                                    ]
+                                (\task ->
+                                    Tasks.getTaskInfo task
+                                        |> .action
+                                        |> Tasks.stringFromAction
+                                        |> Expect.equal "I have been edited"
                                 )
                             >> Maybe.withDefault (Expect.fail "Expected task to not be Nothing.")
                         )
@@ -66,7 +67,6 @@ suite =
                             >> Tasks.applyEdit
                             >> Expect.equal Nothing
                         )
-            , todo "ensures edit only on tasks being edited"
             ]
         ]
 
