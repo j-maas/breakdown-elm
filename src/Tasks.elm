@@ -3,7 +3,7 @@ module Tasks exposing
     , TaskEntry, Task(..), TaskInfo, TaskId, getTaskInfo, Action, taskFromAction, getAction, readAction
     , startEdit, edit, applyEdit, cancelEdit
     , Collection, empty, toList, getId, idToComparable
-    , appendTask, appendAndGetTask, removeTask, moveTask, editTask
+    , appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
     )
 
 {-| Tasks and collection of tasks.
@@ -31,7 +31,7 @@ module Tasks exposing
 
 ## Modify Collection
 
-@docs appendTask, appendAndGetTask, removeTask, moveTask, editTask
+@docs appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
 
 -}
 
@@ -313,11 +313,21 @@ editTask id action collection =
         collection
 
 
+map : (Task -> Task) -> Collection c -> Collection c
+map =
+    IdCollection.map
+
+
 {-| Removes the `TaskEntry` with the given `TaskId` from the `Collection`.
 -}
 removeTask : TaskId c -> Collection c -> Collection c
 removeTask =
     IdCollection.remove
+
+
+updateTask : TaskId c -> (Task -> Task) -> Collection c -> Collection c
+updateTask =
+    IdCollection.update
 
 
 {-| Moves a task between different `Collection`s, ensuring unique IDs.
