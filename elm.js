@@ -505,11 +505,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.bp.aJ === region.bF.aJ)
+	if (region.bp.aH === region.bG.aH)
 	{
-		return 'on line ' + region.bp.aJ;
+		return 'on line ' + region.bp.aH;
 	}
-	return 'on lines ' + region.bp.aJ + ' through ' + region.bF.aJ;
+	return 'on lines ' + region.bp.aH + ' through ' + region.bG.aH;
 }
 
 
@@ -1841,9 +1841,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.cp,
+		impl.cq,
+		impl.cD,
 		impl.cC,
-		impl.cB,
 		function() { return function() {} }
 	);
 });
@@ -2643,9 +2643,9 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		M: func(record.M),
+		K: func(record.K),
 		bq: record.bq,
-		bo: record.bo
+		bn: record.bn
 	}
 });
 
@@ -2913,11 +2913,11 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.M;
+		var message = !tag ? value : tag < 3 ? value.a : value.K;
 		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.bq;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.bo) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.bn) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3900,11 +3900,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.cp,
+		impl.cq,
+		impl.cD,
 		impl.cC,
-		impl.cB,
 		function(sendToApp, initialModel) {
-			var view = impl.cF;
+			var view = impl.cG;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3936,12 +3936,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.cp,
+		impl.cq,
+		impl.cD,
 		impl.cC,
-		impl.cB,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.aQ && impl.aQ(sendToApp)
-			var view = impl.cF;
+			var divertHrefToApp = impl.aO && impl.aO(sendToApp)
+			var view = impl.cG;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3949,7 +3949,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bf);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bd);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
@@ -4005,12 +4005,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.cu;
-	var onUrlRequest = impl.cv;
+	var onUrlChange = impl.cv;
+	var onUrlRequest = impl.cw;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		aQ: function(sendToApp)
+		aO: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4026,9 +4026,9 @@ function _Browser_application(impl)
 					var next = elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.bX === next.bX
-							&& curr.bK === next.bK
-							&& curr.bU.a === next.bU.a
+							&& curr.bY === next.bY
+							&& curr.bL === next.bL
+							&& curr.bV.a === next.bV.a
 						)
 							? elm$browser$Browser$Internal(next)
 							: elm$browser$Browser$External(href)
@@ -4036,13 +4036,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		cp: function(flags)
+		cq: function(flags)
 		{
-			return A3(impl.cp, flags, _Browser_getUrl(), key);
+			return A3(impl.cq, flags, _Browser_getUrl(), key);
 		},
-		cF: impl.cF,
-		cC: impl.cC,
-		cB: impl.cB
+		cG: impl.cG,
+		cD: impl.cD,
+		cC: impl.cC
 	});
 }
 
@@ -4108,17 +4108,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { cm: 'hidden', aF: 'visibilitychange' }
+		? { cn: 'hidden', aA: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { cm: 'mozHidden', aF: 'mozvisibilitychange' }
+		? { cn: 'mozHidden', aA: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { cm: 'msHidden', aF: 'msvisibilitychange' }
+		? { cn: 'msHidden', aA: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { cm: 'webkitHidden', aF: 'webkitvisibilitychange' }
-		: { cm: 'hidden', aF: 'visibilitychange' };
+		? { cn: 'webkitHidden', aA: 'webkitvisibilitychange' }
+		: { cn: 'hidden', aA: 'visibilitychange' };
 }
 
 
@@ -4199,12 +4199,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		b1: _Browser_getScene(),
-		b8: {
-			bc: _Browser_window.pageXOffset,
-			bd: _Browser_window.pageYOffset,
-			aA: _Browser_doc.documentElement.clientWidth,
-			al: _Browser_doc.documentElement.clientHeight
+		b2: _Browser_getScene(),
+		b9: {
+			ba: _Browser_window.pageXOffset,
+			bb: _Browser_window.pageYOffset,
+			av: _Browser_doc.documentElement.clientWidth,
+			ag: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4214,8 +4214,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		aA: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		al: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		av: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		ag: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4238,15 +4238,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			b1: {
-				aA: node.scrollWidth,
-				al: node.scrollHeight
+			b2: {
+				av: node.scrollWidth,
+				ag: node.scrollHeight
 			},
-			b8: {
-				bc: node.scrollLeft,
-				bd: node.scrollTop,
-				aA: node.clientWidth,
-				al: node.clientHeight
+			b9: {
+				ba: node.scrollLeft,
+				bb: node.scrollTop,
+				av: node.clientWidth,
+				ag: node.clientHeight
 			}
 		};
 	});
@@ -4276,18 +4276,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			b1: _Browser_getScene(),
-			b8: {
-				bc: x,
-				bd: y,
-				aA: _Browser_doc.documentElement.clientWidth,
-				al: _Browser_doc.documentElement.clientHeight
+			b2: _Browser_getScene(),
+			b9: {
+				ba: x,
+				bb: y,
+				av: _Browser_doc.documentElement.clientWidth,
+				ag: _Browser_doc.documentElement.clientHeight
 			},
-			ch: {
-				bc: x + rect.left,
-				bd: y + rect.top,
-				aA: rect.width,
-				al: rect.height
+			ci: {
+				ba: x + rect.left,
+				bb: y + rect.top,
+				av: rect.width,
+				ag: rect.height
 			}
 		};
 	});
@@ -4598,25 +4598,25 @@ var elm$core$Basics$sub = _Basics_sub;
 var elm$core$Elm$JsArray$length = _JsArray_length;
 var elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
-		if (!builder.i) {
+		if (!builder.g) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.k),
+				elm$core$Elm$JsArray$length(builder.i),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.k);
+				builder.i);
 		} else {
-			var treeLen = builder.i * elm$core$Array$branchFactor;
+			var treeLen = builder.g * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.l) : builder.l;
-			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.i);
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.k) : builder.k;
+			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.g);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.k) + treeLen,
+				elm$core$Elm$JsArray$length(builder.i) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.k);
+				builder.i);
 		}
 	});
 var elm$core$Basics$idiv = _Basics_idiv;
@@ -4630,7 +4630,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{l: nodeList, i: (len / elm$core$Array$branchFactor) | 0, k: tail});
+					{k: nodeList, g: (len / elm$core$Array$branchFactor) | 0, i: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -4896,10 +4896,10 @@ var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
 var author$project$Main$mapDocument = F2(
 	function (f, document) {
 		return {
-			bf: A2(
+			bd: A2(
 				elm$core$List$map,
 				elm$html$Html$map(f),
-				document.bf),
+				document.bd),
 			bs: document.bs
 		};
 	});
@@ -4943,7 +4943,7 @@ var rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
 };
 var rtfeldman$elm_css$Css$batch = rtfeldman$elm_css$Css$Preprocess$ApplyStyles;
 var rtfeldman$elm_css$Css$Structure$Compatible = 0;
-var rtfeldman$elm_css$Css$borderBox = {be: 0, aY: 0, F: 'border-box'};
+var rtfeldman$elm_css$Css$borderBox = {bc: 0, aW: 0, C: 'border-box'};
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 0, a: a};
 };
@@ -4953,7 +4953,7 @@ var rtfeldman$elm_css$Css$property = F2(
 	});
 var rtfeldman$elm_css$Css$prop1 = F2(
 	function (key, arg) {
-		return A2(rtfeldman$elm_css$Css$property, key, arg.F);
+		return A2(rtfeldman$elm_css$Css$property, key, arg.C);
 	});
 var rtfeldman$elm_css$Css$boxSizing = rtfeldman$elm_css$Css$prop1('box-sizing');
 var rtfeldman$elm_css$Css$EmUnits = 0;
@@ -4962,22 +4962,22 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 	function (units, unitLabel, numericValue) {
 		return {
 			bt: 0,
-			bB: 0,
+			bC: 0,
+			ac: 0,
+			o: 0,
+			aG: 0,
 			ah: 0,
-			p: 0,
-			aI: 0,
-			am: 0,
-			L: 0,
-			an: 0,
-			ao: 0,
-			V: 0,
-			W: 0,
-			D: 0,
-			P: numericValue,
-			aw: 0,
-			ay: unitLabel,
-			aV: units,
-			F: _Utils_ap(
+			J: 0,
+			ai: 0,
+			aj: 0,
+			R: 0,
+			S: 0,
+			A: 0,
+			M: numericValue,
+			ar: 0,
+			at: unitLabel,
+			aT: units,
+			C: _Utils_ap(
 				elm$core$String$fromFloat(numericValue),
 				unitLabel)
 		};
@@ -4999,19 +4999,19 @@ var author$project$Main$actionInputStyle = rtfeldman$elm_css$Css$batch(
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var rtfeldman$elm_css$Css$absolute = {aO: 0, F: 'absolute'};
+var rtfeldman$elm_css$Css$absolute = {aM: 0, C: 'absolute'};
 var rtfeldman$elm_css$Css$border = rtfeldman$elm_css$Css$prop1('border');
 var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
-var rtfeldman$elm_css$Css$hidden = {t: 0, aq: 0, F: 'hidden', aW: 0};
+var rtfeldman$elm_css$Css$hidden = {r: 0, al: 0, C: 'hidden', aU: 0};
 var rtfeldman$elm_css$Css$margin = rtfeldman$elm_css$Css$prop1('margin');
-var rtfeldman$elm_css$Css$noWrap = {aG: 0, a0: 0, F: 'nowrap', S: 0};
+var rtfeldman$elm_css$Css$noWrap = {aC: 0, a_: 0, C: 'nowrap', O: 0};
 var rtfeldman$elm_css$Css$overflow = rtfeldman$elm_css$Css$prop1('overflow');
 var rtfeldman$elm_css$Css$position = rtfeldman$elm_css$Css$prop1('position');
 var rtfeldman$elm_css$Css$PxUnits = 0;
 var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
 var rtfeldman$elm_css$Css$whiteSpace = rtfeldman$elm_css$Css$prop1('white-space');
 var rtfeldman$elm_css$Css$UnitlessInteger = 0;
-var rtfeldman$elm_css$Css$zero = {aI: 0, am: 0, L: 0, an: 0, ao: 0, V: 0, W: 0, aL: 0, P: 0, a4: 0, ay: '', aV: 0, F: '0'};
+var rtfeldman$elm_css$Css$zero = {aG: 0, ah: 0, J: 0, ai: 0, aj: 0, R: 0, S: 0, aJ: 0, M: 0, a2: 0, at: '', aT: 0, C: '0'};
 var author$project$Main$hide = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -5041,7 +5041,7 @@ var rtfeldman$elm_css$Css$pseudoClass = function (_class) {
 };
 var rtfeldman$elm_css$Css$active = rtfeldman$elm_css$Css$pseudoClass('active');
 var rtfeldman$elm_css$Css$backgroundColor = function (c) {
-	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.F);
+	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.C);
 };
 var rtfeldman$elm_css$Css$prop5 = F6(
 	function (key, argA, argB, argC, argD, argE) {
@@ -5052,26 +5052,26 @@ var rtfeldman$elm_css$Css$prop5 = F6(
 				elm$core$String$join,
 				' ',
 				_List_fromArray(
-					[argA.F, argB.F, argC.F, argD.F, argE.F])));
+					[argA.C, argB.C, argC.C, argD.C, argE.C])));
 	});
 var rtfeldman$elm_css$Css$boxShadow5 = rtfeldman$elm_css$Css$prop5('box-shadow');
 var rtfeldman$elm_css$Css$center = rtfeldman$elm_css$Css$prop1('center');
 var rtfeldman$elm_css$Css$color = function (c) {
-	return A2(rtfeldman$elm_css$Css$property, 'color', c.F);
+	return A2(rtfeldman$elm_css$Css$property, 'color', c.C);
 };
 var rtfeldman$elm_css$Css$fontSize = rtfeldman$elm_css$Css$prop1('font-size');
 var rtfeldman$elm_css$Css$hover = rtfeldman$elm_css$Css$pseudoClass('hover');
-var rtfeldman$elm_css$Css$inset = {t: 0, F: 'inset'};
+var rtfeldman$elm_css$Css$inset = {r: 0, C: 'inset'};
 var rtfeldman$elm_css$Css$UnitlessFloat = 0;
 var rtfeldman$elm_css$Css$num = function (val) {
 	return {
-		W: 0,
-		D: 0,
-		aL: 0,
-		P: val,
-		ay: '',
-		aV: 0,
-		F: elm$core$String$fromFloat(val)
+		S: 0,
+		A: 0,
+		aJ: 0,
+		M: val,
+		at: '',
+		aT: 0,
+		C: elm$core$String$fromFloat(val)
 	};
 };
 var rtfeldman$elm_css$Css$opacity = rtfeldman$elm_css$Css$prop1('opacity');
@@ -5082,12 +5082,12 @@ var rtfeldman$elm_css$Css$cssFunction = F2(
 var rtfeldman$elm_css$Css$rgb = F3(
 	function (r, g, b) {
 		return {
-			aC: 1,
-			aE: b,
-			C: 0,
-			aH: g,
-			aP: r,
-			F: A2(
+			ax: 1,
+			az: b,
+			z: 0,
+			aD: g,
+			aN: r,
+			C: A2(
 				rtfeldman$elm_css$Css$cssFunction,
 				'rgb',
 				A2(
@@ -5100,12 +5100,12 @@ var rtfeldman$elm_css$Css$rgb = F3(
 var rtfeldman$elm_css$Css$rgba = F4(
 	function (r, g, b, alpha) {
 		return {
-			aC: alpha,
-			aE: b,
-			C: 0,
-			aH: g,
-			aP: r,
-			F: A2(
+			ax: alpha,
+			az: b,
+			z: 0,
+			aD: g,
+			aN: r,
+			C: A2(
 				rtfeldman$elm_css$Css$cssFunction,
 				'rgba',
 				_Utils_ap(
@@ -5280,7 +5280,7 @@ var elm$virtual_dom$VirtualDom$property = F2(
 	});
 var Skinney$murmur3$Murmur3$HashData = F4(
 	function (shift, seed, hash, charsProcessed) {
-		return {ae: charsProcessed, ak: hash, Y: seed, at: shift};
+		return {_: charsProcessed, af: hash, U: seed, ao: shift};
 	});
 var elm$core$Bitwise$and = _Bitwise_and;
 var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
@@ -5298,8 +5298,8 @@ var Skinney$murmur3$Murmur3$mix = F2(
 	});
 var elm$core$Basics$neq = _Utils_notEqual;
 var Skinney$murmur3$Murmur3$finalize = function (data) {
-	var acc = data.ak ? A2(Skinney$murmur3$Murmur3$mix, data.Y, data.ak) : data.Y;
-	var h1 = acc ^ data.ae;
+	var acc = data.af ? A2(Skinney$murmur3$Murmur3$mix, data.U, data.af) : data.U;
+	var h1 = acc ^ data._;
 	var h2 = A2(Skinney$murmur3$Murmur3$mur, 2246822507, h1 ^ (h1 >>> 16));
 	var h3 = A2(Skinney$murmur3$Murmur3$mur, 3266489909, h2 ^ (h2 >>> 13));
 	return (h3 ^ (h3 >>> 16)) >>> 0;
@@ -5310,14 +5310,14 @@ var Skinney$murmur3$Murmur3$step = function (acc) {
 };
 var Skinney$murmur3$Murmur3$hashFold = F2(
 	function (c, data) {
-		var res = data.ak | (c << data.at);
-		var _n0 = data.at;
+		var res = data.af | (c << data.ao);
+		var _n0 = data.ao;
 		if (_n0 === 24) {
 			var newHash = Skinney$murmur3$Murmur3$step(
-				A2(Skinney$murmur3$Murmur3$mix, data.Y, res));
-			return {ae: data.ae + 1, ak: 0, Y: newHash, at: 0};
+				A2(Skinney$murmur3$Murmur3$mix, data.U, res));
+			return {_: data._ + 1, af: 0, U: newHash, ao: 0};
 		} else {
-			return {ae: data.ae + 1, ak: res, Y: data.Y, at: data.at + 8};
+			return {_: data._ + 1, af: res, U: data.U, ao: data.ao + 8};
 		}
 	});
 var elm$core$Basics$ge = _Utils_ge;
@@ -5400,7 +5400,7 @@ var elm$core$List$singleton = function (value) {
 };
 var elm$core$String$cons = _String_cons;
 var rtfeldman$elm_css$Css$Preprocess$stylesheet = function (snippets) {
-	return {bD: elm$core$Maybe$Nothing, bL: _List_Nil, bQ: _List_Nil, b2: snippets};
+	return {bE: elm$core$Maybe$Nothing, bM: _List_Nil, bR: _List_Nil, b3: snippets};
 };
 var elm$core$List$append = F2(
 	function (xs, ys) {
@@ -6406,7 +6406,7 @@ var rtfeldman$elm_css$Css$Preprocess$Resolve$applyStyles = F2(
 						_List_fromArray(
 							[
 								rtfeldman$elm_css$Css$Structure$Keyframes(
-								{cf: str, ct: name})
+								{cg: str, cu: name})
 							]));
 				case 4:
 					var _n12 = styles.a;
@@ -6541,13 +6541,13 @@ var rtfeldman$elm_css$Css$Preprocess$Resolve$toDeclarations = function (snippetD
 	}
 };
 var rtfeldman$elm_css$Css$Preprocess$Resolve$toStructure = function (_n0) {
-	var charset = _n0.bD;
-	var imports = _n0.bL;
-	var namespaces = _n0.bQ;
-	var snippets = _n0.b2;
+	var charset = _n0.bE;
+	var imports = _n0.bM;
+	var namespaces = _n0.bR;
+	var snippets = _n0.b3;
 	var declarations = rtfeldman$elm_css$Css$Preprocess$Resolve$extract(
 		A2(elm$core$List$concatMap, rtfeldman$elm_css$Css$Preprocess$unwrapSnippet, snippets));
-	return {bD: charset, cg: declarations, bL: imports, bQ: namespaces};
+	return {bE: charset, ch: declarations, bM: imports, bR: namespaces};
 };
 var elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
@@ -6740,8 +6740,8 @@ var rtfeldman$elm_css$Css$Structure$compactHelp = F2(
 					A2(elm$core$List$cons, declaration, declarations));
 			case 6:
 				var record = declaration.a;
-				return elm$core$String$isEmpty(record.cf) ? _Utils_Tuple2(keyframesByName, declarations) : _Utils_Tuple2(
-					A3(elm$core$Dict$insert, record.ct, record.cf, keyframesByName),
+				return elm$core$String$isEmpty(record.cg) ? _Utils_Tuple2(keyframesByName, declarations) : _Utils_Tuple2(
+					A3(elm$core$Dict$insert, record.cu, record.cg, keyframesByName),
 					declarations);
 			case 7:
 				var properties = declaration.a;
@@ -6776,16 +6776,16 @@ var rtfeldman$elm_css$Css$Structure$withKeyframeDeclarations = F2(
 					var name = _n0.a;
 					var decl = _n0.b;
 					return rtfeldman$elm_css$Css$Structure$Keyframes(
-						{cf: decl, ct: name});
+						{cg: decl, cu: name});
 				},
 				elm$core$Dict$toList(keyframesByName)),
 			compactedDeclarations);
 	});
 var rtfeldman$elm_css$Css$Structure$compactStylesheet = function (_n0) {
-	var charset = _n0.bD;
-	var imports = _n0.bL;
-	var namespaces = _n0.bQ;
-	var declarations = _n0.cg;
+	var charset = _n0.bE;
+	var imports = _n0.bM;
+	var namespaces = _n0.bR;
+	var declarations = _n0.ch;
 	var _n1 = A3(
 		elm$core$List$foldr,
 		rtfeldman$elm_css$Css$Structure$compactHelp,
@@ -6794,7 +6794,7 @@ var rtfeldman$elm_css$Css$Structure$compactStylesheet = function (_n0) {
 	var keyframesByName = _n1.a;
 	var compactedDeclarations = _n1.b;
 	var finalDeclarations = A2(rtfeldman$elm_css$Css$Structure$withKeyframeDeclarations, keyframesByName, compactedDeclarations);
-	return {bD: charset, cg: finalDeclarations, bL: imports, bQ: namespaces};
+	return {bE: charset, ch: finalDeclarations, bM: imports, bR: namespaces};
 };
 var elm$core$List$filter = F2(
 	function (isGood, list) {
@@ -6819,13 +6819,13 @@ var rtfeldman$elm_css$Css$Structure$Output$charsetToString = function (charset) 
 			charset));
 };
 var rtfeldman$elm_css$Css$Structure$Output$mediaExpressionToString = function (expression) {
-	return '(' + (expression.bH + (A2(
+	return '(' + (expression.bI + (A2(
 		elm$core$Maybe$withDefault,
 		'',
 		A2(
 			elm$core$Maybe$map,
 			elm$core$Basics$append(': '),
-			expression.F)) + ')'));
+			expression.C)) + ')'));
 };
 var rtfeldman$elm_css$Css$Structure$Output$mediaTypeToString = function (mediaType) {
 	switch (mediaType) {
@@ -7067,8 +7067,8 @@ var rtfeldman$elm_css$Css$Structure$Output$prettyPrintDeclaration = function (de
 		case 5:
 			return 'TODO';
 		case 6:
-			var name = decl.a.ct;
-			var declaration = decl.a.cf;
+			var name = decl.a.cu;
+			var declaration = decl.a.cg;
 			return '@keyframes ' + (name + (' {\n' + (declaration + '\n}')));
 		case 7:
 			return 'TODO';
@@ -7079,10 +7079,10 @@ var rtfeldman$elm_css$Css$Structure$Output$prettyPrintDeclaration = function (de
 	}
 };
 var rtfeldman$elm_css$Css$Structure$Output$prettyPrint = function (_n0) {
-	var charset = _n0.bD;
-	var imports = _n0.bL;
-	var namespaces = _n0.bQ;
-	var declarations = _n0.cg;
+	var charset = _n0.bE;
+	var imports = _n0.bM;
+	var namespaces = _n0.bR;
+	var declarations = _n0.ch;
 	return A2(
 		elm$core$String$join,
 		'\n\n',
@@ -7233,7 +7233,7 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		'justify-content',
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
-var rtfeldman$elm_css$Css$row = {bh: 0, aG: 0, F: 'row'};
+var rtfeldman$elm_css$Css$row = {bg: 0, aC: 0, C: 'row'};
 var rtfeldman$elm_css$Html$Styled$div = rtfeldman$elm_css$Html$Styled$node('div');
 var rtfeldman$elm_css$Html$Styled$form = rtfeldman$elm_css$Html$Styled$node('form');
 var rtfeldman$elm_css$Html$Styled$Attributes$autofocus = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('autofocus');
@@ -7356,10 +7356,10 @@ var rtfeldman$elm_css$Css$prop3 = F4(
 				elm$core$String$join,
 				' ',
 				_List_fromArray(
-					[argA.F, argB.F, argC.F])));
+					[argA.C, argB.C, argC.C])));
 	});
 var rtfeldman$elm_css$Css$margin3 = rtfeldman$elm_css$Css$prop3('margin');
-var rtfeldman$elm_css$Css$none = {ac: 0, bz: 0, t: 0, a: 0, g: 0, cn: 0, bM: 0, bj: 0, ao: 0, V: 0, D: 0, c: 0, b: 0, bl: 0, a4: 0, cx: 0, A: 0, a6: 0, cz: 0, av: 0, _: 0, x: 0, e: 0, cD: 0, F: 'none'};
+var rtfeldman$elm_css$Css$none = {Y: 0, bA: 0, r: 0, a: 0, f: 0, co: 0, bN: 0, bi: 0, aj: 0, R: 0, A: 0, c: 0, b: 0, bk: 0, a2: 0, cy: 0, x: 0, a4: 0, cA: 0, aq: 0, W: 0, v: 0, e: 0, cE: 0, C: 'none'};
 var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -7371,7 +7371,9 @@ var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
 			rtfeldman$elm_css$Css$zero),
 			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero)
 		]));
-var author$project$Main$ApplyEdit = {$: 7};
+var author$project$Main$ApplyEdit = function (a) {
+	return {$: 7, a: a};
+};
 var author$project$Main$CurrentId = function (a) {
 	return {$: 0, a: a};
 };
@@ -7408,13 +7410,16 @@ var author$project$Main$iconButton = F3(
 					rtfeldman$elm_css$Html$Styled$text(icon)
 				]));
 	});
-var author$project$Main$CancelEdit = {$: 8};
+var author$project$Main$CancelEdit = function (a) {
+	return {$: 8, a: a};
+};
 var author$project$Main$DeleteTask = function (a) {
 	return {$: 9, a: a};
 };
-var author$project$Main$EditTask = function (a) {
-	return {$: 6, a: a};
-};
+var author$project$Main$EditTask = F2(
+	function (a, b) {
+		return {$: 6, a: a, b: b};
+	});
 var author$project$Main$errorMessageStyle = rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -7432,17 +7437,21 @@ var author$project$Tasks$actionFromString = function (rawAction) {
 	var cleaned = elm$core$String$trim(rawAction);
 	return elm$core$String$isEmpty(cleaned) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(cleaned);
 };
-var author$project$Tasks$getId = function (_n0) {
-	var id = _n0.y;
-	return id;
+var author$project$Tasks$getEdited = function (_n0) {
+	var info = _n0;
+	return info.aB;
 };
 var author$project$Tasks$stringFromAction = function (_n0) {
 	var rawAction = _n0;
 	return rawAction;
 };
+var author$project$Tasks$readPrevious = function (_n0) {
+	var info = _n0;
+	return author$project$Tasks$stringFromAction(info.bo);
+};
 var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
-var author$project$Main$viewEditAction = F4(
-	function (editedAction, previousAction, task, toGlobalId) {
+var author$project$Main$viewEditAction = F3(
+	function (id, editInfo, toGlobalId) {
 		return A2(
 			rtfeldman$elm_css$Html$Styled$form,
 			_List_fromArray(
@@ -7453,13 +7462,16 @@ var author$project$Main$viewEditAction = F4(
 							rtfeldman$elm_css$Css$flex(
 							rtfeldman$elm_css$Css$num(1))
 						])),
-					rtfeldman$elm_css$Html$Styled$Events$onSubmit(author$project$Main$ApplyEdit)
+					rtfeldman$elm_css$Html$Styled$Events$onSubmit(
+					author$project$Main$ApplyEdit(
+						toGlobalId(id)))
 				]),
 			_List_fromArray(
 				[
 					function () {
+					var edited = author$project$Tasks$getEdited(editInfo.be);
 					var isEmpty = _Utils_eq(
-						author$project$Tasks$actionFromString(editedAction),
+						author$project$Tasks$actionFromString(edited),
 						elm$core$Maybe$Nothing);
 					return A2(
 						rtfeldman$elm_css$Html$Styled$label,
@@ -7483,8 +7495,10 @@ var author$project$Main$viewEditAction = F4(
 								_List_fromArray(
 									[
 										rtfeldman$elm_css$Html$Styled$Attributes$type_('text'),
-										rtfeldman$elm_css$Html$Styled$Attributes$value(editedAction),
-										rtfeldman$elm_css$Html$Styled$Events$onInput(author$project$Main$EditTask),
+										rtfeldman$elm_css$Html$Styled$Attributes$value(edited),
+										rtfeldman$elm_css$Html$Styled$Events$onInput(
+										author$project$Main$EditTask(
+											toGlobalId(id))),
 										author$project$Main$stopPropagation,
 										rtfeldman$elm_css$Html$Styled$Attributes$css(
 										_List_fromArray(
@@ -7521,21 +7535,24 @@ var author$project$Main$viewEditAction = F4(
 						]),
 					_List_fromArray(
 						[
-							A5(
-							author$project$Main$iconButtonInputDisable,
-							_Utils_eq(
-								editedAction,
-								author$project$Tasks$stringFromAction(previousAction)),
-							'reset',
-							author$project$Main$CancelEdit,
-							'Undo changes',
-							'️↩️'),
+							function () {
+							var isUnchanged = _Utils_eq(
+								author$project$Tasks$getEdited(editInfo.be),
+								author$project$Tasks$readPrevious(editInfo.be));
+							return A5(
+								author$project$Main$iconButtonInputDisable,
+								isUnchanged,
+								'reset',
+								author$project$Main$CancelEdit(
+									toGlobalId(id)),
+								'Undo changes',
+								'️↩️');
+						}(),
 							A4(
 							author$project$Main$iconButtonInput,
 							'button',
 							author$project$Main$DeleteTask(
-								toGlobalId(
-									author$project$Tasks$getId(task))),
+								toGlobalId(id)),
 							'Delete task',
 							'🗑️')
 						]))
@@ -7569,16 +7586,17 @@ var author$project$Main$viewTaskBase = F3(
 			_List_fromArray(
 				[action, btn]));
 	});
-var author$project$Main$viewEditTask = F3(
-	function (editedAction, previousAction, task) {
+var author$project$Main$viewEditTask = F2(
+	function (id, editTask) {
 		return A3(
 			author$project$Main$viewTaskBase,
-			author$project$Main$onButtonClick(author$project$Main$ApplyEdit),
-			A4(author$project$Main$viewEditAction, editedAction, previousAction, task, author$project$Main$CurrentId),
+			author$project$Main$onButtonClick(
+				author$project$Main$ApplyEdit(
+					author$project$Main$CurrentId(id))),
+			A3(author$project$Main$viewEditAction, id, editTask, author$project$Main$CurrentId),
 			A3(
 				author$project$Main$iconButton,
-				author$project$Main$DoTask(
-					author$project$Tasks$getId(task)),
+				author$project$Main$DoTask(id),
 				'Mark as done',
 				'✔️'));
 	});
@@ -7586,7 +7604,7 @@ var author$project$Main$StartEdit = function (a) {
 	return {$: 5, a: a};
 };
 var author$project$Main$noStyle = rtfeldman$elm_css$Css$batch(_List_Nil);
-var rtfeldman$elm_css$Css$ellipsis = {b5: 0, F: 'ellipsis'};
+var rtfeldman$elm_css$Css$ellipsis = {b6: 0, C: 'ellipsis'};
 var rtfeldman$elm_css$Css$textOverflow = rtfeldman$elm_css$Css$prop1('text-overflow');
 var author$project$Main$viewAction = F2(
 	function (customStyle, action) {
@@ -7610,197 +7628,188 @@ var author$project$Main$viewAction = F2(
 					rtfeldman$elm_css$Html$Styled$text(action)
 				]));
 	});
-var author$project$Tasks$readAction = function (_n0) {
-	var task = _n0;
-	return author$project$Tasks$stringFromAction(task.ab);
+var author$project$Main$viewTask = F2(
+	function (id, task) {
+		return A3(
+			author$project$Main$viewTaskBase,
+			author$project$Main$onButtonClick(
+				author$project$Main$StartEdit(
+					author$project$Main$CurrentId(id))),
+			A2(
+				author$project$Main$viewAction,
+				author$project$Main$noStyle,
+				author$project$Tasks$stringFromAction(task.bu)),
+			A3(
+				author$project$Main$iconButton,
+				author$project$Main$DoTask(id),
+				'Mark as done',
+				'✔️'));
+	});
+var author$project$IdCollection$toList = function (_n0) {
+	var collection = _n0;
+	return collection;
 };
-var author$project$Main$viewTask = function (task) {
-	return A3(
-		author$project$Main$viewTaskBase,
-		author$project$Main$onButtonClick(
-			author$project$Main$StartEdit(
-				author$project$Main$CurrentId(
-					author$project$Tasks$getId(task)))),
-		A2(
-			author$project$Main$viewAction,
-			author$project$Main$noStyle,
-			author$project$Tasks$readAction(task)),
-		A3(
-			author$project$Main$iconButton,
-			author$project$Main$DoTask(
-				author$project$Tasks$getId(task)),
-			'Mark as done',
-			'✔️'));
-};
-var author$project$Tasks$toList = function (_n0) {
-	var list = _n0;
-	return list;
-};
+var author$project$Tasks$toList = author$project$IdCollection$toList;
 var rtfeldman$elm_css$Css$borderBottom3 = rtfeldman$elm_css$Css$prop3('border-bottom');
-var rtfeldman$elm_css$Css$solid = {t: 0, Z: 0, F: 'solid'};
+var rtfeldman$elm_css$Css$solid = {r: 0, V: 0, C: 'solid'};
 var rtfeldman$elm_css$Html$Styled$li = rtfeldman$elm_css$Html$Styled$node('li');
 var rtfeldman$elm_css$Html$Styled$ol = rtfeldman$elm_css$Html$Styled$node('ol');
-var author$project$Main$viewCurrentTaskList = F2(
-	function (editing, currentTasks) {
-		return A2(
-			rtfeldman$elm_css$Html$Styled$ol,
-			_List_fromArray(
-				[
-					rtfeldman$elm_css$Html$Styled$Attributes$css(
+var author$project$Main$viewCurrentTaskList = function (currentTasks) {
+	return A2(
+		rtfeldman$elm_css$Html$Styled$ol,
+		_List_fromArray(
+			[
+				rtfeldman$elm_css$Html$Styled$Attributes$css(
+				_List_fromArray(
+					[author$project$Main$taskListStyle]))
+			]),
+		A2(
+			elm$core$List$map,
+			function (entry) {
+				return A2(
+					rtfeldman$elm_css$Html$Styled$li,
 					_List_fromArray(
-						[author$project$Main$taskListStyle]))
-				]),
-			A2(
-				elm$core$List$map,
-				function (task) {
-					return A2(
-						rtfeldman$elm_css$Html$Styled$li,
-						_List_fromArray(
-							[
-								rtfeldman$elm_css$Html$Styled$Attributes$css(
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Css$hover(
-										_List_fromArray(
-											[
-												rtfeldman$elm_css$Css$backgroundColor(
-												A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 3.0e-2))
-											])),
-										A2(
-										rtfeldman$elm_css$Css$pseudoClass,
-										'not(:last-child)',
-										_List_fromArray(
-											[
-												A3(
-												rtfeldman$elm_css$Css$borderBottom3,
-												rtfeldman$elm_css$Css$px(1),
-												rtfeldman$elm_css$Css$solid,
-												A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1))
-											]))
-									]))
-							]),
-						_List_fromArray(
-							[
-								function () {
-								if (editing.$ === 1) {
-									return author$project$Main$viewTask(task);
-								} else {
-									var id = editing.a.y;
-									var info = editing.a.r;
-									return _Utils_eq(
-										author$project$Tasks$getId(task),
-										id) ? A3(author$project$Main$viewEditTask, info.N, info.Q, task) : author$project$Main$viewTask(task);
-								}
-							}()
-							]));
-				},
-				author$project$Tasks$toList(currentTasks)));
-	});
+						[
+							rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[
+									rtfeldman$elm_css$Css$hover(
+									_List_fromArray(
+										[
+											rtfeldman$elm_css$Css$backgroundColor(
+											A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 3.0e-2))
+										])),
+									A2(
+									rtfeldman$elm_css$Css$pseudoClass,
+									'not(:last-child)',
+									_List_fromArray(
+										[
+											A3(
+											rtfeldman$elm_css$Css$borderBottom3,
+											rtfeldman$elm_css$Css$px(1),
+											rtfeldman$elm_css$Css$solid,
+											A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1))
+										]))
+								]))
+						]),
+					_List_fromArray(
+						[
+							function () {
+							var _n0 = entry.I;
+							if (!_n0.$) {
+								var taskInfo = _n0.a;
+								return A2(author$project$Main$viewTask, entry.aE, taskInfo);
+							} else {
+								var editingInfo = _n0.a;
+								return A2(author$project$Main$viewEditTask, entry.aE, editingInfo);
+							}
+						}()
+						]));
+			},
+			author$project$Tasks$toList(currentTasks)));
+};
 var author$project$Main$DoneId = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Main$UndoTask = function (a) {
 	return {$: 4, a: a};
 };
-var rtfeldman$elm_css$Css$lineThrough = {av: 0, F: 'line-through'};
+var rtfeldman$elm_css$Css$lineThrough = {aq: 0, C: 'line-through'};
 var rtfeldman$elm_css$Css$textDecoration = rtfeldman$elm_css$Css$prop1('text-decoration');
-var author$project$Main$viewDoneTask = function (task) {
-	return A3(
-		author$project$Main$viewTaskBase,
-		author$project$Main$onButtonClick(
-			author$project$Main$StartEdit(
-				author$project$Main$DoneId(
-					author$project$Tasks$getId(task)))),
-		A2(
-			author$project$Main$viewAction,
-			rtfeldman$elm_css$Css$batch(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$textDecoration(rtfeldman$elm_css$Css$lineThrough),
-						rtfeldman$elm_css$Css$opacity(
-						rtfeldman$elm_css$Css$num(0.6))
-					])),
-			author$project$Tasks$readAction(task)),
-		A3(
-			author$project$Main$iconButton,
-			author$project$Main$UndoTask(
-				author$project$Tasks$getId(task)),
-			'Mark as to do',
-			'🔄'));
-};
-var author$project$Main$viewEditDoneTask = F3(
-	function (editedAction, previousAction, task) {
+var author$project$Main$viewDoneTask = F2(
+	function (id, task) {
 		return A3(
 			author$project$Main$viewTaskBase,
-			author$project$Main$onButtonClick(author$project$Main$ApplyEdit),
-			A4(author$project$Main$viewEditAction, editedAction, previousAction, task, author$project$Main$DoneId),
+			author$project$Main$onButtonClick(
+				author$project$Main$StartEdit(
+					author$project$Main$DoneId(id))),
+			A2(
+				author$project$Main$viewAction,
+				rtfeldman$elm_css$Css$batch(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$textDecoration(rtfeldman$elm_css$Css$lineThrough),
+							rtfeldman$elm_css$Css$opacity(
+							rtfeldman$elm_css$Css$num(0.6))
+						])),
+				author$project$Tasks$stringFromAction(task.bu)),
 			A3(
 				author$project$Main$iconButton,
-				author$project$Main$UndoTask(
-					author$project$Tasks$getId(task)),
+				author$project$Main$UndoTask(id),
 				'Mark as to do',
 				'🔄'));
 	});
-var author$project$Main$viewDoneTaskList = function (editing) {
+var author$project$Main$viewEditDoneTask = F2(
+	function (id, editInfo) {
+		return A3(
+			author$project$Main$viewTaskBase,
+			author$project$Main$onButtonClick(
+				author$project$Main$ApplyEdit(
+					author$project$Main$DoneId(id))),
+			A3(author$project$Main$viewEditAction, id, editInfo, author$project$Main$DoneId),
+			A3(
+				author$project$Main$iconButton,
+				author$project$Main$UndoTask(id),
+				'Mark as to do',
+				'🔄'));
+	});
+var author$project$Main$viewDoneTaskList = function (collection) {
 	return A2(
-		elm$core$Basics$composeL,
-		A2(
-			elm$core$Basics$composeL,
-			rtfeldman$elm_css$Html$Styled$ol(
+		rtfeldman$elm_css$Html$Styled$ol,
+		_List_fromArray(
+			[
+				rtfeldman$elm_css$Html$Styled$Attributes$css(
 				_List_fromArray(
-					[
-						rtfeldman$elm_css$Html$Styled$Attributes$css(
-						_List_fromArray(
-							[author$project$Main$taskListStyle]))
-					])),
-			elm$core$List$map(
-				function (task) {
-					return A2(
-						rtfeldman$elm_css$Html$Styled$li,
-						_List_fromArray(
-							[
-								rtfeldman$elm_css$Html$Styled$Attributes$css(
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Css$hover(
-										_List_fromArray(
-											[
-												rtfeldman$elm_css$Css$backgroundColor(
-												A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 3.0e-2))
-											])),
-										A2(
-										rtfeldman$elm_css$Css$pseudoClass,
-										'not(:last-child)',
-										_List_fromArray(
-											[
-												A3(
-												rtfeldman$elm_css$Css$borderBottom3,
-												rtfeldman$elm_css$Css$px(1),
-												rtfeldman$elm_css$Css$solid,
-												A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1))
-											]))
-									]))
-							]),
-						_List_fromArray(
-							[
-								function () {
-								if (editing.$ === 1) {
-									return author$project$Main$viewDoneTask(task);
-								} else {
-									var id = editing.a.y;
-									var info = editing.a.r;
-									return _Utils_eq(
-										author$project$Tasks$getId(task),
-										id) ? A3(author$project$Main$viewEditDoneTask, info.N, info.Q, task) : author$project$Main$viewDoneTask(task);
-								}
-							}()
-							]));
-				})),
-		author$project$Tasks$toList);
+					[author$project$Main$taskListStyle]))
+			]),
+		A2(
+			elm$core$List$map,
+			function (entry) {
+				return A2(
+					rtfeldman$elm_css$Html$Styled$li,
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[
+									rtfeldman$elm_css$Css$hover(
+									_List_fromArray(
+										[
+											rtfeldman$elm_css$Css$backgroundColor(
+											A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 3.0e-2))
+										])),
+									A2(
+									rtfeldman$elm_css$Css$pseudoClass,
+									'not(:last-child)',
+									_List_fromArray(
+										[
+											A3(
+											rtfeldman$elm_css$Css$borderBottom3,
+											rtfeldman$elm_css$Css$px(1),
+											rtfeldman$elm_css$Css$solid,
+											A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1))
+										]))
+								]))
+						]),
+					_List_fromArray(
+						[
+							function () {
+							var _n0 = entry.I;
+							if (!_n0.$) {
+								var taskInfo = _n0.a;
+								return A2(author$project$Main$viewDoneTask, entry.aE, taskInfo);
+							} else {
+								var editingInfo = _n0.a;
+								return A2(author$project$Main$viewEditDoneTask, entry.aE, editingInfo);
+							}
+						}()
+						]));
+			},
+			author$project$Tasks$toList(collection)));
 };
 var rtfeldman$elm_css$Css$fontFamily = rtfeldman$elm_css$Css$prop1('font-family');
 var rtfeldman$elm_css$Css$maxWidth = rtfeldman$elm_css$Css$prop1('max-width');
-var rtfeldman$elm_css$Css$sansSerif = {T: 0, F: 'sans-serif'};
+var rtfeldman$elm_css$Css$sansSerif = {P: 0, C: 'sans-serif'};
 var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
@@ -8305,7 +8314,7 @@ var rtfeldman$elm_css$VirtualDom$Styled$toUnstyled = function (vdom) {
 var rtfeldman$elm_css$Html$Styled$toUnstyled = rtfeldman$elm_css$VirtualDom$Styled$toUnstyled;
 var author$project$Main$view = function (model) {
 	return {
-		bf: A2(
+		bd: A2(
 			elm$core$List$map,
 			rtfeldman$elm_css$Html$Styled$toUnstyled,
 			_List_fromArray(
@@ -8361,51 +8370,25 @@ var author$project$Main$view = function (model) {
 						]),
 					_List_fromArray(
 						[
-							function () {
-							var _n0 = function () {
-								var _n1 = model.o;
-								if (!_n1.$) {
-									var id = _n1.a.y;
-									var info = _n1.a.r;
-									if (!id.$) {
-										var currentId = id.a;
-										return _Utils_Tuple2(
-											elm$core$Maybe$Just(
-												{y: currentId, r: info}),
-											elm$core$Maybe$Nothing);
-									} else {
-										var doneId = id.a;
-										return _Utils_Tuple2(
-											elm$core$Maybe$Nothing,
-											elm$core$Maybe$Just(
-												{y: doneId, r: info}));
-									}
-								} else {
-									return _Utils_Tuple2(elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
-								}
-							}();
-							var currentEditing = _n0.a;
-							var doneEditing = _n0.b;
-							return A2(
-								rtfeldman$elm_css$Html$Styled$main_,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$Attributes$css(
-										_List_fromArray(
-											[
-												rtfeldman$elm_css$Css$width(
-												rtfeldman$elm_css$Css$pct(100)),
-												rtfeldman$elm_css$Css$maxWidth(
-												rtfeldman$elm_css$Css$em(25))
-											]))
-									]),
-								_List_fromArray(
-									[
-										author$project$Main$viewActionInput(model.ap),
-										A2(author$project$Main$viewCurrentTaskList, currentEditing, model.f),
-										A2(author$project$Main$viewDoneTaskList, doneEditing, model.h)
-									]));
-						}()
+							A2(
+							rtfeldman$elm_css$Html$Styled$main_,
+							_List_fromArray(
+								[
+									rtfeldman$elm_css$Html$Styled$Attributes$css(
+									_List_fromArray(
+										[
+											rtfeldman$elm_css$Css$width(
+											rtfeldman$elm_css$Css$pct(100)),
+											rtfeldman$elm_css$Css$maxWidth(
+											rtfeldman$elm_css$Css$em(25))
+										]))
+								]),
+							_List_fromArray(
+								[
+									author$project$Main$viewActionInput(model.ak),
+									author$project$Main$viewCurrentTaskList(model.j),
+									author$project$Main$viewDoneTaskList(model.m)
+								]))
 						]))
 				])),
 		bs: 'Breakdown'
@@ -8415,62 +8398,48 @@ var author$project$Main$appView = function (appModel) {
 	return A2(
 		author$project$Main$mapDocument,
 		author$project$Main$Msg,
-		author$project$Main$view(appModel.aK));
+		author$project$Main$view(appModel.aI));
 };
 var author$project$Main$Current = 0;
 var author$project$Main$Done = 0;
-var author$project$Tasks$Collection = elm$core$Basics$identity;
-var author$project$Tasks$Task = elm$core$Basics$identity;
-var author$project$Tasks$TaskId = elm$core$Basics$identity;
-var elm$core$List$maximum = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(
-			A3(elm$core$List$foldl, elm$core$Basics$max, x, xs));
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Tasks$nextIdForCollection = function (_n0) {
-	var list = _n0;
-	var highestId = function () {
-		var getIdNum = function (_n1) {
-			var task = _n1;
-			var _n2 = task.y;
-			var n = _n2;
-			return n;
-		};
-		return A2(
-			elm$core$Maybe$withDefault,
-			0,
-			elm$core$List$maximum(
-				A2(elm$core$List$map, getIdNum, list)));
-	}();
-	return highestId + 1;
-};
-var author$project$Tasks$appendAndGetTask = F2(
-	function (action, to) {
-		var list = to;
-		var nextId = author$project$Tasks$nextIdForCollection(to);
-		var newTask = {ab: action, y: nextId};
-		var newList = _Utils_ap(
-			list,
-			_List_fromArray(
-				[newTask]));
-		return _Utils_Tuple2(newTask, newList);
+var author$project$IdCollection$Id = elm$core$Basics$identity;
+var author$project$IdCollection$IdCollection = elm$core$Basics$identity;
+var author$project$IdCollection$appendAndGetEntry = F2(
+	function (item, _n0) {
+		var collection = _n0;
+		var nextId = elm$core$List$length(collection) + 1;
+		var newEntry = {aE: nextId, I: item};
+		return _Utils_Tuple2(
+			newEntry,
+			_Utils_ap(
+				collection,
+				_List_fromArray(
+					[newEntry])));
 	});
 var elm$core$Tuple$second = function (_n0) {
 	var y = _n0.b;
 	return y;
 };
+var author$project$IdCollection$append = F2(
+	function (item, collection) {
+		return A2(author$project$IdCollection$appendAndGetEntry, item, collection).b;
+	});
+var author$project$Tasks$Task = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Tasks$taskFromAction = function (action) {
+	return author$project$Tasks$Task(
+		{bu: action});
+};
 var author$project$Tasks$appendTask = F2(
 	function (action, collection) {
-		return A2(author$project$Tasks$appendAndGetTask, action, collection).b;
+		var task = author$project$Tasks$taskFromAction(action);
+		return A2(author$project$IdCollection$append, task, collection);
 	});
-var author$project$Tasks$empty = function (_n0) {
+var author$project$IdCollection$empty = function (_n0) {
 	return _List_Nil;
 };
+var author$project$Tasks$empty = author$project$IdCollection$empty;
 var elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
 		var _n0 = f(mx);
@@ -8538,10 +8507,9 @@ var author$project$Main$decodeFlags = function (flags) {
 		A2(decodeCollection, 'doneTasks', 0));
 };
 var author$project$Main$initModel = {
-	f: author$project$Tasks$empty(0),
-	h: author$project$Tasks$empty(0),
-	o: elm$core$Maybe$Nothing,
-	ap: ''
+	j: author$project$Tasks$empty(0),
+	m: author$project$Tasks$empty(0),
+	ak: ''
 };
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
@@ -8555,10 +8523,10 @@ var author$project$Main$init = F3(
 		var actualDoneTasks = _n0.b;
 		return author$project$Main$simply(
 			{
-				bi: key,
-				aK: _Utils_update(
+				bh: key,
+				aI: _Utils_update(
 					author$project$Main$initModel,
-					{f: actualCurrentTasks, h: actualDoneTasks})
+					{j: actualCurrentTasks, m: actualDoneTasks})
 			});
 	});
 var elm$core$Platform$Sub$batch = _Platform_batch;
@@ -8576,70 +8544,13 @@ var author$project$Main$addTask = F2(
 			return currentTasks;
 		}
 	});
-var elm_community$list_extra$List$Extra$updateIf = F3(
-	function (predicate, update, list) {
-		return A2(
-			elm$core$List$map,
-			function (item) {
-				return predicate(item) ? update(item) : item;
-			},
-			list);
-	});
-var author$project$Tasks$editTask = F3(
-	function (id, action, _n0) {
-		var list = _n0;
-		return A3(
-			elm_community$list_extra$List$Extra$updateIf,
-			function (task) {
-				return _Utils_eq(
-					author$project$Tasks$getId(task),
-					id);
-			},
-			function (_n1) {
-				var task = _n1;
-				return _Utils_update(
-					task,
-					{ab: action});
-			},
-			list);
-	});
-var author$project$Main$editTask = F3(
-	function (id, editedAction, currentCollection) {
-		var _n0 = author$project$Tasks$actionFromString(editedAction);
-		if (!_n0.$) {
-			var newAction = _n0.a;
-			return A3(author$project$Tasks$editTask, id, newAction, currentCollection);
-		} else {
-			return currentCollection;
-		}
-	});
-var author$project$Main$applyEdit = function (currentModel) {
-	var _n0 = currentModel.o;
-	if (!_n0.$) {
-		var id = _n0.a.y;
-		var info = _n0.a.r;
-		var updatedTasks = function () {
-			if (!id.$) {
-				var currentId = id.a;
-				return _Utils_update(
-					currentModel,
-					{
-						f: A3(author$project$Main$editTask, currentId, info.N, currentModel.f)
-					});
-			} else {
-				var doneId = id.a;
-				return _Utils_update(
-					currentModel,
-					{
-						h: A3(author$project$Main$editTask, doneId, info.N, currentModel.h)
-					});
-			}
-		}();
-		return _Utils_update(
-			updatedTasks,
-			{o: elm$core$Maybe$Nothing});
+var author$project$Tasks$getTaskInfo = function (task) {
+	if (!task.$) {
+		var info = task.a;
+		return info;
 	} else {
-		return currentModel;
+		var editInfo = task.a;
+		return editInfo.aF;
 	}
 };
 var elm$core$Basics$composeR = F3(
@@ -8647,6 +8558,18 @@ var elm$core$Basics$composeR = F3(
 		return g(
 			f(x));
 	});
+var author$project$Tasks$getAction = A2(
+	elm$core$Basics$composeR,
+	function ($) {
+		return $.I;
+	},
+	A2(
+		elm$core$Basics$composeR,
+		author$project$Tasks$getTaskInfo,
+		function ($) {
+			return $.bu;
+		}));
+var author$project$Tasks$readAction = A2(elm$core$Basics$composeR, author$project$Tasks$getAction, author$project$Tasks$stringFromAction);
 var author$project$Main$encodeTask = A2(elm$core$Basics$composeR, author$project$Tasks$readAction, elm$json$Json$Encode$string);
 var author$project$Main$saveRaw = _Platform_outgoingPort('saveRaw', elm$core$Basics$identity);
 var elm$json$Json$Encode$list = F2(
@@ -8681,42 +8604,117 @@ var author$project$Main$save = function (model) {
 					A2(
 						elm$json$Json$Encode$list,
 						author$project$Main$encodeTask,
-						author$project$Tasks$toList(model.f))),
+						author$project$Tasks$toList(model.j))),
 					_Utils_Tuple2(
 					'doneTasks',
 					A2(
 						elm$json$Json$Encode$list,
 						author$project$Main$encodeTask,
-						author$project$Tasks$toList(model.h)))
+						author$project$Tasks$toList(model.m)))
 				])));
 };
-var author$project$Tasks$getAction = function (_n0) {
-	var task = _n0;
-	return task.ab;
-};
-var author$project$Tasks$insertTask = F2(
-	function (_n0, into) {
-		var task = _n0;
-		var list = into;
-		var newId = author$project$Tasks$nextIdForCollection(into);
-		var newTask = {ab: task.ab, y: newId};
-		return _Utils_ap(
-			list,
-			_List_fromArray(
-				[newTask]));
+var author$project$Main$updateEditTask = F2(
+	function (updateFunction, task) {
+		if (task.$ === 1) {
+			var editInfo = task.a;
+			return updateFunction(editInfo);
+		} else {
+			return task;
+		}
 	});
-var author$project$Tasks$removeTask = F2(
-	function (id, _n0) {
-		var list = _n0;
+var elm_community$list_extra$List$Extra$updateIf = F3(
+	function (predicate, update, list) {
 		return A2(
-			elm$core$List$filter,
-			function (task) {
-				return !_Utils_eq(
-					author$project$Tasks$getId(task),
-					id);
+			elm$core$List$map,
+			function (item) {
+				return predicate(item) ? update(item) : item;
 			},
 			list);
 	});
+var author$project$IdCollection$update = F3(
+	function (id, newItem, _n0) {
+		var collection = _n0;
+		var updateEntry = function (entry) {
+			return _Utils_update(
+				entry,
+				{
+					I: newItem(entry.I)
+				});
+		};
+		return A3(
+			elm_community$list_extra$List$Extra$updateIf,
+			function (entry) {
+				return _Utils_eq(entry.aE, id);
+			},
+			updateEntry,
+			collection);
+	});
+var author$project$Tasks$updateTask = author$project$IdCollection$update;
+var author$project$Main$updateTask = F3(
+	function (id, updateFunction, model) {
+		if (!id.$) {
+			var currentId = id.a;
+			return _Utils_update(
+				model,
+				{
+					j: A3(author$project$Tasks$updateTask, currentId, updateFunction, model.j)
+				});
+		} else {
+			var doneId = id.a;
+			return _Utils_update(
+				model,
+				{
+					m: A3(author$project$Tasks$updateTask, doneId, updateFunction, model.m)
+				});
+		}
+	});
+var author$project$Tasks$TaskInEdit = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Tasks$applyEdit = function (task) {
+	var _n0 = task.be;
+	var editing = _n0;
+	return A2(
+		elm$core$Maybe$map,
+		function (newAction) {
+			var info = task.aF;
+			var newInfo = _Utils_update(
+				info,
+				{bu: newAction});
+			return author$project$Tasks$Task(newInfo);
+		},
+		author$project$Tasks$actionFromString(editing.aB));
+};
+var author$project$Tasks$cancelEdit = function (task) {
+	return author$project$Tasks$Task(task.aF);
+};
+var author$project$Tasks$Editing = elm$core$Basics$identity;
+var author$project$Tasks$edit = F2(
+	function (newAction, task) {
+		var _n0 = task.be;
+		var editing = _n0;
+		var newEditing = _Utils_update(
+			editing,
+			{aB: newAction});
+		return _Utils_update(
+			task,
+			{be: newEditing});
+	});
+var author$project$IdCollection$map = F2(
+	function (mapFunction, _n0) {
+		var collection = _n0;
+		return A2(
+			elm$core$List$map,
+			function (entry) {
+				return _Utils_update(
+					entry,
+					{
+						I: mapFunction(entry.I)
+					});
+			},
+			collection);
+	});
+var author$project$Tasks$map = author$project$IdCollection$map;
 var elm_community$list_extra$List$Extra$find = F2(
 	function (predicate, list) {
 		find:
@@ -8738,32 +8736,95 @@ var elm_community$list_extra$List$Extra$find = F2(
 			}
 		}
 	});
+var author$project$IdCollection$get = F2(
+	function (id, _n0) {
+		var collection = _n0;
+		return A2(
+			elm$core$Maybe$map,
+			function ($) {
+				return $.I;
+			},
+			A2(
+				elm_community$list_extra$List$Extra$find,
+				function (entry) {
+					return _Utils_eq(entry.aE, id);
+				},
+				collection));
+	});
+var elm_community$list_extra$List$Extra$remove = F2(
+	function (x, xs) {
+		if (!xs.b) {
+			return _List_Nil;
+		} else {
+			var y = xs.a;
+			var ys = xs.b;
+			return _Utils_eq(x, y) ? ys : A2(
+				elm$core$List$cons,
+				y,
+				A2(elm_community$list_extra$List$Extra$remove, x, ys));
+		}
+	});
+var author$project$IdCollection$removeAndGet = F2(
+	function (id, _n0) {
+		var collection = _n0;
+		var toRemove = A2(
+			elm_community$list_extra$List$Extra$find,
+			function (entry) {
+				return _Utils_eq(entry.aE, id);
+			},
+			collection);
+		var removed = A2(
+			elm$core$Maybe$map,
+			function ($) {
+				return $.I;
+			},
+			toRemove);
+		var newCollection = function () {
+			if (!toRemove.$) {
+				var entry = toRemove.a;
+				return A2(elm_community$list_extra$List$Extra$remove, entry, collection);
+			} else {
+				return collection;
+			}
+		}();
+		return _Utils_Tuple2(removed, newCollection);
+	});
+var author$project$IdCollection$remove = F2(
+	function (id, collection) {
+		return A2(author$project$IdCollection$removeAndGet, id, collection).b;
+	});
+var author$project$Tasks$removeTask = author$project$IdCollection$remove;
 var author$project$Tasks$moveTask = F3(
 	function (id, from, to) {
-		var listFrom = from;
 		var newFrom = A2(author$project$Tasks$removeTask, id, from);
-		var mayBeTask = A2(
-			elm_community$list_extra$List$Extra$find,
-			function (candidate) {
-				return _Utils_eq(
-					author$project$Tasks$getId(candidate),
-					id);
-			},
-			listFrom);
+		var mayBeTask = A2(author$project$IdCollection$get, id, from);
 		if (!mayBeTask.$) {
 			var task = mayBeTask.a;
 			return _Utils_Tuple2(
 				newFrom,
-				A2(author$project$Tasks$insertTask, task, to));
+				A2(author$project$IdCollection$append, task, to));
 		} else {
 			return _Utils_Tuple2(from, to);
 		}
 	});
+var author$project$Tasks$initEditingInfo = function (task) {
+	var action = author$project$Tasks$getTaskInfo(task).bu;
+	return {
+		aB: author$project$Tasks$stringFromAction(action),
+		bo: action
+	};
+};
+var author$project$Tasks$startEdit = function (task) {
+	return {
+		be: author$project$Tasks$initEditingInfo(task),
+		aF: author$project$Tasks$getTaskInfo(task)
+	};
+};
 var author$project$Main$update = F2(
 	function (msg, model) {
-		return function (_n11) {
-			var newModel = _n11.a;
-			var newMsg = _n11.b;
+		return function (_n6) {
+			var newModel = _n6.a;
+			var newMsg = _n6.b;
 			return _Utils_Tuple2(
 				newModel,
 				elm$core$Platform$Cmd$batch(
@@ -8782,170 +8843,69 @@ var author$project$Main$update = F2(
 						return author$project$Main$simply(
 							_Utils_update(
 								model,
-								{ap: action}));
+								{ak: action}));
 					case 2:
-						var newTasks = A2(author$project$Main$addTask, model.ap, model.f);
+						var newTasks = A2(author$project$Main$addTask, model.ak, model.j);
 						return author$project$Main$simply(
 							_Utils_update(
 								model,
-								{f: newTasks, ap: ''}));
+								{j: newTasks, ak: ''}));
 					case 3:
 						var id = msg.a;
-						var _n1 = A3(author$project$Tasks$moveTask, id, model.f, model.h);
+						var _n1 = A3(author$project$Tasks$moveTask, id, model.j, model.m);
 						var newCurrentTasks = _n1.a;
 						var newDoneTasks = _n1.b;
 						return author$project$Main$simply(
 							_Utils_update(
 								model,
-								{f: newCurrentTasks, h: newDoneTasks, o: elm$core$Maybe$Nothing}));
+								{j: newCurrentTasks, m: newDoneTasks}));
 					case 4:
 						var id = msg.a;
-						var _n2 = A3(author$project$Tasks$moveTask, id, model.h, model.f);
+						var _n2 = A3(author$project$Tasks$moveTask, id, model.m, model.j);
 						var newDoneTasks = _n2.a;
 						var newCurrentTasks = _n2.b;
 						return author$project$Main$simply(
 							_Utils_update(
 								model,
-								{f: newCurrentTasks, h: newDoneTasks}));
+								{j: newCurrentTasks, m: newDoneTasks}));
 					case 5:
 						var id = msg.a;
-						var updatedModel = author$project$Main$applyEdit(model);
-						var editing = function () {
-							var initEditingFromTask = function (task) {
-								return A2(
-									elm$core$Maybe$map,
-									function (t) {
-										return {
-											y: id,
-											r: {
-												N: author$project$Tasks$readAction(t),
-												Q: author$project$Tasks$getAction(t)
-											}
-										};
-									},
-									task);
-							};
-							if (!id.$) {
-								var currentId = id.a;
-								return initEditingFromTask(
-									A2(
-										elm_community$list_extra$List$Extra$find,
-										A2(
-											elm$core$Basics$composeR,
-											author$project$Tasks$getId,
-											elm$core$Basics$eq(currentId)),
-										author$project$Tasks$toList(model.f)));
-							} else {
-								var doneId = id.a;
-								return initEditingFromTask(
-									A2(
-										elm_community$list_extra$List$Extra$find,
-										A2(
-											elm$core$Basics$composeR,
-											author$project$Tasks$getId,
-											elm$core$Basics$eq(doneId)),
-										author$project$Tasks$toList(model.h)));
-							}
-						}();
+						var startEdit = A2(elm$core$Basics$composeR, author$project$Tasks$startEdit, author$project$Tasks$TaskInEdit);
 						return author$project$Main$simply(
-							_Utils_update(
-								updatedModel,
-								{o: editing}));
+							A3(author$project$Main$updateTask, id, startEdit, model));
 					case 7:
-						return author$project$Main$simply(
-							author$project$Main$applyEdit(model));
-					case 8:
-						var updatedModel = A2(
-							elm$core$Maybe$withDefault,
-							model,
-							A2(
-								elm$core$Maybe$map,
-								function (_n4) {
-									var id = _n4.y;
-									var info = _n4.r;
-									if (!id.$) {
-										var currentId = id.a;
-										return _Utils_update(
-											model,
-											{
-												f: A3(author$project$Tasks$editTask, currentId, info.Q, model.f)
-											});
+						var id = msg.a;
+						var applyEdit = function (task) {
+							return A2(
+								author$project$Main$updateEditTask,
+								function (editInfo) {
+									var _n3 = author$project$Tasks$applyEdit(editInfo);
+									if (!_n3.$) {
+										var editedTask = _n3.a;
+										return editedTask;
 									} else {
-										var doneId = id.a;
-										return _Utils_update(
-											model,
-											{
-												h: A3(author$project$Tasks$editTask, doneId, info.Q, model.h)
-											});
+										return task;
 									}
 								},
-								model.o));
+								task);
+						};
 						return author$project$Main$simply(
-							_Utils_update(
-								updatedModel,
-								{o: elm$core$Maybe$Nothing}));
+							A3(author$project$Main$updateTask, id, applyEdit, model));
+					case 8:
+						var id = msg.a;
+						var cancelEdit = author$project$Main$updateEditTask(author$project$Tasks$cancelEdit);
+						return author$project$Main$simply(
+							A3(author$project$Main$updateTask, id, cancelEdit, model));
 					case 6:
-						var newRawAction = msg.a;
-						var updatedModel = function () {
-							var _n6 = model.o;
-							if (!_n6.$) {
-								var currentEditing = _n6.a;
-								var id = currentEditing.y;
-								var info = currentEditing.r;
-								if (!id.$) {
-									var currentId = id.a;
-									var updatedCurrentTasks = function () {
-										var _n8 = author$project$Tasks$actionFromString(newRawAction);
-										if (!_n8.$) {
-											var newAction = _n8.a;
-											return A3(author$project$Tasks$editTask, currentId, newAction, model.f);
-										} else {
-											return A3(author$project$Tasks$editTask, currentId, info.Q, model.f);
-										}
-									}();
-									return _Utils_update(
-										model,
-										{
-											f: updatedCurrentTasks,
-											o: elm$core$Maybe$Just(
-												_Utils_update(
-													currentEditing,
-													{
-														r: _Utils_update(
-															info,
-															{N: newRawAction})
-													}))
-										});
-								} else {
-									var doneId = id.a;
-									var updatedDoneTasks = function () {
-										var _n9 = author$project$Tasks$actionFromString(newRawAction);
-										if (!_n9.$) {
-											var newAction = _n9.a;
-											return A3(author$project$Tasks$editTask, doneId, newAction, model.h);
-										} else {
-											return A3(author$project$Tasks$editTask, doneId, info.Q, model.h);
-										}
-									}();
-									return _Utils_update(
-										model,
-										{
-											h: updatedDoneTasks,
-											o: elm$core$Maybe$Just(
-												_Utils_update(
-													currentEditing,
-													{
-														r: _Utils_update(
-															info,
-															{N: newRawAction})
-													}))
-										});
-								}
-							} else {
-								return model;
-							}
-						}();
-						return author$project$Main$simply(updatedModel);
+						var id = msg.a;
+						var newRawAction = msg.b;
+						var editTask = author$project$Main$updateEditTask(
+							A2(
+								elm$core$Basics$composeR,
+								author$project$Tasks$edit(newRawAction),
+								author$project$Tasks$TaskInEdit));
+						return author$project$Main$simply(
+							A3(author$project$Main$updateTask, id, editTask, model));
 					case 9:
 						var id = msg.a;
 						var updatedModel = function () {
@@ -8954,23 +8914,45 @@ var author$project$Main$update = F2(
 								return _Utils_update(
 									model,
 									{
-										f: A2(author$project$Tasks$removeTask, currentId, model.f)
+										j: A2(author$project$Tasks$removeTask, currentId, model.j)
 									});
 							} else {
 								var doneId = id.a;
 								return _Utils_update(
 									model,
 									{
-										h: A2(author$project$Tasks$removeTask, doneId, model.h)
+										m: A2(author$project$Tasks$removeTask, doneId, model.m)
 									});
 							}
 						}();
 						return author$project$Main$simply(updatedModel);
 					default:
+						var applyEdit = function (collection) {
+							return A2(
+								author$project$Tasks$map,
+								function (task) {
+									return A2(
+										author$project$Main$updateEditTask,
+										function (editInfo) {
+											var _n5 = author$project$Tasks$applyEdit(editInfo);
+											if (!_n5.$) {
+												var editedTask = _n5.a;
+												return editedTask;
+											} else {
+												return task;
+											}
+										},
+										task);
+								},
+								collection);
+						};
 						return author$project$Main$simply(
 							_Utils_update(
 								model,
-								{o: elm$core$Maybe$Nothing}));
+								{
+									j: applyEdit(model.j),
+									m: applyEdit(model.m)
+								}));
 				}
 			}());
 	});
@@ -9087,7 +9069,7 @@ var elm$core$String$contains = _String_contains;
 var elm$core$String$toInt = _String_toInt;
 var elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {bI: fragment, bK: host, bS: path, bU: port_, bX: protocol, bY: query};
+		return {bJ: fragment, bL: host, bT: path, bV: port_, bY: protocol, bZ: query};
 	});
 var elm$url$Url$chompBeforePath = F5(
 	function (protocol, path, params, frag, str) {
@@ -9224,7 +9206,7 @@ var elm$url$Url$addPrefixed = F3(
 	});
 var elm$url$Url$toString = function (url) {
 	var http = function () {
-		var _n0 = url.bX;
+		var _n0 = url.bY;
 		if (!_n0) {
 			return 'http://';
 		} else {
@@ -9234,17 +9216,17 @@ var elm$url$Url$toString = function (url) {
 	return A3(
 		elm$url$Url$addPrefixed,
 		'#',
-		url.bI,
+		url.bJ,
 		A3(
 			elm$url$Url$addPrefixed,
 			'?',
-			url.bY,
+			url.bZ,
 			_Utils_ap(
 				A2(
 					elm$url$Url$addPort,
-					url.bU,
-					_Utils_ap(http, url.bK)),
-				url.bS)));
+					url.bV,
+					_Utils_ap(http, url.bL)),
+				url.bT)));
 };
 var author$project$Main$updateApp = F2(
 	function (appMsg, appModel) {
@@ -9256,7 +9238,7 @@ var author$project$Main$updateApp = F2(
 					appModel,
 					A2(
 						elm$browser$Browser$Navigation$pushUrl,
-						appModel.bi,
+						appModel.bh,
 						elm$url$Url$toString(url)));
 			} else {
 				var href = request.a;
@@ -9271,23 +9253,23 @@ var author$project$Main$updateApp = F2(
 				function (model) {
 					return _Utils_update(
 						appModel,
-						{aK: model});
+						{aI: model});
 				},
 				elm$core$Platform$Cmd$map(author$project$Main$Msg),
-				A2(author$project$Main$update, msg, appModel.aK));
+				A2(author$project$Main$update, msg, appModel.aI));
 		}
 	});
 var elm$browser$Browser$application = _Browser_application;
 var elm$json$Json$Decode$value = _Json_decodeValue;
 var author$project$Main$main = elm$browser$Browser$application(
 	{
-		cp: author$project$Main$init,
-		cu: function (_n0) {
+		cq: author$project$Main$init,
+		cv: function (_n0) {
 			return author$project$Main$Msg(author$project$Main$NoOp);
 		},
-		cv: author$project$Main$UrlRequest,
-		cB: author$project$Main$subscriptions,
-		cC: author$project$Main$updateApp,
-		cF: author$project$Main$appView
+		cw: author$project$Main$UrlRequest,
+		cC: author$project$Main$subscriptions,
+		cD: author$project$Main$updateApp,
+		cG: author$project$Main$appView
 	});
 _Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)(0)}});}(this));
