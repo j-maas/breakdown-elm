@@ -88,62 +88,6 @@ suite =
                         update (DeleteTask <| CurrentId <| Tasks.getId task) init
                             |> expectModelEquals initModel
                     )
-        , describe "StartEdit"
-            [ test "sets up edit mode with the correct information" <|
-                \_ ->
-                    testWithAction "Edit me"
-                        (\action ->
-                            let
-                                ( task, currentTasks ) =
-                                    Tasks.appendAndGetTask action initModel.currentTasks
-
-                                init =
-                                    { initModel | currentTasks = currentTasks }
-
-                                globalId =
-                                    CurrentId <| Tasks.getId task
-                            in
-                            update (StartEdit globalId) init
-                                |> expectModelEquals
-                                    { init
-                                        | editing =
-                                            Just
-                                                { id = globalId
-                                                , info =
-                                                    { newRawAction = "Edit me"
-                                                    , previousAction = action
-                                                    }
-                                                }
-                                    }
-                        )
-            , test "applies edit in progress" <|
-                \_ ->
-                    testWithAction "Apply the edit to me"
-                        (\action ->
-                            let
-                                ( task, currentTasks ) =
-                                    Tasks.appendAndGetTask action initModel.currentTasks
-
-                                globalId =
-                                    CurrentId <| Tasks.getId task
-
-                                init =
-                                    { initModel
-                                        | currentTasks = currentTasks
-                                        , editing =
-                                            Just
-                                                { id = globalId
-                                                , info = { newRawAction = "I am edited", previousAction = action }
-                                                }
-                                    }
-                            in
-                            update (StartEdit globalId) init
-                                |> Tuple.first
-                                >> .currentTasks
-                                >> toActionList
-                                |> Expect.equal [ "I am edited" ]
-                        )
-            ]
         , test "ApplyEdit applies the edit in progress" <|
             \_ ->
                 testWithAction "Apply the edit to me"
@@ -158,14 +102,13 @@ suite =
                             init =
                                 { initModel
                                     | currentTasks = currentTasks
-                                    , editing =
-                                        Just
-                                            { id = globalId
-                                            , info = { newRawAction = "I am edited", previousAction = action }
-                                            }
                                 }
                         in
-                        update ApplyEdit init
+                        update (StartEdit globalId) init
+                            |> Tuple.first
+                            |> update (EditTask globalId "I am edited")
+                            |> Tuple.first
+                            |> update (ApplyEdit globalId)
                             |> Tuple.first
                             |> .currentTasks
                             |> toActionList
@@ -185,14 +128,9 @@ suite =
                             init =
                                 { initModel
                                     | currentTasks = currentTasks
-                                    , editing =
-                                        Just
-                                            { id = globalId
-                                            , info = { newRawAction = "I am edited", previousAction = action }
-                                            }
                                 }
                         in
-                        update CancelEdit init
+                        update (CancelEdit globalId) init
                             |> Tuple.first
                             >> .currentTasks
                             >> toActionList
@@ -212,19 +150,17 @@ suite =
                             init =
                                 { initModel
                                     | currentTasks = currentTasks
-                                    , editing =
-                                        Just
-                                            { id = globalId
-                                            , info = { newRawAction = "I am edited", previousAction = action }
-                                            }
                                 }
                         in
-                        update BackgroundClicked init
+                        update (StartEdit globalId) init
                             |> Tuple.first
-                            |> Expect.all
-                                [ \model -> model.currentTasks |> toActionList |> Expect.equal [ "I am edited" ]
-                                , \model -> model.editing |> Expect.equal Nothing
-                                ]
+                            |> update (EditTask globalId "I am edited")
+                            |> Tuple.first
+                            |> update BackgroundClicked
+                            |> Tuple.first
+                            |> .currentTasks
+                            |> toActionList
+                            |> Expect.equal [ "I am edited" ]
                     )
         ]
 
