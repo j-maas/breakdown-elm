@@ -27,7 +27,7 @@
                 <path d="M0 0 v ◊(chkSize 2) h ◊(chkSize 3) v ◊(chkSize -1) h ◊(chkSize -2) v ◊(chkSize -1) Z"/>
         </g>
     </def>
-    <g style="transform-origin: center; transform: scale(0.9);">
+    <g style="transform-origin: center; transform: scale(0.95);">
         <g transform="translate(◊leftPadding 50) rotate(-45)" fill="#50bf00" stroke="#fff" stroke-width="◊strokeWidth" filter="url(#dropshadow)">
             <rect width="◊size" height="◊size" x="◊startX" y="◊startY"/>
             <rect width="◊size" height="◊size" x="◊(offsetX 0)" y="◊(offsetY 1)"/>
@@ -38,8 +38,8 @@
         </g>
     </g>
     <filter id="dropshadow" width="130%" height="130%">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-        <feOffset dx="2" dy="2" result="offsetblur"/>
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="1.5" dy="1.5" result="offsetblur"/>
         <feComponentTransfer>
             <feFuncA type="linear" slope="0.5"/>
         </feComponentTransfer>
