@@ -1,19 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192">
-    <filter id="a" height="130%">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-        <feOffset dx="2" dy="2" result="offsetblur"/>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <def>
+        <g id="checkmark" fill="#fff" stroke="none">
+                <path d="M0 0 v 10 h 15 v -5 h -10 v -5 Z"/>
+        </g>
+    </def>
+    <g style="transform-origin: center; transform: scale(0.95);">
+        <g transform="translate(0.007550570111085619 50) rotate(-45)" fill="#50bf00" stroke="#fff" stroke-width="2" filter="url(#dropshadow)">
+            <rect width="23.28" height="23.28" x="2.5" y="2.5"/>
+            <rect width="23.28" height="23.28" x="2.5" y="30.78"/>
+            <rect width="23.28" height="23.28" x="30.78" y="30.78"/>
+            <rect width="23.28" height="23.28" x="59.06" y="30.78"/>
+            <use href="#checkmark" x="6.640000000000001" y="9.14"/>
+            <use href="#checkmark" x="63.2" y="37.42"/>
+        </g>
+    </g>
+    <filter id="dropshadow" width="130%" height="130%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="1.5" dy="1.5" result="offsetblur"/>
         <feComponentTransfer>
-            <feFuncA slope=".5" type="linear"/>
+            <feFuncA type="linear" slope="0.5"/>
         </feComponentTransfer>
         <feMerge>
             <feMergeNode/>
             <feMergeNode in="SourceGraphic"/>
         </feMerge>
     </filter>
-    <g fill="#50bf00" stroke="#fff" stroke-miterlimit="10" stroke-width="2" filter="url(#a)">
-        <path stroke-width="1.9799" d="M65.27 116.55l28.42 28.42-28.42 28.42-28.42-28.42zM97.06 84.32l28.42 28.42-28.42 28.42-28.42-28.42zM160.91 19.45l28.42 28.42-28.42 28.42-28.42-28.42zM32.87 84.73l28.42 28.42-28.42 28.42-28.42-28.42z"/>
-        <path d="M63.509 102.359l-19.701 19.7-9.701-9.7 4.478-4.477 5.074 5.074 15.224-15.223z"/>
-        <path stroke-width="1.9799" d="M128.95 51.85l28.42 28.42-28.42 28.42-28.42-28.42z"/>
-        <path d="M160.577 70.004l-19.699 19.699-9.701-9.7 4.478-4.478 5.075 5.075 15.224-15.223zM95.865 134.715l-19.701 19.7-9.701-9.698 4.478-4.478 5.074 5.073 15.226-15.224z"/>
-    </g>
 </svg>
