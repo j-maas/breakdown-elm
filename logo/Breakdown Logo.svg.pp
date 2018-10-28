@@ -34,6 +34,7 @@
             <rect width="◊size" height="◊size" x="◊(offsetX 1)" y="◊(offsetY 1)"/>
             <rect width="◊size" height="◊size" x="◊(offsetX 2)" y="◊(offsetY 1)"/>
             <use href="#checkmark" x="◊(checkmarkOffsetX 0)" y="◊(checkmarkOffsetY 0)"/>
+            <use href="#checkmark" x="◊(checkmarkOffsetX 0)" y="◊(checkmarkOffsetY 1)"/>
             <use href="#checkmark" x="◊(checkmarkOffsetX 2)" y="◊(checkmarkOffsetY 1)"/>
         </g>
     </g>
