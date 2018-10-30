@@ -3,6 +3,7 @@ module TestTasks exposing (suite)
 import Expect exposing (Expectation)
 import Fuzz exposing (..)
 import List.Extra as List
+import StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 import Tasks exposing (..)
 import Test exposing (..)
 
@@ -15,13 +16,19 @@ type Collection
 suite : Test
 suite =
     describe "Tasks"
-        [ describe "Actions"
-            [ test "creates valid action" <|
-                \_ ->
-                    case actionFromString "I'm valid" of
+        [ fuzz actionFuzzer "always creates valid action" <|
+            \action ->
+                stringFromAction action
+                    |> String.trim
+                    |> String.isEmpty
+                    |> Expect.false "Action was not empty after trimming."
+        , describe "Actions"
+            [ fuzz nonblankStringFuzzer "creates valid action" <|
+                \validAction ->
+                    case actionFromString validAction of
                         Just action ->
                             stringFromAction action
-                                |> Expect.equal "I'm valid"
+                                |> Expect.equal validAction
 
                         Nothing ->
                             Expect.fail "Should create action."
@@ -29,44 +36,49 @@ suite =
                 \_ ->
                     actionFromString ""
                         |> Expect.equal Nothing
-            , test "does not create actions with only whitespace" <|
-                \_ ->
-                    actionFromString "  \t"
+            , fuzz whitespaceStringFuzzer "does not create actions with only whitespace" <|
+                \invalid ->
+                    actionFromString invalid
                         |> Expect.equal Nothing
             ]
         , describe "Editing"
-            [ test "cancels edit" <|
-                \_ ->
-                    testWithTask "Do not edit me"
-                        (\task ->
-                            Tasks.startEdit task
-                                |> Tasks.edit "I have been edited"
-                                |> Tasks.cancelEdit
-                                |> Expect.equal task
-                        )
-            , test "applies edit" <|
-                \_ ->
-                    testWithTask "Edit me"
-                        (Tasks.startEdit
-                            >> Tasks.edit "I have been edited"
-                            >> Tasks.applyEdit
-                            >> Maybe.map
-                                (\task ->
-                                    Tasks.getTaskInfo task
-                                        |> .action
-                                        |> Tasks.stringFromAction
-                                        |> Expect.equal "I have been edited"
-                                )
-                            >> Maybe.withDefault (Expect.fail "Expected task to not be Nothing.")
-                        )
-            , test "does not apply illegal edit" <|
-                \_ ->
-                    testWithTask "Edit me"
-                        (Tasks.startEdit
-                            >> Tasks.edit ""
-                            >> Tasks.applyEdit
-                            >> Expect.equal Nothing
-                        )
+            [ fuzz2 actionFuzzer nonblankStringFuzzer "cancels edit" <|
+                \action nonblankString ->
+                    let
+                        task =
+                            Tasks.taskFromAction action
+                    in
+                    Tasks.startEdit task
+                        |> Tasks.edit nonblankString
+                        |> Tasks.cancelEdit
+                        |> Expect.equal task
+            , fuzz2 actionFuzzer nonblankStringFuzzer "applies edit" <|
+                \action nonblankString ->
+                    let
+                        task =
+                            Tasks.taskFromAction action
+                    in
+                    Tasks.startEdit task
+                        |> Tasks.edit nonblankString
+                        |> Tasks.applyEdit
+                        |> Maybe.map
+                            (\t ->
+                                Tasks.getTaskInfo t
+                                    |> .action
+                                    |> Tasks.stringFromAction
+                                    |> Expect.equal nonblankString
+                            )
+                        |> Maybe.withDefault (Expect.fail "Expected task to not be Nothing.")
+            , fuzz2 actionFuzzer whitespaceStringFuzzer "does not apply illegal edit" <|
+                \action whitespaceString ->
+                    let
+                        task =
+                            Tasks.taskFromAction action
+                    in
+                    Tasks.startEdit task
+                        |> Tasks.edit whitespaceString
+                        |> Tasks.applyEdit
+                        |> Expect.equal Nothing
             ]
         ]
 
