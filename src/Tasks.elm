@@ -4,6 +4,7 @@ module Tasks exposing
     , startEdit, edit, applyEdit, cancelEdit
     , Collection, empty, toList, getId, idToComparable
     , appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
+    , actionFuzzer
     )
 
 {-| Tasks and collection of tasks.
@@ -33,10 +34,17 @@ module Tasks exposing
 
 @docs appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
 
+
+# Tests
+
+@docs actionFuzzer
+
 -}
 
+import Fuzz
 import IdCollection exposing (IdCollection)
 import List.Extra as List
+import StringFuzzer
 
 
 
@@ -360,3 +368,14 @@ moveTask id from to =
 
         Nothing ->
             ( from, to )
+
+
+
+-- TESTS
+
+
+{-| Fuzzer that yields valid actions.
+-}
+actionFuzzer : Fuzz.Fuzzer Action
+actionFuzzer =
+    Fuzz.map Action StringFuzzer.nonblankStringFuzzer
