@@ -42,25 +42,17 @@ suite =
                         |> Expect.equal Nothing
             ]
         , describe "Editing"
-            [ fuzz2 actionFuzzer nonblankStringFuzzer "cancels edit" <|
+            [ fuzz2 actionFuzzer nonblankStringFuzzer "applies edit" <|
                 \action nonblankString ->
                     let
                         task =
                             Tasks.taskFromAction action
+
+                        editing =
+                            Tasks.startEdit task
+                                |> Tasks.edit nonblankString
                     in
-                    Tasks.startEdit task
-                        |> Tasks.edit nonblankString
-                        |> Tasks.cancelEdit
-                        |> Expect.equal task
-            , fuzz2 actionFuzzer nonblankStringFuzzer "applies edit" <|
-                \action nonblankString ->
-                    let
-                        task =
-                            Tasks.taskFromAction action
-                    in
-                    Tasks.startEdit task
-                        |> Tasks.edit nonblankString
-                        |> Tasks.applyEdit
+                    Tasks.applyEdit editing task
                         |> Maybe.map
                             (\t ->
                                 Tasks.getTaskInfo t
@@ -74,10 +66,12 @@ suite =
                     let
                         task =
                             Tasks.taskFromAction action
+
+                        editing =
+                            Tasks.startEdit task
+                                |> Tasks.edit whitespaceString
                     in
-                    Tasks.startEdit task
-                        |> Tasks.edit whitespaceString
-                        |> Tasks.applyEdit
+                    Tasks.applyEdit editing task
                         |> Expect.equal Nothing
             ]
         ]
