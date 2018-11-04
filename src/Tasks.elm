@@ -1,7 +1,6 @@
 module Tasks exposing
     ( actionFromString, stringFromAction
-    , TaskEntry, Task(..), TaskInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
-    , Editing, startEdit, edit, applyEdit
+    , TaskEntry, Task(..), TaskInfo, TaskId, getTaskInfo, Action, taskFromAction, getAction, readAction
     , Collection, empty, toList, getId, idToComparable, getById
     , appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
     , actionFuzzer
@@ -17,12 +16,7 @@ module Tasks exposing
 
 # Tasks
 
-@docs TaskEntry, Task, TaskInfo, TaskEditInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
-
-
-# Editing
-
-@docs Editing, startEdit, edit, applyEdit
+@docs TaskEntry, Task, TaskInfo, TaskEditInfo, TaskId, getTaskInfo, Action, taskFromAction, getAction, readAction
 
 
 # Collections
@@ -137,74 +131,6 @@ actionFromString rawAction =
 stringFromAction : Action -> String
 stringFromAction (Action rawAction) =
     rawAction
-
-
-
--- EDITING
-
-
-{-| Obscure type that holds the information of the current edit.
--}
-type Editing
-    = Editing EditingInfo
-
-
-{-| The actual data for the current edit.
--}
-type alias EditingInfo =
-    { edited : String
-    , previousAction : Action
-    }
-
-
-getEdited : Editing -> String
-getEdited (Editing info) =
-    info.edited
-
-
-readPrevious : Editing -> String
-readPrevious (Editing info) =
-    info.previousAction |> stringFromAction
-
-
-{-| Initiates editing.
--}
-startEdit : Task -> Editing
-startEdit task =
-    Editing (initEditingInfo task)
-
-
-{-| Helper function to initialize the EditingInfo when starting to edit a task.
--}
-initEditingInfo : Task -> EditingInfo
-initEditingInfo task =
-    let
-        action =
-            getTaskInfo task |> .action
-    in
-    { edited = stringFromAction action
-    , previousAction = action
-    }
-
-
-{-| Stores the new action in the current edit.
--}
-edit : String -> Editing -> Editing
-edit newAction (Editing editing) =
-    Editing { editing | edited = newAction }
-
-
-{-| Applies the current edit to the task.
-If the edit is valid, the task will be returned.
-Otherwise, Nothing is returned.
--}
-applyEdit : Editing -> Task -> Maybe Task
-applyEdit (Editing editing) (Task task) =
-    actionFromString editing.edited
-        |> Maybe.map
-            (\newAction ->
-                Task { task | action = newAction }
-            )
 
 
 
