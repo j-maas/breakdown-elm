@@ -1,8 +1,8 @@
 module Tasks exposing
     ( actionFromString, stringFromAction
     , TaskEntry, Task(..), TaskInfo, TaskId, getTaskInfo, getEdited, readPrevious, Action, taskFromAction, getAction, readAction
-    , startEdit, edit, applyEdit
-    , Collection, empty, toList, getId, idToComparable
+    , Editing, startEdit, edit, applyEdit
+    , Collection, empty, toList, getId, idToComparable, getById
     , appendTask, appendAndGetTask, removeTask, updateTask, map, moveTask, editTask
     , actionFuzzer
     )
@@ -22,12 +22,12 @@ module Tasks exposing
 
 # Editing
 
-@docs startEdit, edit, applyEdit, cancelEdit
+@docs Editing, startEdit, edit, applyEdit
 
 
 # Collections
 
-@docs Collection, empty, toList, getId, idToComparable
+@docs Collection, empty, toList, getId, idToComparable, getById
 
 
 ## Modify Collection
@@ -99,16 +99,16 @@ type Action
     = Action String
 
 
-{-| Extracts the `Action` from a `TaskEntry`.
+{-| Extracts the `Action` from a `Task`.
 -}
-getAction : TaskEntry c -> Action
+getAction : Task -> Action
 getAction =
-    .item >> getTaskInfo >> .action
+    getTaskInfo >> .action
 
 
-{-| Extracts a `TaskEntry`'s `Action` as a `String`.
+{-| Extracts a `Task`'s `Action` as a `String`.
 -}
-readAction : TaskEntry c -> String
+readAction : Task -> String
 readAction =
     getAction >> stringFromAction
 
@@ -275,6 +275,11 @@ getId =
 idToComparable : TaskId c -> Int
 idToComparable =
     IdCollection.idToComparable
+
+
+getById : TaskId c -> Collection c -> Maybe Task
+getById =
+    IdCollection.get
 
 
 
