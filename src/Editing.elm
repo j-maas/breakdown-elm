@@ -1,7 +1,7 @@
 module Editing exposing
     ( Editing, getEdited, readPrevious, isUnchanged
     , startEdit, edit, applyEdit
-    , Collection, inlineEdit
+    , Collection, EditingEntry, fromTasksCollection, inlineEdit, toList
     )
 
 {-| Editing of tasks.
@@ -19,7 +19,7 @@ module Editing exposing
 
 # Collections
 
-@docs Collection, inlineEdit
+@docs Collection, EditingEntry, fromTasksCollection, inlineEdit, toList
 
 -}
 
@@ -101,29 +101,34 @@ applyEdit (Editing editing) (Tasks.Task task) =
 
 
 type alias Collection c =
-    IdCollection.IdCollection c { edit : Maybe Editing, task : Tasks.Task }
+    IdCollection.IdCollection c EditingEntryInfo
 
 
-inlineEdit : Editing -> c -> Tasks.TaskId c -> Tasks.Collection c -> Collection c
-inlineEdit editing tag id collection =
-    IdCollection.toList collection
-        |> List.map
-            (\entry ->
-                let
-                    editInfo : Maybe Editing
-                    editInfo =
-                        if id == entry.id then
-                            Just editing
+type alias EditingEntry c =
+    IdCollection.Entry c EditingEntryInfo
 
-                        else
-                            Nothing
 
-                    task : Tasks.Task
-                    task =
-                        entry.item
-                in
-                { edit = editInfo
-                , task = task
+type alias EditingEntryInfo =
+    { edit : Maybe Editing
+    , task : Tasks.Task
+    }
+
+
+fromTasksCollection : Tasks.Collection c -> Collection c
+fromTasksCollection =
+    IdCollection.map (\task -> { edit = Nothing, task = task })
+
+
+inlineEdit : Editing -> Tasks.TaskId c -> Tasks.Collection c -> Collection c
+inlineEdit editing id collection =
+    fromTasksCollection collection
+        |> IdCollection.update id
+            (\editTask ->
+                { editTask
+                    | edit = Just editing
                 }
             )
-        |> IdCollection.fromList tag
+
+
+toList =
+    IdCollection.toList
