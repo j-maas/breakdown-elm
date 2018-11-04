@@ -14,7 +14,7 @@ nonblankStringFuzzer : Fuzzer String
 nonblankStringFuzzer =
     Fuzz.custom
         nonblankGenerator
-        Shrink.string
+        (Shrink.string |> Shrink.keepIf (\string -> String.length string > 0))
 
 
 nonblankGenerator : Random.Generator String
