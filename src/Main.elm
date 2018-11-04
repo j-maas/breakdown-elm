@@ -467,7 +467,12 @@ viewActionInput currentAction =
 
 
 viewCurrentTaskList : Tasks.Collection Current -> Maybe (EditInfo (Tasks.TaskId Current)) -> Html Msg
-viewCurrentTaskList currentTasks maybeEditInfo =
+viewCurrentTaskList =
+    viewTaskListBase viewTask viewEditTask
+
+
+viewTaskListBase : (Tasks.TaskId c -> Tasks.Task -> Html Msg) -> (Tasks.TaskId c -> Tasks.Editing -> Html Msg) -> Tasks.Collection c -> Maybe (EditInfo (Tasks.TaskId c)) -> Html Msg
+viewTaskListBase taskView editTaskView collection maybeEditInfo =
     ol [ css [ taskListStyle ] ] <|
         List.map
             (\entry ->
@@ -482,17 +487,17 @@ viewCurrentTaskList currentTasks maybeEditInfo =
                     [ Maybe.map
                         (\editInfo ->
                             if editInfo.id == entry.id then
-                                viewEditTask entry.id editInfo.edit
+                                editTaskView entry.id editInfo.edit
 
                             else
-                                viewTask entry.id entry.item
+                                taskView entry.id entry.item
                         )
                         maybeEditInfo
-                        |> Maybe.withDefault (viewTask entry.id entry.item)
+                        |> Maybe.withDefault (taskView entry.id entry.item)
                     ]
             )
         <|
-            Tasks.toList currentTasks
+            Tasks.toList collection
 
 
 viewTask : Tasks.TaskId Current -> Tasks.Task -> Html Msg
@@ -500,7 +505,7 @@ viewTask id task =
     viewTaskBase
         (onButtonClick (StartEdit <| CurrentId id))
         (viewAction noStyle (Tasks.readAction task))
-        (iconButton (DoTask id) "Mark as done" "✔️")
+        (doButton id)
 
 
 viewEditTask : Tasks.TaskId Current -> Tasks.Editing -> Html Msg
@@ -508,7 +513,12 @@ viewEditTask id editTask =
     viewTaskBase
         (onButtonClick ApplyEdit)
         (viewEditAction id editTask CurrentId)
-        (iconButton (DoTask id) "Mark as done" "✔️")
+        (doButton id)
+
+
+doButton : Tasks.TaskId Current -> Html Msg
+doButton id =
+    iconButton (DoTask id) "Mark as done" "✔️"
 
 
 viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
@@ -595,32 +605,8 @@ viewEditAction id editInfo toGlobalId =
 
 
 viewDoneTaskList : Tasks.Collection Done -> Maybe (EditInfo (Tasks.TaskId Done)) -> Html Msg
-viewDoneTaskList collection maybeEditInfo =
-    ol [ css [ taskListStyle ] ] <|
-        List.map
-            (\entry ->
-                li
-                    [ css
-                        [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
-                        , pseudoClass "not(:last-child)"
-                            [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
-                            ]
-                        ]
-                    ]
-                    [ Maybe.map
-                        (\editInfo ->
-                            if editInfo.id == entry.id then
-                                viewEditDoneTask entry.id editInfo.edit
-
-                            else
-                                viewDoneTask entry.id entry.item
-                        )
-                        maybeEditInfo
-                        |> Maybe.withDefault (viewDoneTask entry.id entry.item)
-                    ]
-            )
-        <|
-            Tasks.toList collection
+viewDoneTaskList =
+    viewTaskListBase viewDoneTask viewEditDoneTask
 
 
 viewDoneTask : Tasks.TaskId Done -> Tasks.Task -> Html Msg
@@ -635,7 +621,7 @@ viewDoneTask id task =
             )
             (Tasks.readAction task)
         )
-        (iconButton (UndoTask id) "Mark as to do" "🔄")
+        (undoButton id)
 
 
 viewEditDoneTask : Tasks.TaskId Done -> Tasks.Editing -> Html Msg
@@ -643,7 +629,12 @@ viewEditDoneTask id editInfo =
     viewTaskBase
         (onButtonClick ApplyEdit)
         (viewEditAction id editInfo DoneId)
-        (iconButton (UndoTask id) "Mark as to do" "🔄")
+        (undoButton id)
+
+
+undoButton : Tasks.TaskId Done -> Html Msg
+undoButton id =
+    iconButton (UndoTask id) "Mark as to do" "🔄"
 
 
 
