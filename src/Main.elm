@@ -412,18 +412,20 @@ view model =
                 , onButtonClick BackgroundClicked
                 ]
                 [ let
-                    ( currentEditInfo, doneEditInfo ) =
-                        case model.currentEdit of
-                            Just editInfo ->
-                                case editInfo.id of
-                                    CurrentId currentId ->
-                                        ( Just { id = currentId, edit = editInfo.edit }, Nothing )
+                    ( currentTasksEdit, doneTasksEdit ) =
+                        Tuple.mapBoth Editing.fromTasksCollection Editing.fromTasksCollection ( model.currentTasks, model.doneTasks )
+                            |> (case model.currentEdit of
+                                    Just editInfo ->
+                                        case editInfo.id of
+                                            CurrentId currentId ->
+                                                Tuple.mapFirst (\_ -> Editing.inlineEdit editInfo.edit currentId model.currentTasks)
 
-                                    DoneId doneId ->
-                                        ( Nothing, Just { id = doneId, edit = editInfo.edit } )
+                                            DoneId doneId ->
+                                                Tuple.mapSecond (\_ -> Editing.inlineEdit editInfo.edit doneId model.doneTasks)
 
-                            Nothing ->
-                                ( Nothing, Nothing )
+                                    Nothing ->
+                                        identity
+                               )
                   in
                   main_
                     [ css
@@ -432,8 +434,8 @@ view model =
                         ]
                     ]
                     [ viewActionInput model.newTask
-                    , viewCurrentTaskList model.currentTasks currentEditInfo
-                    , viewDoneTaskList model.doneTasks doneEditInfo
+                    , viewCurrentTaskList currentTasksEdit
+                    , viewDoneTaskList doneTasksEdit
                     ]
                 ]
             ]
@@ -467,16 +469,17 @@ viewActionInput currentAction =
         ]
 
 
-viewCurrentTaskList : Tasks.Collection Current -> Maybe (EditInfo (Tasks.TaskId Current)) -> Html Msg
+viewCurrentTaskList : Editing.Collection Current -> Html Msg
 viewCurrentTaskList =
     viewTaskListBase viewTask viewEditTask
 
 
-viewTaskListBase : (Tasks.TaskId c -> Tasks.Task -> Html Msg) -> (Tasks.TaskId c -> Tasks.Editing -> Html Msg) -> Tasks.Collection c -> Maybe (EditInfo (Tasks.TaskId c)) -> Html Msg
-viewTaskListBase taskView editTaskView collection maybeEditInfo =
+viewTaskListBase : (Tasks.TaskId c -> Tasks.Task -> Html Msg) -> (Tasks.TaskId c -> Editing.Editing -> Html Msg) -> Editing.Collection c -> Html Msg
+viewTaskListBase taskView editTaskView collection =
     ol [ css [ taskListStyle ] ] <|
-        List.map
-            (\entry ->
+        let
+            viewEntry : Editing.EditingEntry c -> Html Msg
+            viewEntry entry =
                 li
                     [ css
                         [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
@@ -485,20 +488,16 @@ viewTaskListBase taskView editTaskView collection maybeEditInfo =
                             ]
                         ]
                     ]
-                    [ Maybe.map
-                        (\editInfo ->
-                            if editInfo.id == entry.id then
-                                editTaskView entry.id editInfo.edit
+                    [ case entry.item.edit of
+                        Just editInfo ->
+                            editTaskView entry.id editInfo
 
-                            else
-                                taskView entry.id entry.item
-                        )
-                        maybeEditInfo
-                        |> Maybe.withDefault (taskView entry.id entry.item)
+                        Nothing ->
+                            taskView entry.id entry.item.task
                     ]
-            )
-        <|
-            Tasks.toList collection
+        in
+        List.map viewEntry <|
+            Editing.toList collection
 
 
 viewTask : Tasks.TaskId Current -> Tasks.Task -> Html Msg
@@ -601,7 +600,7 @@ viewEditAction id editInfo toGlobalId =
         ]
 
 
-viewDoneTaskList : Tasks.Collection Done -> Maybe (EditInfo (Tasks.TaskId Done)) -> Html Msg
+viewDoneTaskList : Editing.Collection Done -> Html Msg
 viewDoneTaskList =
     viewTaskListBase viewDoneTask viewEditDoneTask
 
