@@ -7346,31 +7346,6 @@ var author$project$Main$viewActionInput = function (currentAction) {
 					]))
 			]));
 };
-var rtfeldman$elm_css$Css$listStyleType = rtfeldman$elm_css$Css$prop1('list-style-type');
-var rtfeldman$elm_css$Css$prop3 = F4(
-	function (key, argA, argB, argC) {
-		return A2(
-			rtfeldman$elm_css$Css$property,
-			key,
-			A2(
-				elm$core$String$join,
-				' ',
-				_List_fromArray(
-					[argA.E, argB.E, argC.E])));
-	});
-var rtfeldman$elm_css$Css$margin3 = rtfeldman$elm_css$Css$prop3('margin');
-var rtfeldman$elm_css$Css$none = {_: 0, bA: 0, r: 0, a: 0, f: 0, co: 0, bN: 0, bj: 0, al: 0, T: 0, C: 0, c: 0, b: 0, bl: 0, a4: 0, cy: 0, y: 0, a6: 0, cA: 0, as: 0, Y: 0, v: 0, e: 0, cE: 0, E: 'none'};
-var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
-	_List_fromArray(
-		[
-			rtfeldman$elm_css$Css$listStyleType(rtfeldman$elm_css$Css$none),
-			A3(
-			rtfeldman$elm_css$Css$margin3,
-			rtfeldman$elm_css$Css$em(1.5),
-			rtfeldman$elm_css$Css$zero,
-			rtfeldman$elm_css$Css$zero),
-			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero)
-		]));
 var author$project$Main$ApplyEdit = {$: 7};
 var author$project$Main$CurrentId = function (a) {
 	return {$: 0, a: a};
@@ -7408,6 +7383,13 @@ var author$project$Main$iconButton = F3(
 					rtfeldman$elm_css$Html$Styled$text(icon)
 				]));
 	});
+var author$project$Main$doButton = function (id) {
+	return A3(
+		author$project$Main$iconButton,
+		author$project$Main$DoTask(id),
+		'Mark as done',
+		'✔️');
+};
 var author$project$Main$CancelEdit = {$: 8};
 var author$project$Main$DeleteTask = function (a) {
 	return {$: 9, a: a};
@@ -7576,11 +7558,7 @@ var author$project$Main$viewEditTask = F2(
 			author$project$Main$viewTaskBase,
 			author$project$Main$onButtonClick(author$project$Main$ApplyEdit),
 			A3(author$project$Main$viewEditAction, id, editTask, author$project$Main$CurrentId),
-			A3(
-				author$project$Main$iconButton,
-				author$project$Main$DoTask(id),
-				'Mark as done',
-				'✔️'));
+			author$project$Main$doButton(id));
 	});
 var author$project$Main$StartEdit = function (a) {
 	return {$: 5, a: a};
@@ -7637,12 +7615,33 @@ var author$project$Main$viewTask = F2(
 				author$project$Main$viewAction,
 				author$project$Main$noStyle,
 				author$project$Tasks$readAction(task)),
-			A3(
-				author$project$Main$iconButton,
-				author$project$Main$DoTask(id),
-				'Mark as done',
-				'✔️'));
+			author$project$Main$doButton(id));
 	});
+var rtfeldman$elm_css$Css$listStyleType = rtfeldman$elm_css$Css$prop1('list-style-type');
+var rtfeldman$elm_css$Css$prop3 = F4(
+	function (key, argA, argB, argC) {
+		return A2(
+			rtfeldman$elm_css$Css$property,
+			key,
+			A2(
+				elm$core$String$join,
+				' ',
+				_List_fromArray(
+					[argA.E, argB.E, argC.E])));
+	});
+var rtfeldman$elm_css$Css$margin3 = rtfeldman$elm_css$Css$prop3('margin');
+var rtfeldman$elm_css$Css$none = {_: 0, bA: 0, r: 0, a: 0, f: 0, co: 0, bN: 0, bj: 0, al: 0, T: 0, C: 0, c: 0, b: 0, bl: 0, a4: 0, cy: 0, y: 0, a6: 0, cA: 0, as: 0, Y: 0, v: 0, e: 0, cE: 0, E: 'none'};
+var author$project$Main$taskListStyle = rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			rtfeldman$elm_css$Css$listStyleType(rtfeldman$elm_css$Css$none),
+			A3(
+			rtfeldman$elm_css$Css$margin3,
+			rtfeldman$elm_css$Css$em(1.5),
+			rtfeldman$elm_css$Css$zero,
+			rtfeldman$elm_css$Css$zero),
+			rtfeldman$elm_css$Css$padding(rtfeldman$elm_css$Css$zero)
+		]));
 var author$project$IdCollection$toList = function (_n0) {
 	var collection = _n0;
 	return collection;
@@ -7652,8 +7651,8 @@ var rtfeldman$elm_css$Css$borderBottom3 = rtfeldman$elm_css$Css$prop3('border-bo
 var rtfeldman$elm_css$Css$solid = {r: 0, X: 0, E: 'solid'};
 var rtfeldman$elm_css$Html$Styled$li = rtfeldman$elm_css$Html$Styled$node('li');
 var rtfeldman$elm_css$Html$Styled$ol = rtfeldman$elm_css$Html$Styled$node('ol');
-var author$project$Main$viewCurrentTaskList = F2(
-	function (currentTasks, maybeEditInfo) {
+var author$project$Main$viewTaskListBase = F4(
+	function (taskView, editTaskView, collection, maybeEditInfo) {
 		return A2(
 			rtfeldman$elm_css$Html$Styled$ol,
 			_List_fromArray(
@@ -7695,22 +7694,30 @@ var author$project$Main$viewCurrentTaskList = F2(
 							[
 								A2(
 								elm$core$Maybe$withDefault,
-								A2(author$project$Main$viewTask, entry.aH, entry.K),
+								A2(taskView, entry.aH, entry.K),
 								A2(
 									elm$core$Maybe$map,
 									function (editInfo) {
-										return _Utils_eq(editInfo.aH, entry.aH) ? A2(author$project$Main$viewEditTask, entry.aH, editInfo.w) : A2(author$project$Main$viewTask, entry.aH, entry.K);
+										return _Utils_eq(editInfo.aH, entry.aH) ? A2(editTaskView, entry.aH, editInfo.w) : A2(taskView, entry.aH, entry.K);
 									},
 									maybeEditInfo))
 							]));
 				},
-				author$project$Tasks$toList(currentTasks)));
+				author$project$Tasks$toList(collection)));
 	});
+var author$project$Main$viewCurrentTaskList = A2(author$project$Main$viewTaskListBase, author$project$Main$viewTask, author$project$Main$viewEditTask);
 var author$project$Main$DoneId = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Main$UndoTask = function (a) {
 	return {$: 4, a: a};
+};
+var author$project$Main$undoButton = function (id) {
+	return A3(
+		author$project$Main$iconButton,
+		author$project$Main$UndoTask(id),
+		'Mark as to do',
+		'🔄');
 };
 var rtfeldman$elm_css$Css$lineThrough = {as: 0, E: 'line-through'};
 var rtfeldman$elm_css$Css$textDecoration = rtfeldman$elm_css$Css$prop1('text-decoration');
@@ -7731,11 +7738,7 @@ var author$project$Main$viewDoneTask = F2(
 							rtfeldman$elm_css$Css$num(0.6))
 						])),
 				author$project$Tasks$readAction(task)),
-			A3(
-				author$project$Main$iconButton,
-				author$project$Main$UndoTask(id),
-				'Mark as to do',
-				'🔄'));
+			author$project$Main$undoButton(id));
 	});
 var author$project$Main$viewEditDoneTask = F2(
 	function (id, editInfo) {
@@ -7743,66 +7746,9 @@ var author$project$Main$viewEditDoneTask = F2(
 			author$project$Main$viewTaskBase,
 			author$project$Main$onButtonClick(author$project$Main$ApplyEdit),
 			A3(author$project$Main$viewEditAction, id, editInfo, author$project$Main$DoneId),
-			A3(
-				author$project$Main$iconButton,
-				author$project$Main$UndoTask(id),
-				'Mark as to do',
-				'🔄'));
+			author$project$Main$undoButton(id));
 	});
-var author$project$Main$viewDoneTaskList = F2(
-	function (collection, maybeEditInfo) {
-		return A2(
-			rtfeldman$elm_css$Html$Styled$ol,
-			_List_fromArray(
-				[
-					rtfeldman$elm_css$Html$Styled$Attributes$css(
-					_List_fromArray(
-						[author$project$Main$taskListStyle]))
-				]),
-			A2(
-				elm$core$List$map,
-				function (entry) {
-					return A2(
-						rtfeldman$elm_css$Html$Styled$li,
-						_List_fromArray(
-							[
-								rtfeldman$elm_css$Html$Styled$Attributes$css(
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Css$hover(
-										_List_fromArray(
-											[
-												rtfeldman$elm_css$Css$backgroundColor(
-												A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 3.0e-2))
-											])),
-										A2(
-										rtfeldman$elm_css$Css$pseudoClass,
-										'not(:last-child)',
-										_List_fromArray(
-											[
-												A3(
-												rtfeldman$elm_css$Css$borderBottom3,
-												rtfeldman$elm_css$Css$px(1),
-												rtfeldman$elm_css$Css$solid,
-												A4(rtfeldman$elm_css$Css$rgba, 0, 0, 0, 0.1))
-											]))
-									]))
-							]),
-						_List_fromArray(
-							[
-								A2(
-								elm$core$Maybe$withDefault,
-								A2(author$project$Main$viewDoneTask, entry.aH, entry.K),
-								A2(
-									elm$core$Maybe$map,
-									function (editInfo) {
-										return _Utils_eq(editInfo.aH, entry.aH) ? A2(author$project$Main$viewEditDoneTask, entry.aH, editInfo.w) : A2(author$project$Main$viewDoneTask, entry.aH, entry.K);
-									},
-									maybeEditInfo))
-							]));
-				},
-				author$project$Tasks$toList(collection)));
-	});
+var author$project$Main$viewDoneTaskList = A2(author$project$Main$viewTaskListBase, author$project$Main$viewDoneTask, author$project$Main$viewEditDoneTask);
 var rtfeldman$elm_css$Css$fontFamily = rtfeldman$elm_css$Css$prop1('font-family');
 var rtfeldman$elm_css$Css$maxWidth = rtfeldman$elm_css$Css$prop1('max-width');
 var rtfeldman$elm_css$Css$sansSerif = {R: 0, E: 'sans-serif'};
