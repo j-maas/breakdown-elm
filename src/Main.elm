@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
 import Css.Global exposing (global, selector)
+import Editing
 import Html
 import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
@@ -69,7 +70,7 @@ type alias Model =
 
 type alias EditInfo id =
     { id : id
-    , edit : Tasks.Editing
+    , edit : Editing.Editing
     }
 
 
@@ -235,7 +236,7 @@ update msg model =
                     Maybe.map
                         (\task ->
                             { id = id
-                            , edit = Tasks.startEdit task
+                            , edit = Editing.startEdit task
                             }
                         )
                         maybeTask
@@ -255,7 +256,7 @@ update msg model =
             let
                 newEdit =
                     Maybe.map
-                        (\info -> { info | edit = Tasks.edit newRawAction info.edit })
+                        (\info -> { info | edit = Editing.edit newRawAction info.edit })
                         model.currentEdit
             in
             simply { model | currentEdit = newEdit }
@@ -308,7 +309,7 @@ applyEdit model =
                     editInfo.id
 
                 apply oldTask =
-                    Tasks.applyEdit editInfo.edit oldTask
+                    Editing.applyEdit editInfo.edit oldTask
                         |> Maybe.withDefault oldTask
 
                 appliedModel =
@@ -508,7 +509,7 @@ viewTask id task =
         (doButton id)
 
 
-viewEditTask : Tasks.TaskId Current -> Tasks.Editing -> Html Msg
+viewEditTask : Tasks.TaskId Current -> Editing.Editing -> Html Msg
 viewEditTask id editTask =
     viewTaskBase
         (onButtonClick ApplyEdit)
@@ -551,7 +552,7 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : Tasks.TaskId a -> Tasks.Editing -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
+viewEditAction : Tasks.TaskId a -> Editing.Editing -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
 viewEditAction id editInfo toGlobalId =
     form
         [ css [ flex (num 1) ]
@@ -559,7 +560,7 @@ viewEditAction id editInfo toGlobalId =
         ]
         [ let
             edited =
-                Tasks.getEdited editInfo
+                Editing.getEdited editInfo
 
             isEmpty =
                 Tasks.actionFromString edited == Nothing
@@ -591,7 +592,7 @@ viewEditAction id editInfo toGlobalId =
             [ css [ displayFlex, justifyContent center ] ]
             [ let
                 isUnchanged =
-                    Tasks.getEdited editInfo == Tasks.readPrevious editInfo
+                    Editing.getEdited editInfo == Editing.readPrevious editInfo
               in
               iconButtonInputDisable
                 isUnchanged
@@ -624,7 +625,7 @@ viewDoneTask id task =
         (undoButton id)
 
 
-viewEditDoneTask : Tasks.TaskId Done -> Tasks.Editing -> Html Msg
+viewEditDoneTask : Tasks.TaskId Done -> Editing.Editing -> Html Msg
 viewEditDoneTask id editInfo =
     viewTaskBase
         (onButtonClick ApplyEdit)

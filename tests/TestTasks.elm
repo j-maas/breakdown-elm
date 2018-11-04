@@ -8,11 +8,6 @@ import Tasks exposing (..)
 import Test exposing (..)
 
 
-type Collection
-    = Current
-    | Done
-
-
 suite : Test
 suite =
     describe "Tasks"
@@ -41,47 +36,4 @@ suite =
                     actionFromString invalid
                         |> Expect.equal Nothing
             ]
-        , describe "Editing"
-            [ fuzz2 actionFuzzer nonblankStringFuzzer "applies edit" <|
-                \action nonblankString ->
-                    let
-                        task =
-                            Tasks.taskFromAction action
-
-                        editing =
-                            Tasks.startEdit task
-                                |> Tasks.edit nonblankString
-                    in
-                    Tasks.applyEdit editing task
-                        |> Maybe.map
-                            (\t ->
-                                Tasks.getTaskInfo t
-                                    |> .action
-                                    |> Tasks.stringFromAction
-                                    |> Expect.equal nonblankString
-                            )
-                        |> Maybe.withDefault (Expect.fail "Expected task to not be Nothing.")
-            , fuzz2 actionFuzzer whitespaceStringFuzzer "does not apply illegal edit" <|
-                \action whitespaceString ->
-                    let
-                        task =
-                            Tasks.taskFromAction action
-
-                        editing =
-                            Tasks.startEdit task
-                                |> Tasks.edit whitespaceString
-                    in
-                    Tasks.applyEdit editing task
-                        |> Expect.equal Nothing
-            ]
         ]
-
-
-testWithTask : String -> (Task -> Expectation) -> Expectation
-testWithTask rawAction test =
-    case actionFromString rawAction of
-        Just action ->
-            test (Tasks.taskFromAction action)
-
-        Nothing ->
-            Expect.fail ("Expected '" ++ rawAction ++ "' to be a valid action.")
