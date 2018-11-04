@@ -83,9 +83,17 @@ update id newItem (IdCollection collection) =
     List.updateIf (\entry -> entry.id == id) updateEntry collection |> IdCollection
 
 
-map : (item -> item) -> IdCollection tag item -> IdCollection tag item
+map : (item1 -> item2) -> IdCollection tag item1 -> IdCollection tag item2
 map mapFunction (IdCollection collection) =
-    IdCollection (List.map (\entry -> { entry | item = mapFunction entry.item }) collection)
+    IdCollection
+        (List.map
+            (\entry ->
+                { id = entry.id
+                , item = mapFunction entry.item
+                }
+            )
+            collection
+        )
 
 
 fromList : tag -> List item -> IdCollection tag item
