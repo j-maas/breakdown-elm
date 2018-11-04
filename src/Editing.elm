@@ -1,7 +1,7 @@
 module Editing exposing
-    ( Editing, getEdited, readPrevious
+    ( Editing, getEdited, readPrevious, isUnchanged
     , startEdit, edit, applyEdit
-    , isUnchanged
+    , Collection, inlineEdit
     )
 
 {-| Editing of tasks.
@@ -9,15 +9,21 @@ module Editing exposing
 
 # Editing
 
-@docs Editing, getEdited, readPrevious
+@docs Editing, getEdited, readPrevious, isUnchanged
 
 
 # Editing Tasks
 
 @docs startEdit, edit, applyEdit
 
+
+# Collections
+
+@docs Collection, inlineEdit
+
 -}
 
+import IdCollection
 import Tasks
 
 
@@ -88,3 +94,36 @@ applyEdit (Editing editing) (Tasks.Task task) =
             (\newAction ->
                 Tasks.Task { task | action = newAction }
             )
+
+
+
+-- TRANSFORM
+
+
+type alias Collection c =
+    IdCollection.IdCollection c { edit : Maybe Editing, task : Tasks.Task }
+
+
+inlineEdit : Editing -> c -> Tasks.TaskId c -> Tasks.Collection c -> Collection c
+inlineEdit editing tag id collection =
+    IdCollection.toList collection
+        |> List.map
+            (\entry ->
+                let
+                    editInfo : Maybe Editing
+                    editInfo =
+                        if id == entry.id then
+                            Just editing
+
+                        else
+                            Nothing
+
+                    task : Tasks.Task
+                    task =
+                        entry.item
+                in
+                { edit = editInfo
+                , task = task
+                }
+            )
+        |> IdCollection.fromList tag
