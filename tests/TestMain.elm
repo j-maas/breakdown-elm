@@ -106,9 +106,9 @@ suite =
                         in
                         update (StartEdit globalId) init
                             |> Tuple.first
-                            |> update (EditTask globalId "I am edited")
+                            |> update (Edit "I am edited")
                             |> Tuple.first
-                            |> update (ApplyEdit globalId)
+                            |> update ApplyEdit
                             |> Tuple.first
                             |> .currentTasks
                             |> toActionList
@@ -130,7 +130,7 @@ suite =
                                     | currentTasks = currentTasks
                                 }
                         in
-                        update (CancelEdit globalId) init
+                        update CancelEdit init
                             |> Tuple.first
                             >> .currentTasks
                             >> toActionList
@@ -154,7 +154,7 @@ suite =
                         in
                         update (StartEdit globalId) init
                             |> Tuple.first
-                            |> update (EditTask globalId "I am edited")
+                            |> update (Edit "I am edited")
                             |> Tuple.first
                             |> update BackgroundClicked
                             |> Tuple.first
@@ -189,4 +189,4 @@ expectEquivalentCollections first second =
 -}
 toActionList : Tasks.Collection c -> List String
 toActionList =
-    Tasks.toList >> List.map Tasks.readAction
+    Tasks.toList >> List.map (.item >> Tasks.readAction)

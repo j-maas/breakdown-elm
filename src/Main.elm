@@ -63,6 +63,13 @@ type alias Model =
     { newTask : String
     , currentTasks : Tasks.Collection Current
     , doneTasks : Tasks.Collection Done
+    , currentEdit : Maybe (EditInfo GlobalTaskId)
+    }
+
+
+type alias EditInfo id =
+    { id : id
+    , edit : Tasks.Editing
     }
 
 
@@ -87,6 +94,7 @@ initModel =
     { newTask = ""
     , currentTasks = Tasks.empty Current
     , doneTasks = Tasks.empty Done
+    , currentEdit = Nothing
     }
 
 
@@ -146,9 +154,9 @@ type Msg
     | DoTask (Tasks.TaskId Current)
     | UndoTask (Tasks.TaskId Done)
     | StartEdit GlobalTaskId
-    | EditTask GlobalTaskId String
-    | ApplyEdit GlobalTaskId
-    | CancelEdit GlobalTaskId
+    | Edit String
+    | ApplyEdit
+    | CancelEdit
     | DeleteTask GlobalTaskId
     | BackgroundClicked
 
@@ -220,42 +228,37 @@ update msg model =
 
         StartEdit id ->
             let
-                startEdit =
-                    Tasks.startEdit >> Tasks.TaskInEdit
-            in
-            simply (updateTask id startEdit model)
+                maybeTask =
+                    getTaskByGlobalId id model
 
-        ApplyEdit id ->
-            let
-                applyEdit task =
-                    updateEditTask
-                        (\editInfo ->
-                            case Tasks.applyEdit editInfo of
-                                Just editedTask ->
-                                    editedTask
-
-                                Nothing ->
-                                    task
+                newEdit =
+                    Maybe.map
+                        (\task ->
+                            { id = id
+                            , edit = Tasks.startEdit task
+                            }
                         )
-                        task
-            in
-            simply (updateTask id applyEdit model)
+                        maybeTask
 
-        CancelEdit id ->
-            let
-                cancelEdit =
-                    updateEditTask
-                        Tasks.cancelEdit
+                appliedModel =
+                    applyEdit model
             in
-            simply (updateTask id cancelEdit model)
+            simply { appliedModel | currentEdit = newEdit }
 
-        EditTask id newRawAction ->
+        ApplyEdit ->
+            simply (applyEdit model)
+
+        CancelEdit ->
+            simply { model | currentEdit = Nothing }
+
+        Edit newRawAction ->
             let
-                editTask =
-                    updateEditTask
-                        (Tasks.edit newRawAction >> Tasks.TaskInEdit)
+                newEdit =
+                    Maybe.map
+                        (\info -> { info | edit = Tasks.edit newRawAction info.edit })
+                        model.currentEdit
             in
-            simply (updateTask id editTask model)
+            simply { model | currentEdit = newEdit }
 
         DeleteTask id ->
             let
@@ -270,28 +273,7 @@ update msg model =
             simply updatedModel
 
         BackgroundClicked ->
-            let
-                applyEdit collection =
-                    Tasks.map
-                        (\task ->
-                            updateEditTask
-                                (\editInfo ->
-                                    case Tasks.applyEdit editInfo of
-                                        Just editedTask ->
-                                            editedTask
-
-                                        Nothing ->
-                                            task
-                                )
-                                task
-                        )
-                        collection
-            in
-            simply
-                { model
-                    | currentTasks = applyEdit model.currentTasks
-                    , doneTasks = applyEdit model.doneTasks
-                }
+            simply (applyEdit model)
     )
         |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
 
@@ -309,12 +291,33 @@ save model =
 
 encodeTask : Tasks.TaskEntry a -> Encode.Value
 encodeTask =
-    Tasks.readAction >> Encode.string
+    .item >> Tasks.readAction >> Encode.string
 
 
 {-| Port for saving an encoded model to localStorage.
 -}
 port saveRaw : Encode.Value -> Cmd msg
+
+
+applyEdit : Model -> Model
+applyEdit model =
+    case model.currentEdit of
+        Just editInfo ->
+            let
+                id =
+                    editInfo.id
+
+                apply oldTask =
+                    Tasks.applyEdit editInfo.edit oldTask
+                        |> Maybe.withDefault oldTask
+
+                appliedModel =
+                    updateTask id apply model
+            in
+            { appliedModel | currentEdit = Nothing }
+
+        Nothing ->
+            model
 
 
 {-| Adds a task to the collection, iff the `String` is a valid `Action`.
@@ -329,6 +332,16 @@ addTask rawAction currentTasks =
             currentTasks
 
 
+getTaskByGlobalId : GlobalTaskId -> Model -> Maybe Tasks.Task
+getTaskByGlobalId id model =
+    case id of
+        CurrentId currentId ->
+            Tasks.getById currentId model.currentTasks
+
+        DoneId doneId ->
+            Tasks.getById doneId model.doneTasks
+
+
 updateTask : GlobalTaskId -> (Tasks.Task -> Tasks.Task) -> Model -> Model
 updateTask id updateFunction model =
     case id of
@@ -337,16 +350,6 @@ updateTask id updateFunction model =
 
         DoneId doneId ->
             { model | doneTasks = Tasks.updateTask doneId updateFunction model.doneTasks }
-
-
-updateEditTask : (Tasks.TaskEditInfo -> Tasks.Task) -> Tasks.Task -> Tasks.Task
-updateEditTask updateFunction task =
-    case task of
-        Tasks.TaskInEdit editInfo ->
-            updateFunction editInfo
-
-        Tasks.Task _ ->
-            task
 
 
 
@@ -407,15 +410,29 @@ view model =
                     ]
                 , onButtonClick BackgroundClicked
                 ]
-                [ main_
+                [ let
+                    ( currentEditInfo, doneEditInfo ) =
+                        case model.currentEdit of
+                            Just editInfo ->
+                                case editInfo.id of
+                                    CurrentId currentId ->
+                                        ( Just { id = currentId, edit = editInfo.edit }, Nothing )
+
+                                    DoneId doneId ->
+                                        ( Nothing, Just { id = doneId, edit = editInfo.edit } )
+
+                            Nothing ->
+                                ( Nothing, Nothing )
+                  in
+                  main_
                     [ css
                         [ width (pct 100)
                         , maxWidth (em 25)
                         ]
                     ]
                     [ viewActionInput model.newTask
-                    , viewCurrentTaskList model.currentTasks
-                    , viewDoneTaskList model.doneTasks
+                    , viewCurrentTaskList model.currentTasks currentEditInfo
+                    , viewDoneTaskList model.doneTasks doneEditInfo
                     ]
                 ]
             ]
@@ -449,8 +466,8 @@ viewActionInput currentAction =
         ]
 
 
-viewCurrentTaskList : Tasks.Collection Current -> Html Msg
-viewCurrentTaskList currentTasks =
+viewCurrentTaskList : Tasks.Collection Current -> Maybe (EditInfo (Tasks.TaskId Current)) -> Html Msg
+viewCurrentTaskList currentTasks maybeEditInfo =
     ol [ css [ taskListStyle ] ] <|
         List.map
             (\entry ->
@@ -462,30 +479,34 @@ viewCurrentTaskList currentTasks =
                             ]
                         ]
                     ]
-                    [ case entry.item of
-                        Tasks.Task taskInfo ->
-                            viewTask entry.id taskInfo
+                    [ Maybe.map
+                        (\editInfo ->
+                            if editInfo.id == entry.id then
+                                viewEditTask entry.id editInfo.edit
 
-                        Tasks.TaskInEdit editingInfo ->
-                            viewEditTask entry.id editingInfo
+                            else
+                                viewTask entry.id entry.item
+                        )
+                        maybeEditInfo
+                        |> Maybe.withDefault (viewTask entry.id entry.item)
                     ]
             )
         <|
             Tasks.toList currentTasks
 
 
-viewTask : Tasks.TaskId Current -> Tasks.TaskInfo -> Html Msg
+viewTask : Tasks.TaskId Current -> Tasks.Task -> Html Msg
 viewTask id task =
     viewTaskBase
         (onButtonClick (StartEdit <| CurrentId id))
-        (viewAction noStyle (task.action |> Tasks.stringFromAction))
+        (viewAction noStyle (Tasks.readAction task))
         (iconButton (DoTask id) "Mark as done" "✔️")
 
 
-viewEditTask : Tasks.TaskId Current -> Tasks.TaskEditInfo -> Html Msg
+viewEditTask : Tasks.TaskId Current -> Tasks.Editing -> Html Msg
 viewEditTask id editTask =
     viewTaskBase
-        (onButtonClick (ApplyEdit <| CurrentId id))
+        (onButtonClick ApplyEdit)
         (viewEditAction id editTask CurrentId)
         (iconButton (DoTask id) "Mark as done" "✔️")
 
@@ -520,15 +541,15 @@ viewAction customStyle action =
         [ text action ]
 
 
-viewEditAction : Tasks.TaskId a -> Tasks.TaskEditInfo -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
+viewEditAction : Tasks.TaskId a -> Tasks.Editing -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
 viewEditAction id editInfo toGlobalId =
     form
         [ css [ flex (num 1) ]
-        , onSubmit (ApplyEdit <| toGlobalId id)
+        , onSubmit ApplyEdit
         ]
         [ let
             edited =
-                Tasks.getEdited editInfo.editing
+                Tasks.getEdited editInfo
 
             isEmpty =
                 Tasks.actionFromString edited == Nothing
@@ -538,7 +559,7 @@ viewEditAction id editInfo toGlobalId =
             , input
                 [ type_ "text"
                 , value edited
-                , onInput (EditTask <| toGlobalId id)
+                , onInput Edit
                 , stopPropagation
                 , css [ actionInputStyle ]
                 ]
@@ -560,12 +581,12 @@ viewEditAction id editInfo toGlobalId =
             [ css [ displayFlex, justifyContent center ] ]
             [ let
                 isUnchanged =
-                    Tasks.getEdited editInfo.editing == Tasks.readPrevious editInfo.editing
+                    Tasks.getEdited editInfo == Tasks.readPrevious editInfo
               in
               iconButtonInputDisable
                 isUnchanged
                 "reset"
-                (CancelEdit <| toGlobalId id)
+                CancelEdit
                 "Undo changes"
                 "️↩️"
             , iconButtonInput "button" (DeleteTask <| toGlobalId id) "Delete task" "🗑️"
@@ -573,8 +594,8 @@ viewEditAction id editInfo toGlobalId =
         ]
 
 
-viewDoneTaskList : Tasks.Collection Done -> Html Msg
-viewDoneTaskList collection =
+viewDoneTaskList : Tasks.Collection Done -> Maybe (EditInfo (Tasks.TaskId Done)) -> Html Msg
+viewDoneTaskList collection maybeEditInfo =
     ol [ css [ taskListStyle ] ] <|
         List.map
             (\entry ->
@@ -586,19 +607,23 @@ viewDoneTaskList collection =
                             ]
                         ]
                     ]
-                    [ case entry.item of
-                        Tasks.Task taskInfo ->
-                            viewDoneTask entry.id taskInfo
+                    [ Maybe.map
+                        (\editInfo ->
+                            if editInfo.id == entry.id then
+                                viewEditDoneTask entry.id editInfo.edit
 
-                        Tasks.TaskInEdit editingInfo ->
-                            viewEditDoneTask entry.id editingInfo
+                            else
+                                viewDoneTask entry.id entry.item
+                        )
+                        maybeEditInfo
+                        |> Maybe.withDefault (viewDoneTask entry.id entry.item)
                     ]
             )
         <|
             Tasks.toList collection
 
 
-viewDoneTask : Tasks.TaskId Done -> Tasks.TaskInfo -> Html Msg
+viewDoneTask : Tasks.TaskId Done -> Tasks.Task -> Html Msg
 viewDoneTask id task =
     viewTaskBase
         (onButtonClick (StartEdit <| DoneId id))
@@ -608,15 +633,15 @@ viewDoneTask id task =
                 , opacity (num 0.6)
                 ]
             )
-            (Tasks.stringFromAction task.action)
+            (Tasks.readAction task)
         )
         (iconButton (UndoTask id) "Mark as to do" "🔄")
 
 
-viewEditDoneTask : Tasks.TaskId Done -> Tasks.TaskEditInfo -> Html Msg
+viewEditDoneTask : Tasks.TaskId Done -> Tasks.Editing -> Html Msg
 viewEditDoneTask id editInfo =
     viewTaskBase
-        (onButtonClick (ApplyEdit <| DoneId id))
+        (onButtonClick ApplyEdit)
         (viewEditAction id editInfo DoneId)
         (iconButton (UndoTask id) "Mark as to do" "🔄")
 
