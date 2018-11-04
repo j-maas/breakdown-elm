@@ -11,7 +11,44 @@ import Test exposing (..)
 suite : Test
 suite =
     describe "Editing"
-        [ fuzz2 Tasks.actionFuzzer nonblankStringFuzzer "applies edit" <|
+        [ describe "Editing Type"
+            [ fuzz Tasks.actionFuzzer "started edits are always unchanged" <|
+                \action ->
+                    let
+                        task =
+                            Tasks.taskFromAction action
+
+                        editing =
+                            Editing.startEdit task
+                    in
+                    Editing.isUnchanged editing
+                        |> Expect.true "Expected editing to be unchanged."
+            , fuzz2 Tasks.actionFuzzer nonblankStringFuzzer "edits are changed iff the action is different" <|
+                \action nonblankString ->
+                    let
+                        task =
+                            Tasks.taskFromAction action
+
+                        editing =
+                            Editing.startEdit task
+                                |> Editing.edit nonblankString
+                    in
+                    Editing.isUnchanged editing
+                        |> Expect.equal (Tasks.stringFromAction action == nonblankString)
+            , fuzz Tasks.actionFuzzer "edits with the same action are unchanged" <|
+                \action ->
+                    let
+                        task =
+                            Tasks.taskFromAction action
+
+                        editing =
+                            Editing.startEdit task
+                                |> Editing.edit (Tasks.stringFromAction action)
+                    in
+                    Editing.isUnchanged editing
+                        |> Expect.true "Expected editing to be unchanged."
+            ]
+        , fuzz2 Tasks.actionFuzzer nonblankStringFuzzer "applies edit" <|
             \action nonblankString ->
                 let
                     task =

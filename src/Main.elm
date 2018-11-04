@@ -590,12 +590,8 @@ viewEditAction id editInfo toGlobalId =
             ]
         , div
             [ css [ displayFlex, justifyContent center ] ]
-            [ let
-                isUnchanged =
-                    Editing.getEdited editInfo == Editing.readPrevious editInfo
-              in
-              iconButtonInputDisable
-                isUnchanged
+            [ iconButtonInputDisable
+                (Editing.isUnchanged editInfo)
                 "reset"
                 CancelEdit
                 "Undo changes"

@@ -1,6 +1,7 @@
 module Editing exposing
     ( Editing, getEdited, readPrevious
     , startEdit, edit, applyEdit
+    , isUnchanged
     )
 
 {-| Editing of tasks.
@@ -42,6 +43,11 @@ getEdited (Editing info) =
 readPrevious : Editing -> String
 readPrevious (Editing info) =
     info.previousAction |> Tasks.stringFromAction
+
+
+isUnchanged : Editing -> Bool
+isUnchanged (Editing info) =
+    info.edited == Tasks.stringFromAction info.previousAction
 
 
 {-| Initiates editing.
