@@ -2,8 +2,8 @@ module TestStringFuzzer exposing (suite)
 
 import Expect
 import Fuzz exposing (..)
-import StringFuzzer
 import Test exposing (..)
+import Utils.StringFuzzer as StringFuzzer
 
 
 suite : Test

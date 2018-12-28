@@ -1,4 +1,8 @@
-module StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
+module Utils.StringFuzzer exposing
+    ( minimalLengthStringFuzzer
+    , nonblankStringFuzzer
+    , whitespaceStringFuzzer
+    )
 
 import Fuzz exposing (Fuzzer)
 import Random
@@ -6,6 +10,37 @@ import Random.Char
 import Random.Extra as Random
 import Random.String
 import Shrink
+
+
+minimalLengthStringFuzzer : Int -> Fuzzer String
+minimalLengthStringFuzzer length =
+    Fuzz.custom
+        (minimalLengthStringGenerator length)
+        (Shrink.string |> Shrink.keepIf (\string -> String.length string > 0))
+
+
+minimalLengthStringGenerator : Int -> Random.Generator String
+minimalLengthStringGenerator minimalLength =
+    -- Taken from elm-explorations/test#Fuzz.string
+    let
+        asciiGenerator : Random.Generator String
+        asciiGenerator =
+            Random.frequency
+                ( 3, Random.int minimalLength (minimalLength + 10) )
+                [ ( 1, Random.int (minimalLength + 11) (minimalLength + 50) )
+                , ( 1, Random.int (minimalLength + 50) (minimalLength + 1000) )
+                ]
+                |> Random.andThen (\length -> Random.String.string length Random.Char.ascii)
+
+        minimalLengthWhitespaceGenerator : Random.Generator String
+        minimalLengthWhitespaceGenerator =
+            Random.int minimalLength (minimalLength + 10)
+                |> Random.andThen (\length -> Random.String.string length whitespace)
+    in
+    Random.frequency
+        ( 9, asciiGenerator )
+        [ ( 1, minimalLengthWhitespaceGenerator )
+        ]
 
 
 {-| Generates nonempty strings that contain at least one printable (i. e. not whitespace) character.
