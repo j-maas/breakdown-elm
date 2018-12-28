@@ -2,28 +2,18 @@ module TestTodo exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
-import StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 import Test exposing (..)
 import Todo
+import Utils.NonEmptyString as NonEmptyString
+import Utils.StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 
 
 suite : Test
 suite =
-    describe "Task"
-        [ fuzz nonblankStringFuzzer "makes task and trims action" <|
-            \validAction ->
-                Todo.from validAction
-                    |> Maybe.map
-                        (Todo.action
-                            >> Expect.equal (String.trim validAction)
-                        )
-                    |> Maybe.withDefault (Expect.fail "Expected action to be valid, but received `Nothing`.")
-        , test "does not make task from empty action" <|
+    describe "Todo"
+        [ test "creates todo" <|
             \_ ->
-                Todo.from ""
-                    |> Expect.equal Nothing
-        , fuzz whitespaceStringFuzzer "does not make task from action with only whitespace" <|
-            \invalidAction ->
-                Todo.from invalidAction
-                    |> Expect.equal Nothing
+                Todo.from (NonEmptyString.build 'C' "reate me!")
+                    |> Todo.action
+                    |> Expect.equal "Create me!"
         ]

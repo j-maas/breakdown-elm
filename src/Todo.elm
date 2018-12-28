@@ -1,39 +1,17 @@
-module Todo exposing (action, from)
+module Todo exposing (Todo, action, from)
+
+import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
 
 type Todo
-    = Todo Action
+    = Todo NonEmptyString
 
 
-from : String -> Maybe Todo
-from raw =
-    actionFromString raw
-        |> Maybe.map Todo
+from : NonEmptyString -> Todo
+from =
+    Todo
 
 
 action : Todo -> String
 action (Todo act) =
-    stringFromAction act
-
-
-type Action
-    = Action String
-
-
-actionFromString : String -> Maybe Action
-actionFromString raw =
-    let
-        trimmed =
-            String.trim raw
-    in
-    case String.length trimmed of
-        0 ->
-            Nothing
-
-        _ ->
-            Just (Action trimmed)
-
-
-stringFromAction : Action -> String
-stringFromAction (Action act) =
-    act
+    NonEmptyString.toString act
