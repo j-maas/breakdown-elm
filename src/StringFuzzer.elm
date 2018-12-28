@@ -14,7 +14,16 @@ nonblankStringFuzzer : Fuzzer String
 nonblankStringFuzzer =
     Fuzz.custom
         nonblankGenerator
-        (Shrink.string |> Shrink.keepIf (\string -> String.length string > 0))
+        (Shrink.string
+            |> Shrink.keepIf
+                (\string ->
+                    let
+                        trimmed =
+                            String.trim string
+                    in
+                    String.length trimmed > 0
+                )
+        )
 
 
 nonblankGenerator : Random.Generator String
@@ -30,8 +39,11 @@ nonblankGenerator =
                     partLength =
                         length // 2 - 1
 
+                    ascii =
+                        Random.Char.ascii
+
                     nonblanks =
-                        Random.choices Random.Char.english []
+                        Random.Char.latin
 
                     build : String -> Char -> String -> String
                     build front nonblank back =
@@ -39,9 +51,9 @@ nonblankGenerator =
                 in
                 Random.map3
                     build
-                    (Random.String.string partLength nonblanks)
+                    (Random.String.string partLength ascii)
                     nonblanks
-                    (Random.String.string partLength nonblanks)
+                    (Random.String.string partLength ascii)
             )
 
 

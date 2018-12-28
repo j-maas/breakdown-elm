@@ -8,7 +8,7 @@ import Test exposing (..)
 
 suite : Test
 suite =
-    describe "StrinFuzzer"
+    describe "StringFuzzer"
         [ fuzz StringFuzzer.whitespaceStringFuzzer "whitespaceStringFuzzer trimmed is empty" <|
             \whitespace ->
                 String.trim whitespace
