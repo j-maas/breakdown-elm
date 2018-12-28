@@ -10,14 +10,14 @@ import Todo
 suite : Test
 suite =
     describe "Task"
-        [ fuzz nonblankStringFuzzer "makes task" <|
+        [ fuzz nonblankStringFuzzer "makes task and trims action" <|
             \validAction ->
                 Todo.from validAction
                     |> Maybe.map
                         (Todo.action
-                            >> Expect.equal validAction
+                            >> Expect.equal (String.trim validAction)
                         )
-                    |> Maybe.withDefault (Expect.fail "Expected action to be valid.")
+                    |> Maybe.withDefault (Expect.fail "Expected action to be valid, but received `Nothing`.")
         , test "does not make task from empty action" <|
             \_ ->
                 Todo.from ""
