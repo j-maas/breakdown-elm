@@ -1,6 +1,5 @@
 module Main exposing (main)
 
-import Breakdown
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
