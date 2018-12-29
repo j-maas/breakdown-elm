@@ -2,9 +2,30 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Css
+    exposing
+        ( auto
+        , borderRadius
+        , backgroundColor
+        , em
+        , lineThrough
+        , margin2
+        , maxWidth
+        , textDecoration
+        )
+import Css.Global as Global
+import Html.Styled as Html
+    exposing
+        ( Html
+        , button
+        , div
+        , input
+        , li
+        , text
+        , ul
+        )
+import Html.Styled.Attributes exposing (..)
+import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
 import Url exposing (Url)
@@ -176,10 +197,17 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        [ newTodoInput model.newTodoInput
-        , viewCurrentTodos model.currentTodos
-        , viewDoneTodos model.doneTodos
-        ]
+        List.map Html.toUnstyled
+            [ Global.global
+                [ Global.body
+                    [ maxWidth (em 30)
+                    , margin2 (em 1) auto
+                    ]
+                ]
+            , newTodoInput model.newTodoInput
+            , viewCurrentTodos model.currentTodos
+            , viewDoneTodos model.doneTodos
+            ]
     }
 
 
@@ -187,7 +215,7 @@ newTodoInput : String -> Html Msg
 newTodoInput currentNewTodoInput =
     Html.form [ onSubmit AddNewTodo ]
         [ input [ type_ "text", onInput UpdateNewTodoInput, value currentNewTodoInput ] []
-        , input [ type_ "submit", value "+" ] []
+        , input [ type_ "submit", value "+", css [ buttonStyle ] ] []
         ]
 
 
@@ -204,7 +232,7 @@ viewCurrentTodos todos =
 
 viewDoneTodos : List (TodoEntry Done) -> Html Msg
 viewDoneTodos todos =
-    ul []
+    ul [ css [ textDecoration lineThrough ] ]
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
@@ -229,6 +257,23 @@ viewTodo todoZipper =
     in
     div []
         [ text (Todo.action todo)
-        , button [ onClick (Move todoZipper) ] [ text moveText ]
-        , button [ onClick (Remove todoZipper) ] [ text "Remove" ]
+        , button [ onClick (Move todoZipper), css [ buttonStyle ] ] [ text moveText ]
+        , button [ onClick (Remove todoZipper), css [ buttonStyle ] ] [ text "Remove" ]
+        ]
+
+
+
+-- STYLES
+
+
+actionColor : Css.Color
+actionColor =
+    (Css.rgb 143 222 246)
+
+
+buttonStyle : Css.Style
+buttonStyle =
+    Css.batch
+        [ borderRadius (em 0.5)
+        , backgroundColor actionColor
         ]
