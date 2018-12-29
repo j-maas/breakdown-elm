@@ -26,28 +26,33 @@ main =
 type alias Model =
     { key : Nav.Key
     , newTodoInput : String
-    , currentTodos : TodoList Current
-    , doneTodos : TodoList Done
+    , currentTodos : List (TodoEntry Current)
+    , doneTodos : List (TodoEntry Done)
     }
 
 
-type TodoList a
-    = TodoList (List Todo)
+type TodoEntry a
+    = TodoEntry Todo
+
+
+todoFromEntry : TodoEntry a -> Todo
+todoFromEntry (TodoEntry todo) =
+    todo
 
 
 type TodoZipper
-    = CurrentZipper (Zipper Todo)
-    | DoneZipper (Zipper Todo)
+    = CurrentZipper (Zipper (TodoEntry Current))
+    | DoneZipper (Zipper (TodoEntry Done))
 
 
 zipperFromTodoZipper : TodoZipper -> Zipper Todo
 zipperFromTodoZipper todoZipper =
     case todoZipper of
         CurrentZipper zipper ->
-            zipper
+            Zipper.map todoFromEntry zipper
 
         DoneZipper zipper ->
-            zipper
+            Zipper.map todoFromEntry zipper
 
 
 type Current
@@ -63,11 +68,10 @@ init _ _ key =
     ( { key = key
       , newTodoInput = ""
       , currentTodos =
-            TodoList
-                [ Todo.from (NonEmptyString.build 'H' "ello")
-                , Todo.from (NonEmptyString.build 't' "here")
-                ]
-      , doneTodos = TodoList [ Todo.from (NonEmptyString.build 'H' "ow's it going?") ]
+            [ TodoEntry <| Todo.from (NonEmptyString.build 'H' "ello")
+            , TodoEntry <| Todo.from (NonEmptyString.build 't' "here")
+            ]
+      , doneTodos = [ TodoEntry <| Todo.from (NonEmptyString.build 'H' "ow's it going?") ]
       }
     , Cmd.none
     )
@@ -77,6 +81,7 @@ type Msg
     = NoOp
     | UpdateNewTodoInput String
     | AddNewTodo
+    | Move TodoZipper
     | Remove TodoZipper
 
 
@@ -105,9 +110,7 @@ update msg model =
                             Todo.from action
 
                         newCurrentTodos =
-                            case model.currentTodos of
-                                TodoList list ->
-                                    TodoList (list ++ [ todo ])
+                            model.currentTodos ++ [ TodoEntry todo ]
                     in
                     ( { model
                         | newTodoInput = ""
@@ -119,13 +122,45 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        Move todoZipper ->
+            let
+                ( newCurrent, newDone ) =
+                    case todoZipper of
+                        CurrentZipper zipper ->
+                            let
+                                currentZipper =
+                                    Zipper.map todoFromEntry zipper
+
+                                done =
+                                    List.map todoFromEntry model.doneTodos
+
+                                ( rawNewCurrent, rawNewDone ) =
+                                    Zipper.move currentZipper done
+                            in
+                            ( List.map TodoEntry rawNewCurrent, List.map TodoEntry rawNewDone )
+
+                        DoneZipper zipper ->
+                            let
+                                doneZipper =
+                                    Zipper.map todoFromEntry zipper
+
+                                current =
+                                    List.map todoFromEntry model.currentTodos
+
+                                ( rawNewDone, rawNewCurrent ) =
+                                    Zipper.move doneZipper current
+                            in
+                            ( List.map TodoEntry rawNewCurrent, List.map TodoEntry rawNewDone )
+            in
+            ( { model | currentTodos = newCurrent, doneTodos = newDone }, Cmd.none )
+
         Remove todoZipper ->
             case todoZipper of
                 CurrentZipper zipper ->
-                    ( { model | currentTodos = TodoList (Zipper.remove zipper) }, Cmd.none )
+                    ( { model | currentTodos = Zipper.remove zipper }, Cmd.none )
 
                 DoneZipper zipper ->
-                    ( { model | doneTodos = TodoList (Zipper.remove zipper) }, Cmd.none )
+                    ( { model | doneTodos = Zipper.remove zipper }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -156,8 +191,8 @@ newTodoInput currentNewTodoInput =
         ]
 
 
-viewCurrentTodos : TodoList Current -> Html Msg
-viewCurrentTodos (TodoList todos) =
+viewCurrentTodos : List (TodoEntry Current) -> Html Msg
+viewCurrentTodos todos =
     ul []
         (todos
             |> Zipper.focusMap
@@ -167,8 +202,8 @@ viewCurrentTodos (TodoList todos) =
         )
 
 
-viewDoneTodos : TodoList Done -> Html Msg
-viewDoneTodos (TodoList todos) =
+viewDoneTodos : List (TodoEntry Done) -> Html Msg
+viewDoneTodos todos =
     ul []
         (todos
             |> Zipper.focusMap
@@ -183,8 +218,17 @@ viewTodo todoZipper =
     let
         todo =
             Zipper.current (zipperFromTodoZipper todoZipper)
+
+        moveText =
+            case todoZipper of
+                CurrentZipper _ ->
+                    "Mark as done"
+
+                DoneZipper _ ->
+                    "Mark as to do"
     in
     div []
         [ text (Todo.action todo)
+        , button [ onClick (Move todoZipper) ] [ text moveText ]
         , button [ onClick (Remove todoZipper) ] [ text "Remove" ]
         ]
