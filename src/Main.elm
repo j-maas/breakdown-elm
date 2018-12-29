@@ -4,7 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput, onSubmit)
+import Html.Events exposing (onClick, onInput, onSubmit)
 import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
 import Url exposing (Url)
@@ -26,9 +26,36 @@ main =
 type alias Model =
     { key : Nav.Key
     , newTodoInput : String
-    , currentTodos : List Todo
-    , doneTodos : List Todo
+    , currentTodos : TodoList Current
+    , doneTodos : TodoList Done
     }
+
+
+type TodoList a
+    = TodoList (List Todo)
+
+
+type TodoZipper
+    = CurrentZipper (Zipper Todo)
+    | DoneZipper (Zipper Todo)
+
+
+zipperFromTodoZipper : TodoZipper -> Zipper Todo
+zipperFromTodoZipper todoZipper =
+    case todoZipper of
+        CurrentZipper zipper ->
+            zipper
+
+        DoneZipper zipper ->
+            zipper
+
+
+type Current
+    = Current
+
+
+type Done
+    = Done
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -36,10 +63,11 @@ init _ _ key =
     ( { key = key
       , newTodoInput = ""
       , currentTodos =
-            [ Todo.from (NonEmptyString.build 'H' "ello")
-            , Todo.from (NonEmptyString.build 't' "here")
-            ]
-      , doneTodos = [ Todo.from (NonEmptyString.build 'H' "ow's it going?") ]
+            TodoList
+                [ Todo.from (NonEmptyString.build 'H' "ello")
+                , Todo.from (NonEmptyString.build 't' "here")
+                ]
+      , doneTodos = TodoList [ Todo.from (NonEmptyString.build 'H' "ow's it going?") ]
       }
     , Cmd.none
     )
@@ -49,6 +77,7 @@ type Msg
     = NoOp
     | UpdateNewTodoInput String
     | AddNewTodo
+    | Remove TodoZipper
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -76,7 +105,9 @@ update msg model =
                             Todo.from action
 
                         newCurrentTodos =
-                            model.currentTodos ++ [ todo ]
+                            case model.currentTodos of
+                                TodoList list ->
+                                    TodoList (list ++ [ todo ])
                     in
                     ( { model
                         | newTodoInput = ""
@@ -87,6 +118,14 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        Remove todoZipper ->
+            case todoZipper of
+                CurrentZipper zipper ->
+                    ( { model | currentTodos = TodoList (Zipper.remove zipper) }, Cmd.none )
+
+                DoneZipper zipper ->
+                    ( { model | doneTodos = TodoList (Zipper.remove zipper) }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -117,32 +156,35 @@ newTodoInput currentNewTodoInput =
         ]
 
 
-viewCurrentTodos : List Todo -> Html Msg
-viewCurrentTodos todos =
+viewCurrentTodos : TodoList Current -> Html Msg
+viewCurrentTodos (TodoList todos) =
     ul []
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
-                    li [] [ viewTodo todoZipper ]
+                    li [] [ viewTodo (CurrentZipper todoZipper) ]
                 )
         )
 
 
-viewDoneTodos : List Todo -> Html Msg
-viewDoneTodos todos =
+viewDoneTodos : TodoList Done -> Html Msg
+viewDoneTodos (TodoList todos) =
     ul []
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
-                    li [] [ viewTodo todoZipper ]
+                    li [] [ viewTodo (DoneZipper todoZipper) ]
                 )
         )
 
 
-viewTodo : Zipper Todo -> Html Msg
+viewTodo : TodoZipper -> Html Msg
 viewTodo todoZipper =
     let
         todo =
-            Zipper.current todoZipper
+            Zipper.current (zipperFromTodoZipper todoZipper)
     in
-    text (Todo.action todo)
+    div []
+        [ text (Todo.action todo)
+        , button [ onClick (Remove todoZipper) ] [ text "Remove" ]
+        ]
