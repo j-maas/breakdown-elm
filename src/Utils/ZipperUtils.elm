@@ -1,10 +1,26 @@
 module Utils.ZipperUtils exposing
-    ( focusMap
+    ( build
+    , buildWithFocus
+    , focusMap
     , move
     , remove
     )
 
 import List.Zipper as Zipper exposing (Zipper(..))
+
+
+
+-- BUILD
+
+
+build : a -> List a -> Zipper a
+build first rest =
+    Zipper [] first rest
+
+
+buildWithFocus : List a -> a -> List a -> Zipper a
+buildWithFocus pre focus post =
+    Zipper (List.reverse pre) focus post
 
 
 
@@ -56,13 +72,14 @@ zipperMap map zipper =
 
 remove : Zipper a -> List a
 remove zipper =
-    case zipper of
-        Zipper prelist focus postlist ->
-            let
-                remaining =
-                    prelist ++ postlist
-            in
-            remaining
+    let
+        prelist =
+            Zipper.before zipper
+
+        postlist =
+            Zipper.after zipper
+    in
+    prelist ++ postlist
 
 
 move : Zipper a -> List a -> ( List a, List a )
