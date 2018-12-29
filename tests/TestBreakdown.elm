@@ -19,29 +19,31 @@ suite =
                         Todo.from (NonEmptyString.build 'A' "dd me")
                 in
                 Breakdown.insert todo Breakdown.empty
+                    |> Tuple.second
                     |> Breakdown.currentTodos
-                    |> Expect.equal (Array.fromList [ todo ])
+                    |> List.map Tuple.second
+                    |> Expect.equal [ todo ]
         , test "moves a todo from current to done" <|
             \_ ->
                 let
                     todo =
                         Todo.from (NonEmptyString.build 'A' "dd me")
 
-                    inCurrent =
+                    ( id, inCurrent ) =
                         Breakdown.insert todo Breakdown.empty
                 in
-                Breakdown.moveToDone 0 inCurrent
+                Breakdown.moveToDone id inCurrent
                     |> Maybe.map
-                        (\breakdown ->
+                        (\( _, breakdown ) ->
                             Expect.all
                                 [ \b ->
-                                    Expect.equal
-                                        (Array.fromList [])
-                                        (Breakdown.currentTodos b)
+                                    Breakdown.currentTodos b
+                                        |> List.map Tuple.second
+                                        |> Expect.equal []
                                 , \b ->
-                                    Expect.equal
-                                        (Array.fromList [ todo ])
-                                        (Breakdown.doneTodos b)
+                                    Breakdown.doneTodos b
+                                        |> List.map Tuple.second
+                                        |> Expect.equal [ todo ]
                                 ]
                                 breakdown
                         )
@@ -52,26 +54,26 @@ suite =
                     todo =
                         Todo.from (NonEmptyString.build 'A' "dd me")
 
-                    inCurrent =
+                    ( id, inCurrent ) =
                         Breakdown.insert todo Breakdown.empty
 
-                    maybeInDone =
-                        Breakdown.moveToDone 0 inCurrent
+                    maybeMoved =
+                        Breakdown.moveToDone id inCurrent
                 in
-                case maybeInDone of
-                    Just inDone ->
-                        Breakdown.moveToCurrent 0 inDone
+                case maybeMoved of
+                    Just ( newId, inDone ) ->
+                        Breakdown.moveToCurrent newId inDone
                             |> Maybe.map
-                                (\breakdown ->
+                                (\( _, breakdown ) ->
                                     Expect.all
                                         [ \b ->
-                                            Expect.equal
-                                                (Array.fromList [ todo ])
-                                                (Breakdown.currentTodos b)
+                                            Breakdown.currentTodos b
+                                                |> List.map Tuple.second
+                                                |> Expect.equal [ todo ]
                                         , \b ->
-                                            Expect.equal
-                                                (Array.fromList [])
-                                                (Breakdown.doneTodos b)
+                                            Breakdown.doneTodos b
+                                                |> List.map Tuple.second
+                                                |> Expect.equal []
                                         ]
                                         breakdown
                                 )

@@ -1,4 +1,14 @@
-module Breakdown exposing (currentTodos, doneTodos, empty, insert, moveToCurrent, moveToDone)
+module Breakdown exposing
+    ( Current
+    , Done
+    , Id
+    , currentTodos
+    , doneTodos
+    , empty
+    , insert
+    , moveToCurrent
+    , moveToDone
+    )
 
 import Array exposing (Array)
 import Array.Extra as Array
@@ -20,23 +30,41 @@ empty =
         }
 
 
-insert : Todo -> Breakdown -> Breakdown
+type Id collection
+    = Id Int
+
+
+type Current
+    = Current
+
+
+type Done
+    = Done
+
+
+insert : Todo -> Breakdown -> ( Id Current, Breakdown )
 insert todo (Breakdown breakdown) =
-    Breakdown { breakdown | current = Array.push todo breakdown.current }
+    let
+        ( newIndex, newCurrent ) =
+            pushWithIndex todo breakdown.current
+    in
+    ( Id newIndex, Breakdown { breakdown | current = newCurrent } )
 
 
-currentTodos : Breakdown -> Array Todo
+currentTodos : Breakdown -> List ( Id Current, Todo )
 currentTodos (Breakdown breakdown) =
-    breakdown.current
+    Array.toIndexedList breakdown.current
+        |> List.map (Tuple.mapFirst Id)
 
 
-doneTodos : Breakdown -> Array Todo
+doneTodos : Breakdown -> List ( Id Done, Todo )
 doneTodos (Breakdown breakdown) =
-    breakdown.done
+    Array.toIndexedList breakdown.done
+        |> List.map (Tuple.mapFirst Id)
 
 
-moveToDone : Int -> Breakdown -> Maybe Breakdown
-moveToDone index (Breakdown breakdown) =
+moveToDone : Id Current -> Breakdown -> Maybe ( Id Done, Breakdown )
+moveToDone (Id index) (Breakdown breakdown) =
     Array.get index breakdown.current
         |> Maybe.map
             (\todo ->
@@ -44,15 +72,15 @@ moveToDone index (Breakdown breakdown) =
                     newCurrent =
                         Array.removeAt index breakdown.current
 
-                    newDone =
-                        Array.push todo breakdown.done
+                    ( newId, newDone ) =
+                        pushWithIndex todo breakdown.done
                 in
-                Breakdown { breakdown | current = newCurrent, done = newDone }
+                ( Id newId, Breakdown { breakdown | current = newCurrent, done = newDone } )
             )
 
 
-moveToCurrent : Int -> Breakdown -> Maybe Breakdown
-moveToCurrent index (Breakdown breakdown) =
+moveToCurrent : Id Done -> Breakdown -> Maybe ( Id Current, Breakdown )
+moveToCurrent (Id index) (Breakdown breakdown) =
     Array.get index breakdown.done
         |> Maybe.map
             (\todo ->
@@ -60,8 +88,21 @@ moveToCurrent index (Breakdown breakdown) =
                     newDone =
                         Array.removeAt index breakdown.done
 
-                    newCurrent =
-                        Array.push todo breakdown.current
+                    ( newId, newCurrent ) =
+                        pushWithIndex todo breakdown.current
                 in
-                Breakdown { breakdown | current = newCurrent, done = newDone }
+                ( Id newId, Breakdown { breakdown | current = newCurrent, done = newDone } )
             )
+
+
+
+-- HELPERS
+
+
+pushWithIndex : a -> Array a -> ( Int, Array a )
+pushWithIndex item array =
+    let
+        index =
+            Array.length array
+    in
+    ( index, Array.push item array )
