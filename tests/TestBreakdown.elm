@@ -18,8 +18,7 @@ suite =
                     todo =
                         Todo.from (NonEmptyString.build 'A' "dd me")
                 in
-                Breakdown.insert todo Breakdown.empty
-                    |> Tuple.second
+                Breakdown.put todo Breakdown.empty
                     |> Breakdown.currentTodos
                     |> List.map Tuple.second
                     |> Expect.equal [ todo ]
