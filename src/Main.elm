@@ -5,9 +5,11 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onSubmit)
+import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
 import Url exposing (Url)
 import Utils.NonEmptyString as NonEmptyString
+import Utils.ZipperUtils as Zipper
 
 
 main =
@@ -23,24 +25,21 @@ main =
 
 type alias Model =
     { key : Nav.Key
-    , breakdown : Breakdown.Model
     , newTodoInput : String
+    , currentTodos : List Todo
+    , doneTodos : List Todo
     }
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ _ key =
     ( { key = key
-      , breakdown =
-            Breakdown.empty
-                |> Breakdown.put (Todo.from (NonEmptyString.build 'H' "ello"))
-                |> Breakdown.insert (Todo.from (NonEmptyString.build 't' "here"))
-                |> (\( id, model ) ->
-                        Breakdown.moveToDone id model
-                   )
-                |> Maybe.map Tuple.second
-                |> Maybe.withDefault Breakdown.empty
       , newTodoInput = ""
+      , currentTodos =
+            [ Todo.from (NonEmptyString.build 'H' "ello")
+            , Todo.from (NonEmptyString.build 't' "here")
+            ]
+      , doneTodos = [ Todo.from (NonEmptyString.build 'H' "ow's it going?") ]
       }
     , Cmd.none
     )
@@ -76,10 +75,15 @@ update msg model =
                         todo =
                             Todo.from action
 
-                        newBreakdown =
-                            Breakdown.put todo model.breakdown
+                        newCurrentTodos =
+                            model.currentTodos ++ [ todo ]
                     in
-                    ( { model | breakdown = newBreakdown, newTodoInput = "" }, Cmd.none )
+                    ( { model
+                        | newTodoInput = ""
+                        , currentTodos = newCurrentTodos
+                      }
+                    , Cmd.none
+                    )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -99,8 +103,8 @@ view model =
     { title = "Breakdown"
     , body =
         [ newTodoInput model.newTodoInput
-        , viewCurrentTodos (Breakdown.currentTodos model.breakdown)
-        , viewDoneTodos (Breakdown.doneTodos model.breakdown)
+        , viewCurrentTodos model.currentTodos
+        , viewDoneTodos model.doneTodos
         ]
     }
 
@@ -113,33 +117,32 @@ newTodoInput currentNewTodoInput =
         ]
 
 
-type BreakdownId
-    = CurrentId (Breakdown.Id Breakdown.Current)
-    | DoneId (Breakdown.Id Breakdown.Done)
-
-
-viewCurrentTodos : List ( Breakdown.Id Breakdown.Current, Todo ) -> Html Msg
+viewCurrentTodos : List Todo -> Html Msg
 viewCurrentTodos todos =
     ul []
         (todos
-            |> List.map
-                (\( id, todo ) ->
-                    li [] [ viewTodo (CurrentId id) todo ]
+            |> Zipper.focusMap
+                (\todoZipper ->
+                    li [] [ viewTodo todoZipper ]
                 )
         )
 
 
-viewDoneTodos : List ( Breakdown.Id Breakdown.Done, Todo ) -> Html Msg
+viewDoneTodos : List Todo -> Html Msg
 viewDoneTodos todos =
     ul []
         (todos
-            |> List.map
-                (\( id, todo ) ->
-                    li [] [ viewTodo (DoneId id) todo ]
+            |> Zipper.focusMap
+                (\todoZipper ->
+                    li [] [ viewTodo todoZipper ]
                 )
         )
 
 
-viewTodo : BreakdownId -> Todo -> Html Msg
-viewTodo id todo =
+viewTodo : Zipper Todo -> Html Msg
+viewTodo todoZipper =
+    let
+        todo =
+            Zipper.current todoZipper
+    in
     text (Todo.action todo)
