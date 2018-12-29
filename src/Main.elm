@@ -1,8 +1,14 @@
 module Main exposing (main)
 
+import Breakdown
 import Browser
 import Browser.Navigation as Nav
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onInput, onSubmit)
+import Todo exposing (Todo)
 import Url exposing (Url)
+import Utils.NonEmptyString as NonEmptyString
 
 
 main =
@@ -17,16 +23,34 @@ main =
 
 
 type alias Model =
-    { key : Nav.Key }
+    { key : Nav.Key
+    , breakdown : Breakdown.Model
+    , newTodoInput : String
+    }
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ _ key =
-    ( { key = key }, Cmd.none )
+    ( { key = key
+      , breakdown =
+            Breakdown.empty
+                |> Breakdown.put (Todo.from (NonEmptyString.build 'H' "ello"))
+                |> Breakdown.insert (Todo.from (NonEmptyString.build 't' "here"))
+                |> (\( id, model ) ->
+                        Breakdown.moveToDone id model
+                   )
+                |> Maybe.map Tuple.second
+                |> Maybe.withDefault Breakdown.empty
+      , newTodoInput = ""
+      }
+    , Cmd.none
+    )
 
 
 type Msg
     = NoOp
+    | UpdateNewTodoInput String
+    | AddNewTodo
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -35,14 +59,88 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
+        UpdateNewTodoInput newTodo ->
+            let
+                newModel =
+                    { model | newTodoInput = newTodo }
+            in
+            ( newModel, Cmd.none )
 
-view : Model -> Browser.Document Msg
-view model =
-    { title = "Breakdown"
-    , body = []
-    }
+        AddNewTodo ->
+            let
+                maybeAction =
+                    NonEmptyString.fromString model.newTodoInput
+            in
+            case maybeAction of
+                Just action ->
+                    let
+                        todo =
+                            Todo.from action
+
+                        newBreakdown =
+                            Breakdown.put todo model.breakdown
+                    in
+                    ( { model | breakdown = newBreakdown, newTodoInput = "" }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
+
+
+
+-- VIEW
+
+
+view : Model -> Browser.Document Msg
+view model =
+    { title = "Breakdown"
+    , body =
+        [ newTodoInput model.newTodoInput
+        , viewCurrentTodos (Breakdown.currentTodos model.breakdown)
+        , viewDoneTodos (Breakdown.doneTodos model.breakdown)
+        ]
+    }
+
+
+newTodoInput : String -> Html Msg
+newTodoInput currentNewTodoInput =
+    Html.form [ onSubmit AddNewTodo ]
+        [ input [ type_ "text", onInput UpdateNewTodoInput, value currentNewTodoInput ] []
+        , input [ type_ "submit", value "+" ] []
+        ]
+
+
+type BreakdownId
+    = CurrentId (Breakdown.Id Breakdown.Current)
+    | DoneId (Breakdown.Id Breakdown.Done)
+
+
+viewCurrentTodos : List ( Breakdown.Id Breakdown.Current, Todo ) -> Html Msg
+viewCurrentTodos todos =
+    ul []
+        (todos
+            |> List.map
+                (\( id, todo ) ->
+                    li [] [ viewTodo (CurrentId id) todo ]
+                )
+        )
+
+
+viewDoneTodos : List ( Breakdown.Id Breakdown.Done, Todo ) -> Html Msg
+viewDoneTodos todos =
+    ul []
+        (todos
+            |> List.map
+                (\( id, todo ) ->
+                    li [] [ viewTodo (DoneId id) todo ]
+                )
+        )
+
+
+viewTodo : BreakdownId -> Todo -> Html Msg
+viewTodo id todo =
+    text (Todo.action todo)
