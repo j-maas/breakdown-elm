@@ -5,8 +5,8 @@ import Browser.Navigation as Nav
 import Css
     exposing
         ( auto
-        , borderRadius
         , backgroundColor
+        , borderRadius
         , em
         , lineThrough
         , margin2
@@ -268,7 +268,7 @@ viewTodo todoZipper =
 
 actionColor : Css.Color
 actionColor =
-    (Css.rgb 143 222 246)
+    Css.rgb 143 222 246
 
 
 buttonStyle : Css.Style
