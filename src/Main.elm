@@ -194,6 +194,7 @@ view model =
                 [ Global.body
                     [ maxWidth (em 26)
                     , margin2 (em 1) auto
+                    , fontFamily sansSerif
                     ]
                 ]
             , newTodoInput model.newTodoInput
@@ -311,7 +312,7 @@ buttonStyle =
         , margin (em 0.1)
         , textAlign center
         , hover [ backgroundColor (hsl 0.0 0.0 0.92) ]
-        , active [backgroundColor (hsl 0.0 0.0 0.88)]
+        , active [ backgroundColor (hsl 0.0 0.0 0.88) ]
         ]
 
 
