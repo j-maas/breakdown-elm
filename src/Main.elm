@@ -2,17 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Css
-    exposing
-        ( auto
-        , backgroundColor
-        , borderRadius
-        , em
-        , lineThrough
-        , margin2
-        , maxWidth
-        , textDecoration
-        )
+import Css exposing (..)
 import Css.Global as Global
 import Html.Styled as Html
     exposing
@@ -20,11 +10,13 @@ import Html.Styled as Html
         , button
         , div
         , input
+        , label
         , li
+        , span
         , text
         , ul
         )
-import Html.Styled.Attributes exposing (..)
+import Html.Styled.Attributes exposing (attribute, css, title, type_, value)
 import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
@@ -215,7 +207,7 @@ newTodoInput : String -> Html Msg
 newTodoInput currentNewTodoInput =
     Html.form [ onSubmit AddNewTodo ]
         [ input [ type_ "text", onInput UpdateNewTodoInput, value currentNewTodoInput ] []
-        , input [ type_ "submit", value "+", css [ buttonStyle ] ] []
+        , inputSubmit "Add new todo" "add"
         ]
 
 
@@ -247,18 +239,43 @@ viewTodo todoZipper =
         todo =
             Zipper.current (zipperFromTodoZipper todoZipper)
 
-        moveText =
+        ( iconName, moveText ) =
             case todoZipper of
                 CurrentZipper _ ->
-                    "Mark as done"
+                    ( "done", "Mark as done" )
 
                 DoneZipper _ ->
-                    "Mark as to do"
+                    ( "refresh", "Mark as to do" )
     in
     div []
         [ text (Todo.action todo)
-        , button [ onClick (Move todoZipper), css [ buttonStyle ] ] [ text moveText ]
-        , button [ onClick (Remove todoZipper), css [ buttonStyle ] ] [ text "Remove" ]
+        , button moveText iconName (Move todoZipper)
+        , button "Remove" "delete" (Remove todoZipper)
+        ]
+
+
+
+-- COMPONENTS
+
+
+button : String -> String -> Msg -> Html Msg
+button description iconName action =
+    Html.button
+        [ onClick action, css [ buttonStyle, icon iconName ], title description ]
+        [ span [ css [ visuallyHidden ] ] [ text description ] ]
+
+
+inputSubmit : String -> String -> Html Msg
+inputSubmit description iconName =
+    label []
+        [ span [ css [ visuallyHidden ] ] [ text description ]
+        , input
+            [ type_ "submit"
+            , css [ buttonStyle, icon iconName ]
+            , title description
+            , value ""
+            ]
+            []
         ]
 
 
@@ -276,4 +293,38 @@ buttonStyle =
     Css.batch
         [ borderRadius (em 0.5)
         , backgroundColor actionColor
+        , border zero
+        , padding (em 0.5)
+        , margin (em 0.1)
+        , textAlign center
+        ]
+
+
+icon : String -> Css.Style
+icon iconName =
+    Css.batch
+        [ backgroundImage (url <| "./icons/" ++ iconName ++ ".svg")
+        , backgroundRepeat noRepeat
+        , backgroundPosition center
+        , backgroundSize (pct 75)
+        , width (em 3)
+        , height (em 3)
+        ]
+
+
+{-| Hides an element visually, but keeps it discoverable to assistive technologies.
+See <https://www.w3.org/WAI/tutorials/forms/labels/#note-on-hiding-elements> for further information.
+-}
+visuallyHidden : Css.Style
+visuallyHidden =
+    Css.batch
+        [ border zero
+        , property "clip" "rect(0 0 0 0)"
+        , height (px 1)
+        , margin (px -1)
+        , overflow hidden
+        , padding zero
+        , position absolute
+        , whiteSpace noWrap
+        , width (px 1)
         ]
