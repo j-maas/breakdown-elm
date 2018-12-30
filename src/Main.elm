@@ -283,16 +283,11 @@ inputSubmit description iconName =
 -- STYLES
 
 
-actionColor : Css.Color
-actionColor =
-    Css.rgb 143 222 246
-
-
 buttonStyle : Css.Style
 buttonStyle =
     Css.batch
         [ borderRadius (em 0.5)
-        , backgroundColor actionColor
+        , backgroundColor (hsl 0.0 0.0 0.8)
         , border zero
         , padding (em 0.5)
         , margin (em 0.1)
