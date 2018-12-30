@@ -192,7 +192,7 @@ view model =
         List.map Html.toUnstyled
             [ Global.global
                 [ Global.body
-                    [ maxWidth (em 30)
+                    [ maxWidth (em 26)
                     , margin2 (em 1) auto
                     ]
                 ]
@@ -213,22 +213,30 @@ newTodoInput currentNewTodoInput =
 
 viewCurrentTodos : List (TodoEntry Current) -> Html Msg
 viewCurrentTodos todos =
-    ul []
+    ul [ css [ todoListStyle ] ]
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
-                    li [] [ viewTodo (CurrentZipper todoZipper) ]
+                    li [ css [ todoListEntryStyle ] ]
+                        [ viewTodo (CurrentZipper todoZipper) ]
                 )
         )
 
 
 viewDoneTodos : List (TodoEntry Done) -> Html Msg
 viewDoneTodos todos =
-    ul [ css [ textDecoration lineThrough ] ]
+    ul [ css [ textDecoration lineThrough, todoListStyle ] ]
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
-                    li [] [ viewTodo (DoneZipper todoZipper) ]
+                    li
+                        [ css
+                            [ hover [ opacity (num 1) ]
+                            , opacity (num 0.6)
+                            , todoListEntryStyle
+                            ]
+                        ]
+                        [ viewTodo (DoneZipper todoZipper) ]
                 )
         )
 
@@ -246,11 +254,21 @@ viewTodo todoZipper =
 
                 DoneZipper _ ->
                     ( "refresh", "Mark as to do" )
+
+        containerStyle =
+            Css.batch
+                [ displayFlex
+                , flexDirection row
+                , justifyContent spaceBetween
+                , alignItems center
+                ]
     in
-    div []
+    div [ css [ containerStyle ] ]
         [ text (Todo.action todo)
-        , button moveText iconName (Move todoZipper)
-        , button "Remove" "delete" (Remove todoZipper)
+        , div []
+            [ button moveText iconName (Move todoZipper)
+            , button "Remove" "delete" (Remove todoZipper)
+            ]
         ]
 
 
@@ -287,11 +305,13 @@ buttonStyle : Css.Style
 buttonStyle =
     Css.batch
         [ borderRadius (em 0.5)
-        , backgroundColor (hsl 0.0 0.0 0.8)
+        , backgroundColor (hsl 0.0 0.0 0.9)
         , border zero
         , padding (em 0.5)
         , margin (em 0.1)
         , textAlign center
+        , hover [ backgroundColor (hsl 0.0 0.0 0.92) ]
+        , active [backgroundColor (hsl 0.0 0.0 0.88)]
         ]
 
 
@@ -304,6 +324,25 @@ icon iconName =
         , backgroundSize (pct 75)
         , width (em 3)
         , height (em 3)
+        ]
+
+
+todoListStyle : Css.Style
+todoListStyle =
+    Css.batch
+        [ listStyle none
+        , padding zero
+        ]
+
+
+todoListEntryStyle : Css.Style
+todoListEntryStyle =
+    Css.batch
+        [ borderBottom3 (px 1) solid (hsla 0.0 0.0 0.0 0.1)
+        , padding (em 0.5)
+        , hover
+            [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
+            ]
         ]
 
 
