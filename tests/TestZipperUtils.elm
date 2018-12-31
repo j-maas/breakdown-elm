@@ -41,4 +41,34 @@ suite =
                 in
                 Utils.move zipper list
                     |> Expect.equal ( [ 1, 2, 4 ], [ 5, 6, 3 ] )
+        , describe "focusIndex"
+            [ test "goes to specified index" <|
+                \_ ->
+                    let
+                        zipper =
+                            Utils.build 1 [ 2, 3, 4 ]
+                    in
+                    Utils.focusIndex 2 zipper
+                        |> Maybe.map
+                            (Zipper.current
+                                >> Expect.equal 3
+                            )
+                        |> Maybe.withDefault (Expect.fail "Expected index to be valid, but received Nothing.")
+            , test "if index too high, returns Nothing" <|
+                \_ ->
+                    let
+                        zipper =
+                            Utils.build 1 [ 2, 3, 4 ]
+                    in
+                    Utils.focusIndex 4 zipper
+                        |> Expect.equal Nothing
+            , test "if index negative, returns Nothing" <|
+                \_ ->
+                    let
+                        zipper =
+                            Utils.build 1 [ 2, 3, 4 ]
+                    in
+                    Utils.focusIndex -1 zipper
+                        |> Expect.equal Nothing
+            ]
         ]

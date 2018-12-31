@@ -1,6 +1,7 @@
 module Utils.ZipperUtils exposing
     ( build
     , buildWithFocus
+    , focusIndex
     , focusMap
     , move
     , remove
@@ -64,6 +65,31 @@ zipperMap map zipper =
             Zipper.first zipper
     in
     zipMapHelper firstZip []
+
+
+focusIndex : Int -> Zipper a -> Maybe (Zipper a)
+focusIndex index zipper =
+    let
+        advance : Int -> Zipper a -> Maybe (Zipper a)
+        advance n zip =
+            case n of
+                0 ->
+                    Just zip
+
+                remaining ->
+                    case Zipper.next zip of
+                        Nothing ->
+                            Nothing
+
+                        Just nextZip ->
+                            advance (n - 1) nextZip
+    in
+    if index < 0 then
+        Nothing
+
+    else
+        Zipper.first zipper
+            |> advance index
 
 
 
