@@ -11,9 +11,24 @@ import Utils.StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer
 suite : Test
 suite =
     describe "Todo"
-        [ test "creates todo" <|
+        [ test "creates todo with action" <|
             \_ ->
-                Todo.from (NonEmptyString.build 'C' "reate me!")
+                let
+                    action =
+                        NonEmptyString.build 'C' "reate me!"
+                in
+                Todo.from action
                     |> Todo.action
-                    |> Expect.equal "Create me!"
+                    |> Expect.equal action
+        , test "readActions returns action as String" <|
+            \_ ->
+                Todo.from (NonEmptyString.build 'R' "eturn me!")
+                    |> Todo.readAction
+                    |> Expect.equal "Return me!"
+        , test "updates action" <|
+            \_ ->
+                Todo.from(NonEmptyString.build 'C' "ange me!")
+                |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
+                |> Todo.readAction
+                |> Expect.equal "Changed."
         ]

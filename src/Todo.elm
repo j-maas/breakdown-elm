@@ -1,4 +1,4 @@
-module Todo exposing (Todo, action, from)
+module Todo exposing (Todo, action, from, readAction, setAction)
 
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
@@ -12,6 +12,16 @@ from =
     Todo
 
 
-action : Todo -> String
+action : Todo -> NonEmptyString
 action (Todo act) =
-    NonEmptyString.toString act
+    act
+
+
+readAction : Todo -> String
+readAction todo =
+    action todo |> NonEmptyString.toString
+
+
+setAction : NonEmptyString -> Todo -> Todo
+setAction newAction _ =
+    Todo newAction
