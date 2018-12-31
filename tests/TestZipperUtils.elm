@@ -13,15 +13,13 @@ suite =
         [ test "build has focus on first element" <|
             \_ ->
                 Utils.build 1 [ 2, 3 ]
-                    |> Zipper.mapCurrent (always 0)
-                    |> Zipper.toList
-                    |> Expect.equal [ 0, 2, 3 ]
+                    |> Zipper.current
+                    |> Expect.equal 1
         , test "buildWithFocus sets focus correctly" <|
             \_ ->
                 Utils.buildWithFocus [ 1, 2 ] 3 [ 4, 5 ]
-                    |> Zipper.mapCurrent (always 0)
-                    |> Zipper.toList
-                    |> Expect.equal [ 1, 2, 0, 4, 5 ]
+                    |> Zipper.current
+                    |> Expect.equal 3
         , test "focusMap increments correctly" <|
             \_ ->
                 [ 1, 2, 3 ]
