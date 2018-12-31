@@ -21,7 +21,7 @@ import Html.Styled.Events exposing (onClick, onInput, onSubmit)
 import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
 import Url exposing (Url)
-import Utils.NonEmptyString as NonEmptyString
+import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 import Utils.ZipperUtils as Zipper
 
 
@@ -41,6 +41,7 @@ type alias Model =
     , newTodoInput : String
     , currentTodos : List (TodoEntry Current)
     , doneTodos : List (TodoEntry Done)
+    , editing : Maybe EditingInfo
     }
 
 
@@ -51,6 +52,12 @@ type TodoEntry a
 todoFromEntry : TodoEntry a -> Todo
 todoFromEntry (TodoEntry todo) =
     todo
+
+
+type alias EditingInfo =
+    { todo : TodoZipper
+    , oldAction : NonEmptyString
+    }
 
 
 type TodoZipper
@@ -66,6 +73,16 @@ zipperFromTodoZipper todoZipper =
 
         DoneZipper zipper ->
             Zipper.map todoFromEntry zipper
+
+
+mapTodoZipper : (Todo -> Todo) -> TodoZipper -> TodoZipper
+mapTodoZipper map todoZipper =
+    case todoZipper of
+        CurrentZipper zipper ->
+            CurrentZipper (Zipper.mapCurrent (todoFromEntry >> map >> TodoEntry) zipper)
+
+        DoneZipper zipper ->
+            DoneZipper (Zipper.mapCurrent (todoFromEntry >> map >> TodoEntry) zipper)
 
 
 type Current
@@ -85,6 +102,7 @@ init _ _ key =
             , TodoEntry <| Todo.from (NonEmptyString.build 't' "here")
             ]
       , doneTodos = [ TodoEntry <| Todo.from (NonEmptyString.build 'H' "ow's it going?") ]
+      , editing = Nothing
       }
     , Cmd.none
     )
@@ -96,6 +114,10 @@ type Msg
     | AddNewTodo
     | Move TodoZipper
     | Remove TodoZipper
+    | StartEdit TodoZipper
+    | UpdateEdit TodoZipper NonEmptyString String
+    | ApplyEdit
+    | CancelEdit
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -175,6 +197,74 @@ update msg model =
                 DoneZipper zipper ->
                     ( { model | doneTodos = Zipper.remove zipper }, Cmd.none )
 
+        StartEdit todoZipper ->
+            let
+                zipper =
+                    zipperFromTodoZipper todoZipper
+
+                todo =
+                    Zipper.current zipper
+            in
+            ( { model
+                | editing =
+                    Just
+                        { todo = todoZipper
+                        , oldAction = Todo.action todo
+                        }
+              }
+            , Cmd.none
+            )
+
+        UpdateEdit todoZipper oldAction rawNewAction ->
+            let
+                newTodoZipper =
+                    case NonEmptyString.fromString rawNewAction of
+                        Just newAction ->
+                            mapTodoZipper (Todo.setAction newAction) todoZipper
+
+                        Nothing ->
+                            todoZipper
+            in
+            ( { model
+                | editing =
+                    Just
+                        { todo = newTodoZipper
+                        , oldAction = oldAction
+                        }
+              }
+            , Cmd.none
+            )
+
+        ApplyEdit ->
+            case model.editing of
+                Just editInfo ->
+                    case editInfo.todo of
+                        CurrentZipper zipper ->
+                            ( { model | currentTodos = Zipper.toList zipper, editing = Nothing }, Cmd.none )
+
+                        DoneZipper zipper ->
+                            ( { model | doneTodos = Zipper.toList zipper, editing = Nothing }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        CancelEdit ->
+            case model.editing of
+                Just editInfo ->
+                    let
+                        restoredZipper =
+                            mapTodoZipper (Todo.setAction editInfo.oldAction) editInfo.todo
+                    in
+                    case restoredZipper of
+                        CurrentZipper zipper ->
+                            ( { model | currentTodos = Zipper.toList zipper, editing = Nothing }, Cmd.none )
+
+                        DoneZipper zipper ->
+                            ( { model | doneTodos = Zipper.toList zipper, editing = Nothing }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -198,8 +288,8 @@ view model =
                     ]
                 ]
             , newTodoInput model.newTodoInput
-            , viewCurrentTodos model.currentTodos
-            , viewDoneTodos model.doneTodos
+            , viewCurrentTodos model.currentTodos model.editing
+            , viewDoneTodos model.doneTodos model.editing
             ]
     }
 
@@ -212,24 +302,54 @@ newTodoInput currentNewTodoInput =
         ]
 
 
-viewCurrentTodos : List (TodoEntry Current) -> Html Msg
-viewCurrentTodos todos =
+viewCurrentTodos : List (TodoEntry Current) -> Maybe EditingInfo -> Html Msg
+viewCurrentTodos todos editing =
     ul [ css [ todoListStyle ] ]
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
+                    let
+                        currentEdit =
+                            Maybe.andThen
+                                (\editInfo ->
+                                    if editInfo.todo == CurrentZipper todoZipper then
+                                        Just editInfo
+
+                                    else
+                                        Nothing
+                                )
+                                editing
+                    in
                     li [ css [ todoListEntryStyle ] ]
-                        [ viewTodo (CurrentZipper todoZipper) ]
+                        [ case currentEdit of
+                            Just editInfo ->
+                                viewEditTodo (CurrentZipper todoZipper) editInfo
+
+                            Nothing ->
+                                viewTodo (CurrentZipper todoZipper)
+                        ]
                 )
         )
 
 
-viewDoneTodos : List (TodoEntry Done) -> Html Msg
-viewDoneTodos todos =
+viewDoneTodos : List (TodoEntry Done) -> Maybe EditingInfo -> Html Msg
+viewDoneTodos todos editing =
     ul [ css [ textDecoration lineThrough, todoListStyle ] ]
         (todos
             |> Zipper.focusMap
                 (\todoZipper ->
+                    let
+                        currentEdit =
+                            Maybe.andThen
+                                (\editInfo ->
+                                    if editInfo.todo == DoneZipper todoZipper then
+                                        Just editInfo
+
+                                    else
+                                        Nothing
+                                )
+                                editing
+                    in
                     li
                         [ css
                             [ hover [ opacity (num 1) ]
@@ -237,7 +357,13 @@ viewDoneTodos todos =
                             , todoListEntryStyle
                             ]
                         ]
-                        [ viewTodo (DoneZipper todoZipper) ]
+                        [ case currentEdit of
+                            Just editInfo ->
+                                viewEditTodo (DoneZipper todoZipper) editInfo
+
+                            Nothing ->
+                                viewTodo (DoneZipper todoZipper)
+                        ]
                 )
         )
 
@@ -255,19 +381,34 @@ viewTodo todoZipper =
 
                 DoneZipper _ ->
                     ( "refresh", "Mark as to do" )
-
-        containerStyle =
-            Css.batch
-                [ displayFlex
-                , flexDirection row
-                , justifyContent spaceBetween
-                , alignItems center
-                ]
     in
-    div [ css [ containerStyle ] ]
-        [ text (Todo.action todo)
+    div [ css [ containerStyle ], onClick (StartEdit todoZipper) ]
+        [ text (Todo.readAction todo)
         , div []
             [ button moveText iconName (Move todoZipper)
+            ]
+        ]
+
+
+viewEditTodo : TodoZipper -> EditingInfo -> Html Msg
+viewEditTodo todoZipper editInfo =
+    let
+        todo =
+            Zipper.current (zipperFromTodoZipper todoZipper)
+
+        ( iconName, moveText ) =
+            case todoZipper of
+                CurrentZipper _ ->
+                    ( "done", "Mark as done" )
+
+                DoneZipper _ ->
+                    ( "refresh", "Mark as to do" )
+    in
+    div [ css [ containerStyle ], onClick ApplyEdit ]
+        [ input [ type_ "text", onInput (UpdateEdit todoZipper editInfo.oldAction), value (Todo.readAction todo) ] []
+        , div []
+            [ button moveText iconName (Move todoZipper)
+            , button "Undo changes" "undo" CancelEdit
             , button "Remove" "delete" (Remove todoZipper)
             ]
         ]
@@ -344,6 +485,16 @@ todoListEntryStyle =
         , hover
             [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
             ]
+        ]
+
+
+containerStyle : Css.Style
+containerStyle =
+    Css.batch
+        [ displayFlex
+        , flexDirection row
+        , justifyContent spaceBetween
+        , alignItems center
         ]
 
 
