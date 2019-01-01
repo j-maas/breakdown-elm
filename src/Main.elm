@@ -301,7 +301,7 @@ viewTodo id todo =
                 TodoCollection.Done ->
                     ( "refresh", "Mark as to do" )
     in
-    div [ css [ containerStyle ], onButtonClick (StartEdit id) ]
+    div [ css [ containerStyle ], onClick (StartEdit id) ]
         [ text (Todo.readAction todo)
         , div []
             [ button moveText iconName (Move id)
@@ -311,8 +311,8 @@ viewTodo id todo =
 
 viewEditTodo : TodoCollection.Id -> Todo -> EditingInfo -> Html Msg
 viewEditTodo id todo editInfo =
-    div [ css [ containerStyle ], onButtonClick ApplyEdit ]
-        [ Html.form [onSubmit ApplyEdit]
+    div [ css [ containerStyle ], onClick ApplyEdit ]
+        [ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
                 , stopPropagation
@@ -335,7 +335,7 @@ viewEditTodo id todo editInfo =
 button : String -> String -> Msg -> Html Msg
 button description iconName action =
     Html.button
-        [ onButtonClick action, css [ buttonStyle, icon iconName ], title description ]
+        [ onClick action, css [ buttonStyle, icon iconName ], title description ]
         [ span [ css [ visuallyHidden ] ] [ text description ] ]
 
 
@@ -439,6 +439,6 @@ stopPropagation =
     stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
 
 
-onButtonClick : Msg -> Html.Attribute Msg
-onButtonClick msg =
+onClick : Msg -> Html.Attribute Msg
+onClick msg =
     stopPropagationOn "click" (Decode.succeed ( msg, True ))
