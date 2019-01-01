@@ -109,23 +109,22 @@ update msg model =
                     ( model, Cmd.none )
 
         Move id ->
-            updateId id
+            ( invalidateTodoWithId id
                 model
-                (\zipper ->
-                    ( { model | todos = TodoCollection.move zipper }, Cmd.none )
-                )
+                TodoCollection.move
+            , Cmd.none
+            )
 
         Remove id ->
-            updateId id
+            ( invalidateTodoWithId id
                 model
-                (\zipper ->
-                    ( { model | todos = TodoCollection.remove zipper }, Cmd.none )
-                )
+                TodoCollection.remove
+            , Cmd.none
+            )
 
         StartEdit id ->
-            updateId id
-                model
-                (\zipper ->
+            case TodoCollection.find id model.todos of
+                Just zipper ->
                     let
                         todo =
                             TodoCollection.current zipper
@@ -139,7 +138,9 @@ update msg model =
                       }
                     , Cmd.none
                     )
-                )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         UpdateEdit id rawNewAction ->
             ( { model
@@ -153,38 +154,55 @@ update msg model =
             )
 
         ApplyEdit ->
-            model.editing
-                |> Maybe.andThen
-                    (\editInfo ->
-                        NonEmptyString.fromString editInfo.rawNewAction
-                            |> Maybe.map
-                                (\newAction ->
-                                    updateId editInfo.todoId
-                                        model
-                                        (\zipper ->
-                                            ( { model
-                                                | todos = TodoCollection.mapTodo (Todo.setAction newAction) zipper
-                                                , editing = Nothing
-                                              }
-                                            , Cmd.none
-                                            )
+            let
+                newModel =
+                    model.editing
+                        |> Maybe.andThen
+                            (\editInfo ->
+                                NonEmptyString.fromString editInfo.rawNewAction
+                                    |> Maybe.map
+                                        (\newAction ->
+                                            case TodoCollection.find editInfo.todoId model.todos of
+                                                Just zipper ->
+                                                    { model
+                                                        | todos = TodoCollection.mapTodo (Todo.setAction newAction) zipper
+                                                    }
+
+                                                Nothing ->
+                                                    model
                                         )
-                                )
-                    )
-                |> Maybe.withDefault ( model, Cmd.none )
+                            )
+                        |> Maybe.withDefault model
+            in
+            ( { newModel | editing = Nothing }, Cmd.none )
 
         CancelEdit ->
             ( { model | editing = Nothing }, Cmd.none )
 
 
-updateId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> ( Model, Cmd Msg )) -> ( Model, Cmd Msg )
-updateId id model doUpdate =
-    case TodoCollection.find id model.todos of
-        Just zipper ->
-            doUpdate zipper
+invalidateTodoWithId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> TodoCollection) -> Model
+invalidateTodoWithId id model doUpdate =
+    let
+        newEditing =
+            Maybe.andThen
+                (\editInfo ->
+                    if editInfo.todoId == id then
+                        Nothing
 
-        Nothing ->
-            ( model, Cmd.none )
+                    else
+                        model.editing
+                )
+                model.editing
+
+        newTodos =
+            case TodoCollection.find id model.todos of
+                Just zipper ->
+                    doUpdate zipper
+
+                Nothing ->
+                    model.todos
+    in
+    { model | editing = newEditing, todos = newTodos }
 
 
 subscriptions : Model -> Sub Msg
@@ -314,7 +332,6 @@ viewEditTodo id todo editInfo =
         [ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
-                , stopPropagation
                 , onInput (UpdateEdit id)
                 , value editInfo.rawNewAction
                 ]
