@@ -27,8 +27,8 @@ suite =
                     |> Expect.equal "Return me!"
         , test "updates action" <|
             \_ ->
-                Todo.from(NonEmptyString.build 'C' "ange me!")
-                |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
-                |> Todo.readAction
-                |> Expect.equal "Changed."
+                Todo.from (NonEmptyString.build 'C' "ange me!")
+                    |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
+                    |> Todo.readAction
+                    |> Expect.equal "Changed."
         ]
