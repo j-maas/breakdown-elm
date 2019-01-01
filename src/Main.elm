@@ -48,7 +48,7 @@ type alias Model =
 
 type alias EditingInfo =
     { todoId : TodoCollection.Id
-    , oldAction : NonEmptyString
+    , rawNewAction : String
     }
 
 
@@ -70,7 +70,7 @@ type Msg
     | Move TodoCollection.Id
     | Remove TodoCollection.Id
     | StartEdit TodoCollection.Id
-    | UpdateEdit TodoCollection.Id NonEmptyString String
+    | UpdateEdit TodoCollection.Id String
     | ApplyEdit
     | CancelEdit
 
@@ -135,57 +135,47 @@ update msg model =
                         | editing =
                             Just
                                 { todoId = id
-                                , oldAction = Todo.action todo
+                                , rawNewAction = Todo.readAction todo
                                 }
                       }
                     , Cmd.none
                     )
                 )
 
-        UpdateEdit id oldAction rawNewAction ->
-            updateId id
-                model
-                (\zipper ->
-                    let
-                        newTodos =
-                            case NonEmptyString.fromString rawNewAction of
-                                Just newAction ->
-                                    TodoCollection.mapTodo (Todo.setAction newAction) zipper
-
-                                Nothing ->
-                                    model.todos
-                    in
-                    ( { model
-                        | editing =
-                            Just
-                                { todoId = id
-                                , oldAction = oldAction
-                                }
-                        , todos = newTodos
-                      }
-                    , Cmd.none
-                    )
-                )
+        UpdateEdit id rawNewAction ->
+            ( { model
+                | editing =
+                    Just
+                        { todoId = id
+                        , rawNewAction = rawNewAction
+                        }
+              }
+            , Cmd.none
+            )
 
         ApplyEdit ->
-            ( { model | editing = Nothing }, Cmd.none )
+            model.editing
+                |> Maybe.andThen
+                    (\editInfo ->
+                        NonEmptyString.fromString editInfo.rawNewAction
+                            |> Maybe.map
+                                (\newAction ->
+                                    updateId editInfo.todoId
+                                        model
+                                        (\zipper ->
+                                            ( { model
+                                                | todos = TodoCollection.mapTodo (Todo.setAction newAction) zipper
+                                                , editing = Nothing
+                                              }
+                                            , Cmd.none
+                                            )
+                                        )
+                                )
+                    )
+                |> Maybe.withDefault ( model, Cmd.none )
 
         CancelEdit ->
-            case model.editing of
-                Just editInfo ->
-                    updateId editInfo.todoId
-                        model
-                        (\zipper ->
-                            ( { model
-                                | todos = TodoCollection.mapTodo (Todo.setAction editInfo.oldAction) zipper
-                                , editing = Nothing
-                              }
-                            , Cmd.none
-                            )
-                        )
-
-                Nothing ->
-                    ( model, Cmd.none )
+            ( { model | editing = Nothing }, Cmd.none )
 
 
 updateId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> ( Model, Cmd Msg )) -> ( Model, Cmd Msg )
@@ -321,26 +311,18 @@ viewTodo id todo =
 
 viewEditTodo : TodoCollection.Id -> Todo -> EditingInfo -> Html Msg
 viewEditTodo id todo editInfo =
-    let
-        ( iconName, moveText ) =
-            case TodoCollection.selectorFromId id of
-                TodoCollection.Current ->
-                    ( "done", "Mark as done" )
-
-                TodoCollection.Done ->
-                    ( "refresh", "Mark as to do" )
-    in
     div [ css [ containerStyle ], onButtonClick ApplyEdit ]
-        [ input
-            [ type_ "text"
-            , stopPropagation
-            , onInput (UpdateEdit id editInfo.oldAction)
-            , value (Todo.readAction todo)
+        [ Html.form [onSubmit ApplyEdit]
+            [ input
+                [ type_ "text"
+                , stopPropagation
+                , onInput (UpdateEdit id)
+                , value editInfo.rawNewAction
+                ]
+                []
             ]
-            []
         , div []
-            [ button moveText iconName (Move id)
-            , button "Undo changes" "undo" CancelEdit
+            [ button "Undo changes" "undo" CancelEdit
             , button "Remove" "delete" (Remove id)
             ]
         ]
