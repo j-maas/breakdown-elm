@@ -361,9 +361,8 @@ inputSubmit description iconName =
         [ span [ css [ visuallyHidden ] ] [ text description ]
         , input
             [ type_ "submit"
-            , css [ buttonStyle, icon iconName ]
+            , css [ buttonStyle, icon iconName, color transparent ]
             , title description
-            , value ""
             ]
             []
         ]
