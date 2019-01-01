@@ -9,7 +9,6 @@ import Html.Styled as Html
         ( Html
         , button
         , div
-        , input
         , label
         , li
         , span
@@ -432,6 +431,11 @@ visuallyHidden =
 
 
 -- EVENTS
+
+
+input : List (Html.Attribute Msg) -> List (Html Msg) -> Html Msg
+input attributes children =
+    Html.input (attributes ++ [ stopPropagation ]) children
 
 
 stopPropagation : Html.Attribute Msg
