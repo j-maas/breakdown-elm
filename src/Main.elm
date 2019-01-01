@@ -48,6 +48,7 @@ type alias Model =
 type alias EditingInfo =
     { todoId : TodoCollection.Id
     , rawNewAction : String
+    , oldAction : NonEmptyString
     }
 
 
@@ -69,7 +70,7 @@ type Msg
     | Move TodoCollection.Id
     | Remove TodoCollection.Id
     | StartEdit TodoCollection.Id
-    | UpdateEdit TodoCollection.Id String
+    | UpdateEdit TodoCollection.Id NonEmptyString String
     | ApplyEdit
     | CancelEdit
 
@@ -134,6 +135,7 @@ update msg model =
                             Just
                                 { todoId = id
                                 , rawNewAction = Todo.readAction todo
+                                , oldAction = Todo.action todo
                                 }
                       }
                     , Cmd.none
@@ -142,39 +144,31 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        UpdateEdit id rawNewAction ->
-            ( { model
-                | editing =
-                    Just
-                        { todoId = id
-                        , rawNewAction = rawNewAction
-                        }
-              }
-            , Cmd.none
-            )
-
-        ApplyEdit ->
+        UpdateEdit id oldAction rawNewAction ->
             let
-                newModel =
-                    model.editing
-                        |> Maybe.andThen
-                            (\editInfo ->
-                                NonEmptyString.fromString editInfo.rawNewAction
-                                    |> Maybe.map
-                                        (\newAction ->
-                                            case TodoCollection.find editInfo.todoId model.todos of
-                                                Just zipper ->
-                                                    { model
-                                                        | todos = TodoCollection.mapTodo (Todo.setAction newAction) zipper
-                                                    }
+                editInfo : EditingInfo
+                editInfo =
+                    { todoId = id
+                    , rawNewAction = rawNewAction
+                    , oldAction = oldAction
+                    }
 
-                                                Nothing ->
-                                                    model
+                newTodos =
+                    NonEmptyString.fromString editInfo.rawNewAction
+                        |> Maybe.andThen
+                            (\newAction ->
+                                TodoCollection.find editInfo.todoId model.todos
+                                    |> Maybe.map
+                                        (\zipper ->
+                                            TodoCollection.mapTodo (Todo.setAction newAction) zipper
                                         )
                             )
-                        |> Maybe.withDefault model
+                        |> Maybe.withDefault model.todos
             in
-            ( { newModel | editing = Nothing }, Cmd.none )
+            ( { model | todos = newTodos, editing = Just editInfo }, Cmd.none )
+
+        ApplyEdit ->
+            ( { model | editing = Nothing }, Cmd.none )
 
         CancelEdit ->
             ( { model | editing = Nothing }, Cmd.none )
@@ -332,7 +326,7 @@ viewEditTodo id todo editInfo =
         [ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
-                , onInput (UpdateEdit id)
+                , onInput (UpdateEdit id editInfo.oldAction)
                 , value editInfo.rawNewAction
                 ]
                 []
