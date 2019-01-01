@@ -1,4 +1,14 @@
-module TodoList exposing (TodoList, find, fromList, insert, mapToList)
+module TodoList exposing
+    ( Id
+    , TodoList
+    , find
+    , fromList
+    , insert
+    , mapToList
+    , mapTodo
+    , put
+    , remove
+    )
 
 import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
@@ -27,6 +37,11 @@ insert todo (TodoList todos) =
     ( newId, TodoList (todos ++ [ todo ]) )
 
 
+put : Todo -> TodoList -> TodoList
+put todo list =
+    insert todo list |> Tuple.second
+
+
 find : Id -> TodoList -> Maybe (Zipper Todo)
 find id (TodoList todos) =
     let
@@ -39,6 +54,16 @@ find id (TodoList todos) =
         |> Maybe.andThen (Zipper.focusIndex index)
 
 
+mapTodo : (Todo -> Todo) -> Zipper Todo -> TodoList
+mapTodo map zipper =
+    TodoList (Zipper.mapCurrent map zipper |> Zipper.toList)
+
+
 mapToList : (Id -> Todo -> a) -> TodoList -> List a
 mapToList map (TodoList todos) =
     List.indexedMap (\id todo -> map (Id id) todo) todos
+
+
+remove : Zipper Todo -> TodoList
+remove zipper =
+    TodoList (Zipper.remove zipper)
