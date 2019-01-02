@@ -1,7 +1,8 @@
 {
     "type": "application",
     "source-directories": [
-        "src"
+        "src",
+        "packages/string-fuzzers/src"
     ],
     "elm-version": "0.19.0",
     "dependencies": {
@@ -12,10 +13,12 @@
             "elm/json": "1.0.0",
             "elm/random": "1.0.0",
             "elm/url": "1.0.0",
+            "elm-community/array-extra": "2.0.0",
             "elm-community/list-extra": "8.0.0",
             "elm-community/random-extra": "3.0.0",
             "elm-explorations/test": "1.1.0",
-            "rtfeldman/elm-css": "15.1.0"
+            "rtfeldman/elm-css": "15.1.0",
+            "wernerdegroot/listzipper": "3.1.1"
         },
         "indirect": {
             "Skinney/murmur3": "2.0.7",

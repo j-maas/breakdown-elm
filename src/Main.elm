@@ -1,298 +1,273 @@
-port module Main exposing (GlobalTaskId(..), Model, Msg(..), initModel, main, update)
+port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
 import Css exposing (..)
-import Css.Global exposing (global, selector)
-import Editing
-import Html
-import Html.Styled exposing (Attribute, Html, button, div, form, input, label, li, main_, ol, section, span, text, toUnstyled)
-import Html.Styled.Attributes exposing (autofocus, css, id, title, type_, value)
-import Html.Styled.Events exposing (on, onClick, onInput, onSubmit, stopPropagationOn)
+import Css.Global as Global
+import Html.Styled as Html
+    exposing
+        ( Html
+        , button
+        , div
+        , label
+        , li
+        , span
+        , text
+        , ul
+        )
+import Html.Styled.Attributes exposing (attribute, css, title, type_, value)
+import Html.Styled.Events exposing (onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
 import Json.Encode as Encode
-import List.Extra as List
-import Tasks
+import List.Zipper as Zipper exposing (Zipper)
+import Todo exposing (Todo)
+import TodoCollection exposing (TodoCollection)
 import Url exposing (Url)
+import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
+import Utils.ZipperUtils as Zipper
 
 
-main : Program Decode.Value AppModel AppMsg
 main =
     Browser.application
         { init = init
-        , view = appView
-        , update = updateApp
+        , view = view
+        , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = UrlRequest
-        , onUrlChange = \_ -> Msg NoOp
+        , onUrlRequest = \_ -> NoOp
+        , onUrlChange = \_ -> NoOp
         }
 
 
 
--- MODEL
-
-
-{-| Tags for the different types of task collections.
--}
-type Current
-    = Current
-
-
-type Done
-    = Done
-
-
-{-| Wrapper to make list-locally unique TaskIds globally unique.
--}
-type GlobalTaskId
-    = CurrentId (Tasks.TaskId Current)
-    | DoneId (Tasks.TaskId Done)
-
-
-{-| The highest-level Model, containing the Nav.Key.
-
-This extra layer is because Nav.Key prohibits testing, see <https://github.com/elm-explorations/test/issues/24>.
-
--}
-type alias AppModel =
-    { key : Nav.Key
-    , model : Model
-    }
+-- INIT
 
 
 type alias Model =
-    { newTask : String
-    , currentTasks : Tasks.Collection Current
-    , doneTasks : Tasks.Collection Done
-    , currentEdit : Maybe (EditInfo GlobalTaskId)
+    { key : Nav.Key
+    , newTodoInput : String
+    , todos : TodoCollection
+    , editing : Maybe EditingInfo
     }
 
 
-type alias EditInfo id =
-    { id : id
-    , edit : Editing.Editing
+type alias EditingInfo =
+    { todoId : TodoCollection.Id
+    , rawNewAction : String
+    , oldAction : NonEmptyString
     }
 
 
-init : Decode.Value -> Url -> Nav.Key -> ( AppModel, Cmd AppMsg )
-init flags url key =
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags _ key =
     let
-        ( actualCurrentTasks, actualDoneTasks ) =
+        todos =
             decodeFlags flags
+                |> Maybe.withDefault TodoCollection.empty
     in
-    simply
-        { key = key
-        , model =
-            { initModel
-                | currentTasks = actualCurrentTasks
-                , doneTasks = actualDoneTasks
-            }
-        }
-
-
-initModel : Model
-initModel =
-    { newTask = ""
-    , currentTasks = Tasks.empty Current
-    , doneTasks = Tasks.empty Done
-    , currentEdit = Nothing
-    }
-
-
-decodeFlags : Decode.Value -> ( Tasks.Collection Current, Tasks.Collection Done )
-decodeFlags flags =
-    let
-        decodeCollection field c =
-            Result.withDefault (Tasks.empty c) <|
-                Decode.decodeValue
-                    (Decode.map (collectionFromStrings c)
-                        (Decode.field field <| Decode.list Decode.string)
-                    )
-                    flags
-
-        collectionFromStrings c rawActions =
-            List.filterMap Tasks.actionFromString rawActions
-                |> collectionFromActions c
-
-        collectionFromActions c =
-            List.foldl
-                (\action collection ->
-                    Tasks.appendTask action collection
-                )
-                (Tasks.empty c)
-    in
-    ( decodeCollection "currentTasks" Current
-    , decodeCollection "doneTasks" Done
+    ( { key = key
+      , newTodoInput = ""
+      , todos = todos
+      , editing = Nothing
+      }
+    , Cmd.none
     )
 
 
-{-| Convenience function for when no commands are sent.
--}
-simply : model -> ( model, Cmd msg )
-simply model =
-    ( model, Cmd.none )
+decodeFlags : Decode.Value -> Maybe TodoCollection
+decodeFlags flags =
+    let
+        currentTodos =
+            decodeTodos "currentTodos" flags
+
+        doneTodos =
+            decodeTodos "doneTodos" flags
+
+        decodeTodos field value =
+            Decode.decodeValue
+                (Decode.field field
+                    (Decode.list Todo.decoder)
+                )
+                value
+    in
+    Result.map2
+        (\current done ->
+            TodoCollection.init { current = current, done = done }
+        )
+        currentTodos
+        doneTodos
+        |> Result.toMaybe
 
 
 
 -- UPDATE
 
 
-{-| Global Msg wrapper.
-
-Due to test issues with Nav.Key (see <https://github.com/elm-explorations/test/issues/24>)
-this will wrap the testable messages.
-
--}
-type AppMsg
-    = UrlRequest Browser.UrlRequest
-    | Msg Msg
-
-
 type Msg
     = NoOp
-    | UpdateNewTask String
-    | AddNewTask
-    | DoTask (Tasks.TaskId Current)
-    | UndoTask (Tasks.TaskId Done)
-    | StartEdit GlobalTaskId
-    | Edit String
+    | UpdateNewTodoInput String
+    | AddNewTodo
+    | Move TodoCollection.Id
+    | Remove TodoCollection.Id
+    | StartEdit TodoCollection.Id
+    | UpdateEdit TodoCollection.Id NonEmptyString String
     | ApplyEdit
     | CancelEdit
-    | DeleteTask GlobalTaskId
-    | BackgroundClicked
-
-
-{-| Wrapper to pass on and convert back from the update function to the global types.
-
-This wrapping is due to issues with testing Nav.Key (see <https://github.com/elm-explorations/test/issues/24>).
-
--}
-updateApp : AppMsg -> AppModel -> ( AppModel, Cmd AppMsg )
-updateApp appMsg appModel =
-    case appMsg of
-        UrlRequest request ->
-            case request of
-                Browser.Internal url ->
-                    ( appModel, Nav.pushUrl appModel.key (Url.toString url) )
-
-                Browser.External href ->
-                    ( appModel, Nav.load href )
-
-        Msg msg ->
-            update msg appModel.model
-                |> Tuple.mapBoth
-                    (\model -> { appModel | model = model })
-                    (Cmd.map Msg)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     (case msg of
         NoOp ->
-            simply model
+            ( model, Cmd.none )
 
-        UpdateNewTask action ->
-            simply { model | newTask = action }
-
-        AddNewTask ->
+        UpdateNewTodoInput newTodo ->
             let
-                newTasks =
-                    addTask model.newTask model.currentTasks
+                newModel =
+                    { model | newTodoInput = newTodo }
             in
-            simply
-                { model
-                    | currentTasks = newTasks
-                    , newTask = ""
-                }
+            ( newModel, Cmd.none )
 
-        DoTask id ->
+        AddNewTodo ->
             let
-                ( newCurrentTasks, newDoneTasks ) =
-                    Tasks.moveTask id model.currentTasks model.doneTasks
+                maybeAction =
+                    NonEmptyString.fromString model.newTodoInput
             in
-            simply
-                { model
-                    | currentTasks = newCurrentTasks
-                    , doneTasks = newDoneTasks
-                }
+            case maybeAction of
+                Just action ->
+                    let
+                        todo =
+                            Todo.from action
+                    in
+                    ( { model
+                        | newTodoInput = ""
+                        , todos = TodoCollection.put TodoCollection.Current todo model.todos
+                      }
+                    , Cmd.none
+                    )
 
-        UndoTask id ->
-            let
-                ( newDoneTasks, newCurrentTasks ) =
-                    Tasks.moveTask id model.doneTasks model.currentTasks
-            in
-            simply
-                { model
-                    | doneTasks = newDoneTasks
-                    , currentTasks = newCurrentTasks
-                }
+                Nothing ->
+                    ( model, Cmd.none )
+
+        Move id ->
+            ( invalidateTodoWithId id
+                model
+                TodoCollection.move
+            , Cmd.none
+            )
+
+        Remove id ->
+            ( invalidateTodoWithId id
+                model
+                TodoCollection.remove
+            , Cmd.none
+            )
 
         StartEdit id ->
+            case TodoCollection.find id model.todos of
+                Just zipper ->
+                    let
+                        todo =
+                            TodoCollection.current zipper
+                    in
+                    ( { model
+                        | editing =
+                            Just
+                                { todoId = id
+                                , rawNewAction = Todo.readAction todo
+                                , oldAction = Todo.action todo
+                                }
+                      }
+                    , Cmd.none
+                    )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        UpdateEdit id oldAction rawNewAction ->
             let
-                maybeTask =
-                    getTaskByGlobalId id model
+                editInfo : EditingInfo
+                editInfo =
+                    { todoId = id
+                    , rawNewAction = rawNewAction
+                    , oldAction = oldAction
+                    }
 
-                newEdit =
-                    Maybe.map
-                        (\task ->
-                            { id = id
-                            , edit = Editing.startEdit task
-                            }
-                        )
-                        maybeTask
-
-                appliedModel =
-                    applyEdit model
+                newTodos =
+                    NonEmptyString.fromString editInfo.rawNewAction
+                        |> Maybe.andThen
+                            (\newAction ->
+                                TodoCollection.find editInfo.todoId model.todos
+                                    |> Maybe.map
+                                        (\zipper ->
+                                            TodoCollection.mapTodo (Todo.setAction newAction) zipper
+                                        )
+                            )
+                        |> Maybe.withDefault model.todos
             in
-            simply { appliedModel | currentEdit = newEdit }
+            ( { model | todos = newTodos, editing = Just editInfo }, Cmd.none )
 
         ApplyEdit ->
-            simply (applyEdit model)
+            ( { model | editing = Nothing }, Cmd.none )
 
         CancelEdit ->
-            simply { model | currentEdit = Nothing }
-
-        Edit newRawAction ->
             let
-                newEdit =
-                    Maybe.map
-                        (\info -> { info | edit = Editing.edit newRawAction info.edit })
-                        model.currentEdit
+                newTodos =
+                    model.editing
+                        |> Maybe.andThen
+                            (\editInfo ->
+                                TodoCollection.find editInfo.todoId model.todos
+                                    |> Maybe.map
+                                        (\zipper ->
+                                            TodoCollection.mapTodo (Todo.setAction editInfo.oldAction) zipper
+                                        )
+                            )
+                        |> Maybe.withDefault model.todos
             in
-            simply { model | currentEdit = newEdit }
-
-        DeleteTask id ->
-            let
-                updatedModel =
-                    case id of
-                        CurrentId currentId ->
-                            { model | currentTasks = Tasks.removeTask currentId model.currentTasks }
-
-                        DoneId doneId ->
-                            { model | doneTasks = Tasks.removeTask doneId model.doneTasks }
-            in
-            simply updatedModel
-
-        BackgroundClicked ->
-            simply (applyEdit model)
+            ( { model | todos = newTodos, editing = Nothing }, Cmd.none )
     )
-        |> (\( newModel, newMsg ) -> ( newModel, Cmd.batch [ newMsg, save newModel ] ))
+        |> (\( mdl, cmd ) ->
+                ( mdl, Cmd.batch [ cmd, save mdl ] )
+           )
+
+
+invalidateTodoWithId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> TodoCollection) -> Model
+invalidateTodoWithId id model doUpdate =
+    let
+        newEditing =
+            Maybe.andThen
+                (\editInfo ->
+                    if editInfo.todoId == id then
+                        Nothing
+
+                    else
+                        model.editing
+                )
+                model.editing
+
+        newTodos =
+            case TodoCollection.find id model.todos of
+                Just zipper ->
+                    doUpdate zipper
+
+                Nothing ->
+                    model.todos
+    in
+    { model | editing = newEditing, todos = newTodos }
 
 
 {-| Command that saves the tasks collections persistently.
 -}
 save : Model -> Cmd msg
 save model =
+    let
+        getTodos selector =
+            TodoCollection.mapToList selector (\_ todo -> todo)
+    in
     Encode.object
-        [ ( "currentTasks", Encode.list encodeTask <| Tasks.toList model.currentTasks )
-        , ( "doneTasks", Encode.list encodeTask <| Tasks.toList model.doneTasks )
+        [ ( "currentTodos", Encode.list Todo.encode <| getTodos TodoCollection.Current model.todos )
+        , ( "doneTodos", Encode.list Todo.encode <| getTodos TodoCollection.Done model.todos )
         ]
         |> saveRaw
-
-
-encodeTask : Tasks.TaskEntry a -> Encode.Value
-encodeTask =
-    .item >> Tasks.readAction >> Encode.string
 
 
 {-| Port for saving an encoded model to localStorage.
@@ -300,64 +275,7 @@ encodeTask =
 port saveRaw : Encode.Value -> Cmd msg
 
 
-applyEdit : Model -> Model
-applyEdit model =
-    case model.currentEdit of
-        Just editInfo ->
-            let
-                id =
-                    editInfo.id
-
-                apply oldTask =
-                    Editing.applyEdit editInfo.edit oldTask
-                        |> Maybe.withDefault oldTask
-
-                appliedModel =
-                    updateTask id apply model
-            in
-            { appliedModel | currentEdit = Nothing }
-
-        Nothing ->
-            model
-
-
-{-| Adds a task to the collection, iff the `String` is a valid `Action`.
--}
-addTask : String -> Tasks.Collection c -> Tasks.Collection c
-addTask rawAction currentTasks =
-    case Tasks.actionFromString rawAction of
-        Just action ->
-            Tasks.appendTask action currentTasks
-
-        Nothing ->
-            currentTasks
-
-
-getTaskByGlobalId : GlobalTaskId -> Model -> Maybe Tasks.Task
-getTaskByGlobalId id model =
-    case id of
-        CurrentId currentId ->
-            Tasks.getById currentId model.currentTasks
-
-        DoneId doneId ->
-            Tasks.getById doneId model.doneTasks
-
-
-updateTask : GlobalTaskId -> (Tasks.Task -> Tasks.Task) -> Model -> Model
-updateTask id updateFunction model =
-    case id of
-        CurrentId currentId ->
-            { model | currentTasks = Tasks.updateTask currentId updateFunction model.currentTasks }
-
-        DoneId doneId ->
-            { model | doneTasks = Tasks.updateTask doneId updateFunction model.doneTasks }
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : AppModel -> Sub AppMsg
+subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
 
@@ -366,297 +284,174 @@ subscriptions model =
 -- VIEW
 
 
-{-| Wrapper to pass on and convert back from the view function to the global types.
-
-This wrapping is due to issues with testing Nav.Key (see <https://github.com/elm-explorations/test/issues/24>).
-
--}
-appView : AppModel -> Browser.Document AppMsg
-appView appModel =
-    view appModel.model
-        |> mapDocument Msg
-
-
-{-| Maps the msg type inside a Document.
--}
-mapDocument : (a -> msg) -> Browser.Document a -> Browser.Document msg
-mapDocument f document =
-    { title = document.title
-    , body = List.map (Html.map f) document.body
-    }
-
-
 view : Model -> Browser.Document Msg
 view model =
     { title = "Breakdown"
     , body =
-        List.map toUnstyled
-            [ global
-                [ selector "html" [ height (pct 100) ]
-                , selector "body"
-                    [ margin zero
-                    , height (pct 100)
-                    ]
-                , selector "*" [ fontSize (pct 100) ]
-                ]
-            , div
-                [ css
-                    [ boxSizing borderBox
-                    , width (pct 100)
-                    , height (pct 100)
-                    , displayFlex
-                    , justifyContent center
-                    , padding (em 1)
+        List.map Html.toUnstyled
+            [ Global.global
+                [ Global.body
+                    [ maxWidth (em 26)
+                    , margin2 (em 1) auto
                     , fontFamily sansSerif
                     ]
-                , onButtonClick BackgroundClicked
                 ]
-                [ let
-                    ( currentTasksEdit, doneTasksEdit ) =
-                        Tuple.mapBoth Editing.fromTasksCollection Editing.fromTasksCollection ( model.currentTasks, model.doneTasks )
-                            |> (case model.currentEdit of
-                                    Just editInfo ->
-                                        case editInfo.id of
-                                            CurrentId currentId ->
-                                                Tuple.mapFirst (\_ -> Editing.inlineEdit editInfo.edit currentId model.currentTasks)
-
-                                            DoneId doneId ->
-                                                Tuple.mapSecond (\_ -> Editing.inlineEdit editInfo.edit doneId model.doneTasks)
-
-                                    Nothing ->
-                                        identity
-                               )
-                  in
-                  main_
-                    [ css
-                        [ width (pct 100)
-                        , maxWidth (em 25)
-                        ]
-                    ]
-                    [ viewActionInput model.newTask
-                    , viewCurrentTaskList currentTasksEdit
-                    , viewDoneTaskList doneTasksEdit
-                    ]
-                ]
+            , newTodoInput model.newTodoInput
+            , viewCurrentTodos model.todos model.editing
+            , viewDoneTodos model.todos model.editing
             ]
     }
 
 
-viewActionInput : String -> Html Msg
-viewActionInput currentAction =
-    form [ onSubmit AddNewTask ]
-        [ label []
-            [ span [ css [ hide ] ] [ text "New task's action" ]
-            , input
-                [ type_ "text"
-                , value currentAction
-                , onInput UpdateNewTask
-                , autofocus True
-                , css [ actionInputStyle ]
+newTodoInput : String -> Html Msg
+newTodoInput currentNewTodoInput =
+    Html.form
+        [ onSubmit AddNewTodo
+        , css
+            [ inputContainerStyle
+            ]
+        ]
+        [ input
+            [ type_ "text"
+            , onInput UpdateNewTodoInput
+            , value currentNewTodoInput
+            , css
+                [ width (pct 100)
+                , boxSizing borderBox
+                , padding (em 0.75)
+                , fontSize (pct 100)
+                , height (em 3)
+                , marginRight (em 0.5)
                 ]
-                []
             ]
-        , div
-            [ css
-                [ displayFlex
-                , flexDirection row
-                , justifyContent center
-                ]
-            ]
-            [ iconButtonInput "submit" NoOp "Add new task" "➕"
-            , iconButtonInput "reset" (UpdateNewTask "") "Clear input" "❌"
-            ]
+            []
+        , inputSubmit "Add new todo" "add"
         ]
 
 
-viewCurrentTaskList : Editing.Collection Current -> Html Msg
-viewCurrentTaskList =
-    viewTaskListBase viewTask viewEditTask
+viewCurrentTodos : TodoCollection -> Maybe EditingInfo -> Html Msg
+viewCurrentTodos todos editing =
+    ul [ css [ todoListStyle ] ]
+        (todos
+            |> TodoCollection.mapToList TodoCollection.Current
+                (\id todo ->
+                    let
+                        currentEdit =
+                            Maybe.andThen
+                                (\editInfo ->
+                                    if editInfo.todoId == id then
+                                        Just editInfo
+
+                                    else
+                                        Nothing
+                                )
+                                editing
+                    in
+                    li [ css [ todoListEntryStyle ] ]
+                        [ case currentEdit of
+                            Just editInfo ->
+                                viewEditTodo id todo editInfo
+
+                            Nothing ->
+                                viewTodo id todo
+                        ]
+                )
+        )
 
 
-viewTaskListBase : (Tasks.TaskId c -> Tasks.Task -> Html Msg) -> (Tasks.TaskId c -> Editing.Editing -> Html Msg) -> Editing.Collection c -> Html Msg
-viewTaskListBase taskView editTaskView collection =
-    ol [ css [ taskListStyle ] ] <|
-        let
-            viewEntry : Editing.EditingEntry c -> Html Msg
-            viewEntry entry =
-                li
-                    [ css
-                        [ hover [ backgroundColor (rgba 0 0 0 0.03) ]
-                        , pseudoClass "not(:last-child)"
-                            [ borderBottom3 (px 1) solid (rgba 0 0 0 0.1)
+viewDoneTodos : TodoCollection -> Maybe EditingInfo -> Html Msg
+viewDoneTodos todos editing =
+    ul [ css [ textDecoration lineThrough, todoListStyle ] ]
+        (todos
+            |> TodoCollection.mapToList TodoCollection.Done
+                (\id todo ->
+                    let
+                        currentEdit =
+                            Maybe.andThen
+                                (\editInfo ->
+                                    if editInfo.todoId == id then
+                                        Just editInfo
+
+                                    else
+                                        Nothing
+                                )
+                                editing
+                    in
+                    li
+                        [ css
+                            [ hover [ opacity (num 1) ]
+                            , opacity (num 0.6)
+                            , todoListEntryStyle
                             ]
                         ]
-                    ]
-                    [ case entry.item.edit of
-                        Just editInfo ->
-                            editTaskView entry.id editInfo
+                        [ case currentEdit of
+                            Just editInfo ->
+                                viewEditTodo id todo editInfo
 
-                        Nothing ->
-                            taskView entry.id entry.item.task
-                    ]
-        in
-        List.map viewEntry <|
-            Editing.toList collection
+                            Nothing ->
+                                viewTodo id todo
+                        ]
+                )
+        )
 
 
-viewTask : Tasks.TaskId Current -> Tasks.Task -> Html Msg
-viewTask id task =
-    viewTaskBase
-        (onButtonClick (StartEdit <| CurrentId id))
-        (viewAction noStyle (Tasks.readAction task))
-        (doButton id)
+viewTodo : TodoCollection.Id -> Todo -> Html Msg
+viewTodo id todo =
+    let
+        ( iconName, moveText ) =
+            case TodoCollection.selectorFromId id of
+                TodoCollection.Current ->
+                    ( "done", "Mark as done" )
 
-
-viewEditTask : Tasks.TaskId Current -> Editing.Editing -> Html Msg
-viewEditTask id editTask =
-    viewTaskBase
-        (onButtonClick ApplyEdit)
-        (viewEditAction id editTask CurrentId)
-        (doButton id)
-
-
-doButton : Tasks.TaskId Current -> Html Msg
-doButton id =
-    iconButton (DoTask id) "Mark as done" "✔️"
-
-
-viewTaskBase : Attribute Msg -> Html Msg -> Html Msg -> Html Msg
-viewTaskBase whenClicked action btn =
-    div
-        [ css
-            [ displayFlex
-            , alignItems center
-            , justifyContent spaceBetween
-            , padding (em 0.5)
-            ]
-        , whenClicked
-        ]
-        [ action
-        , btn
-        ]
-
-
-viewAction : Style -> String -> Html Msg
-viewAction customStyle action =
-    span
-        [ css
-            [ whiteSpace noWrap
-            , overflow hidden
-            , textOverflow ellipsis
-            , flex (num 1)
-            , customStyle
+                TodoCollection.Done ->
+                    ( "refresh", "Mark as to do" )
+    in
+    div [ css [ inputContainerStyle ], onClick (StartEdit id) ]
+        [ text (Todo.readAction todo)
+        , div []
+            [ button moveText iconName (Move id)
             ]
         ]
-        [ text action ]
 
 
-viewEditAction : Tasks.TaskId a -> Editing.Editing -> (Tasks.TaskId a -> GlobalTaskId) -> Html Msg
-viewEditAction id editInfo toGlobalId =
-    form
-        [ css [ flex (num 1) ]
-        , onSubmit ApplyEdit
-        ]
-        [ let
-            edited =
-                Editing.getEdited editInfo
-
-            isEmpty =
-                Tasks.actionFromString edited == Nothing
-          in
-          label []
-            [ span [ css [ hide ] ] [ text "Action" ]
-            , input
+viewEditTodo : TodoCollection.Id -> Todo -> EditingInfo -> Html Msg
+viewEditTodo id todo editInfo =
+    div [ css [ inputContainerStyle ], onClick ApplyEdit ]
+        [ Html.form [ onSubmit ApplyEdit ]
+            [ input
                 [ type_ "text"
-                , value edited
-                , onInput Edit
-                , stopPropagation
-                , css [ actionInputStyle ]
+                , onInput (UpdateEdit id editInfo.oldAction)
+                , value editInfo.rawNewAction
+                , css [ width (pct 100), boxSizing borderBox ]
                 ]
                 []
-            , span
-                [ css
-                    ([ errorMessageStyle ]
-                        ++ (if isEmpty then
-                                []
-
-                            else
-                                [ hide ]
-                           )
-                    )
-                ]
-                [ text "The action cannot be empty." ]
             ]
-        , div
-            [ css [ displayFlex, justifyContent center ] ]
-            [ iconButtonInputDisable
-                (Editing.isUnchanged editInfo)
-                "reset"
-                CancelEdit
-                "Undo changes"
-                "️↩️"
-            , iconButtonInput "button" (DeleteTask <| toGlobalId id) "Delete task" "🗑️"
+        , div []
+            [ button "Undo changes" "undo" CancelEdit
+            , button "Remove" "delete" (Remove id)
             ]
         ]
 
 
-viewDoneTaskList : Editing.Collection Done -> Html Msg
-viewDoneTaskList =
-    viewTaskListBase viewDoneTask viewEditDoneTask
+
+-- COMPONENTS
 
 
-viewDoneTask : Tasks.TaskId Done -> Tasks.Task -> Html Msg
-viewDoneTask id task =
-    viewTaskBase
-        (onButtonClick (StartEdit <| DoneId id))
-        (viewAction
-            (batch
-                [ textDecoration lineThrough
-                , opacity (num 0.6)
-                ]
-            )
-            (Tasks.readAction task)
-        )
-        (undoButton id)
+button : String -> String -> Msg -> Html Msg
+button description iconName action =
+    Html.button
+        [ onClick action, css [ buttonStyle, icon iconName ], title description ]
+        [ span [ css [ visuallyHidden ] ] [ text description ] ]
 
 
-viewEditDoneTask : Tasks.TaskId Done -> Editing.Editing -> Html Msg
-viewEditDoneTask id editInfo =
-    viewTaskBase
-        (onButtonClick ApplyEdit)
-        (viewEditAction id editInfo DoneId)
-        (undoButton id)
-
-
-undoButton : Tasks.TaskId Done -> Html Msg
-undoButton id =
-    iconButton (UndoTask id) "Mark as to do" "🔄"
-
-
-
--- ELEMENTS
-
-
-iconButton : Msg -> String -> String -> Html Msg
-iconButton msg hint icon =
-    button [ onButtonClick msg, css [ buttonStyle ], title hint ] [ span [ css [ hide ] ] [ text hint ], text icon ]
-
-
-iconButtonInput =
-    iconButtonInputDisable False
-
-
-iconButtonInputDisable : Bool -> String -> Msg -> String -> String -> Html Msg
-iconButtonInputDisable isDisabled inputType msg hint icon =
+inputSubmit : String -> String -> Html Msg
+inputSubmit description iconName =
     label []
-        [ span [ css [ hide ] ] [ text hint ]
+        [ span [ css [ visuallyHidden ] ] [ text description ]
         , input
-            [ css [ buttonStyle ]
-            , title hint
-            , Html.Styled.Attributes.disabled isDisabled
-            , type_ inputType
-            , value icon
-            , onButtonClick msg
+            [ type_ "submit"
+            , css [ buttonStyle, icon iconName, color transparent ]
+            , title description
             ]
             []
         ]
@@ -666,69 +461,67 @@ iconButtonInputDisable isDisabled inputType msg hint icon =
 -- STYLES
 
 
-{-| Shortcut for no style.
--}
-noStyle : Style
-noStyle =
-    batch []
-
-
-taskListStyle : Style
-taskListStyle =
-    batch
-        [ listStyleType none
-        , margin3 (em 1.5) zero zero
-        , padding zero
-        ]
-
-
-actionInputStyle : Style
-actionInputStyle =
-    batch
-        [ boxSizing borderBox
-        , width (pct 100)
-        , padding (em 0.75)
-        ]
-
-
-errorMessageStyle : Style
-errorMessageStyle =
-    batch
-        [ color (rgb 255 0 0) ]
-
-
-buttonStyle : Style
+buttonStyle : Css.Style
 buttonStyle =
-    let
-        size =
-            em 2
-    in
-    batch
-        [ border zero
-        , padding zero
-        , width size
-        , height size
-        , fontSize (pct 125)
-        , textAlign center
-        , backgroundColor (rgba 0 0 0 0.1)
-        , hover [ backgroundColor (rgba 0 0 0 0.07) ]
-        , active [ boxShadow5 inset (em 0.1) (em 0.1) (em 0.2) (rgba 0 0 0 0.1) ]
+    Css.batch
+        [ borderRadius (em 0.5)
+        , backgroundColor (hsl 0.0 0.0 0.9)
+        , border zero
+        , padding (em 0.5)
         , margin (em 0.1)
-        , pseudoClass "disabled"
-            [ color (rgb 0 0 0)
-            , opacity (num 0.3)
+        , textAlign center
+        , hover [ backgroundColor (hsl 0.0 0.0 0.92) ]
+        , active [ backgroundColor (hsl 0.0 0.0 0.88) ]
+        ]
+
+
+icon : String -> Css.Style
+icon iconName =
+    Css.batch
+        [ backgroundImage (url <| "./icons/" ++ iconName ++ ".svg")
+        , backgroundRepeat noRepeat
+        , backgroundPosition center
+        , backgroundSize (pct 75)
+        , width (em 3)
+        , height (em 3)
+        ]
+
+
+todoListStyle : Css.Style
+todoListStyle =
+    Css.batch
+        [ listStyle none
+        , padding zero
+        ]
+
+
+todoListEntryStyle : Css.Style
+todoListEntryStyle =
+    Css.batch
+        [ borderBottom3 (px 1) solid (hsla 0.0 0.0 0.0 0.1)
+        , hover
+            [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
             ]
         ]
 
 
+inputContainerStyle : Css.Style
+inputContainerStyle =
+    Css.batch
+        [ property "display" "grid"
+        , property "grid-template-columns" "1fr auto"
+        , property "grid-gap" "0.5em"
+        , alignItems center
+        , padding (em 0.5)
+        ]
+
+
 {-| Hides an element visually, but keeps it discoverable to assistive technologies.
-
 See <https://www.w3.org/WAI/tutorials/forms/labels/#note-on-hiding-elements> for further information.
-
 -}
-hide : Style
-hide =
-    batch
+visuallyHidden : Css.Style
+visuallyHidden =
+    Css.batch
         [ border zero
         , property "clip" "rect(0 0 0 0)"
         , height (px 1)
@@ -745,31 +538,16 @@ hide =
 -- EVENTS
 
 
-stopPropagation : Attribute Msg
+input : List (Html.Attribute Msg) -> List (Html Msg) -> Html Msg
+input attributes children =
+    Html.input (attributes ++ [ stopPropagation ]) children
+
+
+stopPropagation : Html.Attribute Msg
 stopPropagation =
     stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
 
 
-onButtonClick : Msg -> Attribute Msg
-onButtonClick msg =
+onClick : Msg -> Html.Attribute Msg
+onClick msg =
     stopPropagationOn "click" (Decode.succeed ( msg, True ))
-
-
-{-| Only fires for clicks exactly on the element.
-
-See <https://javascript.info/bubbling-and-capturing#event-target> for further information.
-
--}
-onClickWithId : String -> Msg -> Attribute Msg
-onClickWithId targetId msg =
-    on "click"
-        (Decode.at [ "target", "id" ] Decode.string
-            |> Decode.andThen
-                (\actualId ->
-                    if actualId == targetId then
-                        Decode.succeed msg
-
-                    else
-                        Decode.fail <| "Element id was " ++ actualId ++ ", expected " ++ targetId ++ "."
-                )
-        )
