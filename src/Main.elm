@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -18,6 +18,7 @@ import Html.Styled as Html
 import Html.Styled.Attributes exposing (attribute, css, title, type_, value)
 import Html.Styled.Events exposing (onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
+import Json.Encode as Encode
 import List.Zipper as Zipper exposing (Zipper)
 import Todo exposing (Todo)
 import TodoCollection exposing (TodoCollection)
@@ -37,6 +38,10 @@ main =
         }
 
 
+
+-- INIT
+
+
 type alias Model =
     { key : Nav.Key
     , newTodoInput : String
@@ -52,15 +57,49 @@ type alias EditingInfo =
     }
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ _ key =
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags _ key =
+    let
+        todos =
+            decodeFlags flags
+                |> Maybe.withDefault TodoCollection.empty
+    in
     ( { key = key
       , newTodoInput = ""
-      , todos = TodoCollection.empty
+      , todos = todos
       , editing = Nothing
       }
     , Cmd.none
     )
+
+
+decodeFlags : Decode.Value -> Maybe TodoCollection
+decodeFlags flags =
+    let
+        currentTodos =
+            decodeTodos "currentTodos" flags
+
+        doneTodos =
+            decodeTodos "doneTodos" flags
+
+        decodeTodos field value =
+            Decode.decodeValue
+                (Decode.field field
+                    (Decode.list Todo.decoder)
+                )
+                value
+    in
+    Result.map2
+        (\current done ->
+            TodoCollection.init { current = current, done = done }
+        )
+        currentTodos
+        doneTodos
+        |> Result.toMaybe
+
+
+
+-- UPDATE
 
 
 type Msg
@@ -77,7 +116,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    (case msg of
         NoOp ->
             ( model, Cmd.none )
 
@@ -185,6 +224,10 @@ update msg model =
                         |> Maybe.withDefault model.todos
             in
             ( { model | todos = newTodos, editing = Nothing }, Cmd.none )
+    )
+        |> (\( mdl, cmd ) ->
+                ( mdl, Cmd.batch [ cmd, save mdl ] )
+           )
 
 
 invalidateTodoWithId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> TodoCollection) -> Model
@@ -210,6 +253,26 @@ invalidateTodoWithId id model doUpdate =
                     model.todos
     in
     { model | editing = newEditing, todos = newTodos }
+
+
+{-| Command that saves the tasks collections persistently.
+-}
+save : Model -> Cmd msg
+save model =
+    let
+        getTodos selector =
+            TodoCollection.mapToList selector (\_ todo -> todo)
+    in
+    Encode.object
+        [ ( "currentTodos", Encode.list Todo.encode <| getTodos TodoCollection.Current model.todos )
+        , ( "doneTodos", Encode.list Todo.encode <| getTodos TodoCollection.Done model.todos )
+        ]
+        |> saveRaw
+
+
+{-| Port for saving an encoded model to localStorage.
+-}
+port saveRaw : Encode.Value -> Cmd msg
 
 
 subscriptions : Model -> Sub Msg
@@ -246,7 +309,7 @@ newTodoInput currentNewTodoInput =
         [ onSubmit AddNewTodo
         , css
             [ inputContainerStyle
-             ]
+            ]
         ]
         [ input
             [ type_ "text"
