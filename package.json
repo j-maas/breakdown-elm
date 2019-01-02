@@ -5,6 +5,7 @@
     "elm-live": "^3.4.0"
   },
   "scripts": {
+    "start": "elm-live src/Main.elm --path-to-elm=node_modules/.bin/elm --dir=dist/ --before-build=./build.sh --start-page=./index.html",
     "start:dev": "elm-live src/Main.elm --path-to-elm=node_modules/.bin/elm --dir=static/ --start-page=../index.html"
   }
 }
