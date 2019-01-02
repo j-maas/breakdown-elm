@@ -7,6 +7,7 @@ module TodoCollection exposing
     , empty
     , find
     , fromList
+    , init
     , insert
     , mapToList
     , mapTodo
@@ -70,6 +71,13 @@ empty =
         { current = TodoList.fromList []
         , done = TodoList.fromList []
         }
+
+
+init : { current : List Todo, done : List Todo } -> TodoCollection
+init lists =
+    empty
+        |> fromList Current lists.current
+        |> fromList Done lists.done
 
 
 fromList : Selector -> List Todo -> TodoCollection -> TodoCollection

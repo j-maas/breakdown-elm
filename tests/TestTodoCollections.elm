@@ -13,7 +13,31 @@ import Utils.NonEmptyString as NonEmptyString
 suite : Test
 suite =
     describe "TodoCollection"
-        [ test "puts todos from list into one collection and retrieves them" <|
+        [ test "inits empty collection" <|
+            \_ ->
+                TodoCollection.empty
+                    |> Expect.all
+                        [ getTodos TodoCollection.Current >> Expect.equal []
+                        , getTodos TodoCollection.Done >> Expect.equal []
+                        ]
+        , test "inits from lists" <|
+            \_ ->
+                let
+                    todo1 =
+                        Todo.from (NonEmptyString.build 'I' "nsert me!")
+
+                    todo2 =
+                        Todo.from (NonEmptyString.build 'I' "nsert me, too!")
+
+                    todo3 =
+                        Todo.from (NonEmptyString.build 'A' "nd me, too!")
+                in
+                TodoCollection.init { current = [ todo1 ], done = [ todo2, todo3 ] }
+                    |> Expect.all
+                        [ getTodos TodoCollection.Current >> Expect.equal [ todo1 ]
+                        , getTodos TodoCollection.Done >> Expect.equal [ todo2, todo3 ]
+                        ]
+        , test "puts todos from list into one collection and retrieves them" <|
             \_ ->
                 let
                     todo =
@@ -45,9 +69,7 @@ suite =
                     todo3 =
                         Todo.from (NonEmptyString.build 'G' "et me!")
                 in
-                TodoCollection.empty
-                    |> TodoCollection.fromList TodoCollection.Current [ todo1 ]
-                    |> TodoCollection.fromList TodoCollection.Done [ todo2 ]
+                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
                     |> (\( id, collection ) ->
                             TodoCollection.find id collection
@@ -69,9 +91,7 @@ suite =
                     todo3 =
                         Todo.from (NonEmptyString.build 'C' "hange me!")
                 in
-                TodoCollection.empty
-                    |> TodoCollection.fromList TodoCollection.Current [ todo1 ]
-                    |> TodoCollection.fromList TodoCollection.Done [ todo2 ]
+                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
                     |> (\( id, collection ) ->
                             TodoCollection.find id collection
@@ -102,9 +122,7 @@ suite =
                     todo3 =
                         Todo.from (NonEmptyString.build 'R' "emove me!")
                 in
-                TodoCollection.empty
-                    |> TodoCollection.fromList TodoCollection.Current [ todo1 ]
-                    |> TodoCollection.fromList TodoCollection.Done [ todo2 ]
+                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
                     |> (\( id, collection ) ->
                             TodoCollection.find id collection
@@ -130,9 +148,7 @@ suite =
                     todo3 =
                         Todo.from (NonEmptyString.build 'M' "ove me!")
                 in
-                TodoCollection.empty
-                    |> TodoCollection.fromList TodoCollection.Current [ todo1 ]
-                    |> TodoCollection.fromList TodoCollection.Done [ todo2 ]
+                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
                     |> (\( id, collection ) ->
                             TodoCollection.find id collection
