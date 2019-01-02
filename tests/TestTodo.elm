@@ -2,10 +2,10 @@ module TestTodo exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import StringFuzz exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 import Test exposing (..)
 import Todo
 import Utils.NonEmptyString as NonEmptyString
-import Utils.StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 
 
 suite : Test

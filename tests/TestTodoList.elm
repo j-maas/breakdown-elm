@@ -7,7 +7,6 @@ import Test exposing (..)
 import Todo
 import TodoList
 import Utils.NonEmptyString as NonEmptyString
-import Utils.StringFuzzer exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 
 
 suite : Test

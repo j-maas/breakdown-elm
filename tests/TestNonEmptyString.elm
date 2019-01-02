@@ -2,9 +2,9 @@ module TestNonEmptyString exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import StringFuzz exposing (minimalLengthStringFuzzer)
 import Test exposing (..)
 import Utils.NonEmptyString as NonEmptyString
-import Utils.StringFuzzer exposing (minimalLengthStringFuzzer)
 
 
 suite : Test
