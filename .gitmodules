@@ -1,0 +1,3 @@
+[submodule "packages/string-fuzzers"]
+	path = packages/string-fuzzers
+	url = https://github.com/Y0hy0h/string-fuzzers.git

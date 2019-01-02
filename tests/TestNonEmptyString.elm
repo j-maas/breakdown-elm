@@ -2,15 +2,15 @@ module TestNonEmptyString exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import StringFuzz exposing (nonemptyStringFuzzer)
 import Test exposing (..)
 import Utils.NonEmptyString as NonEmptyString
-import Utils.StringFuzzer exposing (minimalLengthStringFuzzer)
 
 
 suite : Test
 suite =
     describe "NonEmptyString"
-        [ fuzz (minimalLengthStringFuzzer 1) "makes non-empty string" <|
+        [ fuzz nonemptyStringFuzzer "makes non-empty string" <|
             \nonempty ->
                 NonEmptyString.fromString nonempty
                     |> Maybe.map (NonEmptyString.toString >> Expect.equal nonempty)
