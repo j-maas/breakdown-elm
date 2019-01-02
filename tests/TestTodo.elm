@@ -2,6 +2,7 @@ module TestTodo exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import Json.Decode as Decode
 import StringFuzz exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 import Test exposing (..)
 import Todo
@@ -31,4 +32,13 @@ suite =
                     |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
                     |> Todo.readAction
                     |> Expect.equal "Changed."
+        , test "encoding and decoding results in same todo" <|
+            \_ ->
+                let
+                    todo =
+                        Todo.from (NonEmptyString.build 'R' "estore me!")
+                in
+                Todo.encode todo
+                    |> Decode.decodeValue Todo.decoder
+                    |> Expect.equal (Ok todo)
         ]

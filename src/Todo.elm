@@ -1,5 +1,7 @@
-module Todo exposing (Todo, action, from, readAction, setAction)
+module Todo exposing (Todo, action, decoder, encode, from, readAction, setAction)
 
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
 
@@ -25,3 +27,22 @@ readAction todo =
 setAction : NonEmptyString -> Todo -> Todo
 setAction newAction _ =
     Todo newAction
+
+
+encode : Todo -> Encode.Value
+encode =
+    readAction >> Encode.string
+
+
+decoder : Decode.Decoder Todo
+decoder =
+    Decode.string
+        |> Decode.andThen
+            (\rawAction ->
+                case NonEmptyString.fromString rawAction of
+                    Just act ->
+                        Decode.succeed (from act)
+
+                    Nothing ->
+                        Decode.fail "Invalid action."
+            )
