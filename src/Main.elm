@@ -171,7 +171,20 @@ update msg model =
             ( { model | editing = Nothing }, Cmd.none )
 
         CancelEdit ->
-            ( { model | editing = Nothing }, Cmd.none )
+            let
+                newTodos =
+                    model.editing
+                        |> Maybe.andThen
+                            (\editInfo ->
+                                TodoCollection.find editInfo.todoId model.todos
+                                    |> Maybe.map
+                                        (\zipper ->
+                                            TodoCollection.mapTodo (Todo.setAction editInfo.oldAction) zipper
+                                        )
+                            )
+                        |> Maybe.withDefault model.todos
+            in
+            ( { model | todos = newTodos, editing = Nothing }, Cmd.none )
 
 
 invalidateTodoWithId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> TodoCollection) -> Model
@@ -232,7 +245,7 @@ newTodoInput currentNewTodoInput =
     Html.form
         [ onSubmit AddNewTodo
         , css
-            [ inputContainerStyle]
+            [ inputContainerStyle ]
         ]
         [ input
             [ type_ "text"
