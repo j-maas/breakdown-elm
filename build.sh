@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+echo "Building Breakdown..."
+
 # Cleanup
 rm -rf dist/
 
