@@ -245,7 +245,8 @@ newTodoInput currentNewTodoInput =
     Html.form
         [ onSubmit AddNewTodo
         , css
-            [ inputContainerStyle ]
+            [ inputContainerStyle
+             ]
         ]
         [ input
             [ type_ "text"
@@ -435,7 +436,6 @@ todoListEntryStyle : Css.Style
 todoListEntryStyle =
     Css.batch
         [ borderBottom3 (px 1) solid (hsla 0.0 0.0 0.0 0.1)
-        , padding (em 0.5)
         , hover
             [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
             ]
@@ -449,6 +449,7 @@ inputContainerStyle =
         , property "grid-template-columns" "1fr auto"
         , property "grid-gap" "0.5em"
         , alignItems center
+        , padding (em 0.5)
         ]
 
 
