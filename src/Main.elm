@@ -229,8 +229,25 @@ view model =
 
 newTodoInput : String -> Html Msg
 newTodoInput currentNewTodoInput =
-    Html.form [ onSubmit AddNewTodo ]
-        [ input [ type_ "text", onInput UpdateNewTodoInput, value currentNewTodoInput ] []
+    Html.form
+        [ onSubmit AddNewTodo
+        , css
+            [ inputContainerStyle]
+        ]
+        [ input
+            [ type_ "text"
+            , onInput UpdateNewTodoInput
+            , value currentNewTodoInput
+            , css
+                [ width (pct 100)
+                , boxSizing borderBox
+                , padding (em 0.75)
+                , fontSize (pct 100)
+                , height (em 3)
+                , marginRight (em 0.5)
+                ]
+            ]
+            []
         , inputSubmit "Add new todo" "add"
         ]
 
@@ -312,7 +329,7 @@ viewTodo id todo =
                 TodoCollection.Done ->
                     ( "refresh", "Mark as to do" )
     in
-    div [ css [ containerStyle ], onClick (StartEdit id) ]
+    div [ css [ inputContainerStyle ], onClick (StartEdit id) ]
         [ text (Todo.readAction todo)
         , div []
             [ button moveText iconName (Move id)
@@ -322,12 +339,13 @@ viewTodo id todo =
 
 viewEditTodo : TodoCollection.Id -> Todo -> EditingInfo -> Html Msg
 viewEditTodo id todo editInfo =
-    div [ css [ containerStyle ], onClick ApplyEdit ]
+    div [ css [ inputContainerStyle ], onClick ApplyEdit ]
         [ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
                 , onInput (UpdateEdit id editInfo.oldAction)
                 , value editInfo.rawNewAction
+                , css [ width (pct 100), boxSizing borderBox ]
                 ]
                 []
             ]
@@ -411,12 +429,12 @@ todoListEntryStyle =
         ]
 
 
-containerStyle : Css.Style
-containerStyle =
+inputContainerStyle : Css.Style
+inputContainerStyle =
     Css.batch
-        [ displayFlex
-        , flexDirection row
-        , justifyContent spaceBetween
+        [ property "display" "grid"
+        , property "grid-template-columns" "1fr auto"
+        , property "grid-gap" "0.5em"
         , alignItems center
         ]
 
