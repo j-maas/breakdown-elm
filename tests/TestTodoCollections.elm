@@ -24,13 +24,13 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'I' "nsert me!")
+                        Todo.fromAction (NonEmptyString.build 'I' "nsert me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'I' "nsert me, too!")
+                        Todo.fromAction (NonEmptyString.build 'I' "nsert me, too!")
 
                     todo3 =
-                        Todo.from (NonEmptyString.build 'A' "nd me, too!")
+                        Todo.fromAction (NonEmptyString.build 'A' "nd me, too!")
                 in
                 TodoCollection.init { current = [ todo1 ], done = [ todo2, todo3 ] }
                     |> Expect.all
@@ -41,7 +41,7 @@ suite =
             \_ ->
                 let
                     todo =
-                        Todo.from (NonEmptyString.build 'I' "nsert me!")
+                        Todo.fromAction (NonEmptyString.build 'I' "nsert me!")
                 in
                 TodoCollection.empty
                     |> TodoCollection.fromList TodoCollection.Current [ todo ]
@@ -51,7 +51,7 @@ suite =
             \_ ->
                 let
                     todo =
-                        Todo.from (NonEmptyString.build 'D' "o not get me!")
+                        Todo.fromAction (NonEmptyString.build 'D' "o not get me!")
                 in
                 TodoCollection.empty
                     |> TodoCollection.fromList TodoCollection.Current [ todo ]
@@ -61,13 +61,13 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'L' "eave me!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'L' "eave me, too!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me, too!")
 
                     todo3 =
-                        Todo.from (NonEmptyString.build 'G' "et me!")
+                        Todo.fromAction (NonEmptyString.build 'G' "et me!")
                 in
                 TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
@@ -83,13 +83,13 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'L' "eave me!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'L' "eave me, too!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me, too!")
 
                     todo3 =
-                        Todo.from (NonEmptyString.build 'C' "hange me!")
+                        Todo.fromAction (NonEmptyString.build 'C' "hange me!")
                 in
                 TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
@@ -102,7 +102,7 @@ suite =
                                                 NonEmptyString.build 'C' "hanged."
 
                                             changedTodo =
-                                                Todo.from newAction
+                                                Todo.fromAction newAction
                                         in
                                         TodoCollection.mapTodo (Todo.setAction newAction) zipper
                                             |> getTodos TodoCollection.Current
@@ -114,13 +114,13 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'L' "eave me!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'L' "eave me, too!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me, too!")
 
                     todo3 =
-                        Todo.from (NonEmptyString.build 'R' "emove me!")
+                        Todo.fromAction (NonEmptyString.build 'R' "emove me!")
                 in
                 TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3
@@ -140,13 +140,13 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'L' "eave me!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'L' "eave me, too!")
+                        Todo.fromAction (NonEmptyString.build 'L' "eave me, too!")
 
                     todo3 =
-                        Todo.from (NonEmptyString.build 'M' "ove me!")
+                        Todo.fromAction (NonEmptyString.build 'M' "ove me!")
                 in
                 TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
                     |> TodoCollection.insert TodoCollection.Current todo3

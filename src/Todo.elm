@@ -1,4 +1,4 @@
-module Todo exposing (Todo, action, decoder, encode, from, readAction, setAction)
+module Todo exposing (Todo, action, decoder, encode, fromAction, readAction, setAction)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -9,8 +9,8 @@ type Todo
     = Todo NonEmptyString
 
 
-from : NonEmptyString -> Todo
-from =
+fromAction : NonEmptyString -> Todo
+fromAction =
     Todo
 
 

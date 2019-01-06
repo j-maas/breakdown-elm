@@ -16,10 +16,10 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'A' "dd me!")
+                        Todo.fromAction (NonEmptyString.build 'A' "dd me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'M' "e, too!")
+                        Todo.fromAction (NonEmptyString.build 'M' "e, too!")
                 in
                 TodoList.fromList [ todo1, todo2 ]
                     |> TodoList.mapToList (\_ todo -> todo)
@@ -28,10 +28,10 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'A' "dd me!")
+                        Todo.fromAction (NonEmptyString.build 'A' "dd me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'M' "e, too!")
+                        Todo.fromAction (NonEmptyString.build 'M' "e, too!")
                 in
                 TodoList.fromList [ todo1 ]
                     |> TodoList.insert todo2
@@ -42,10 +42,10 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'A' "dd me!")
+                        Todo.fromAction (NonEmptyString.build 'A' "dd me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'M' "e, too!")
+                        Todo.fromAction (NonEmptyString.build 'M' "e, too!")
                 in
                 TodoList.fromList [ todo1 ]
                     |> TodoList.insert todo2
@@ -65,10 +65,10 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'K' "eep me!")
+                        Todo.fromAction (NonEmptyString.build 'K' "eep me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'C' "hange me!")
+                        Todo.fromAction (NonEmptyString.build 'C' "hange me!")
                 in
                 TodoList.fromList [ todo1 ]
                     |> TodoList.insert todo2
@@ -82,7 +82,7 @@ suite =
                                     NonEmptyString.build 'C' "hanged."
 
                                 changedTodo =
-                                    Todo.from newAction
+                                    Todo.fromAction newAction
                             in
                             TodoList.mapTodo (Todo.setAction newAction) zipper
                                 |> TodoList.mapToList (\_ t -> t)
@@ -93,10 +93,10 @@ suite =
             \_ ->
                 let
                     todo1 =
-                        Todo.from (NonEmptyString.build 'A' "dd me!")
+                        Todo.fromAction (NonEmptyString.build 'A' "dd me!")
 
                     todo2 =
-                        Todo.from (NonEmptyString.build 'R' "emove me!")
+                        Todo.fromAction (NonEmptyString.build 'R' "emove me!")
                 in
                 TodoList.fromList [ todo1 ]
                     |> TodoList.insert todo2

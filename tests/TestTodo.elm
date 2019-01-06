@@ -18,17 +18,17 @@ suite =
                     action =
                         NonEmptyString.build 'C' "reate me!"
                 in
-                Todo.from action
+                Todo.fromAction action
                     |> Todo.action
                     |> Expect.equal action
         , test "readActions returns action as String" <|
             \_ ->
-                Todo.from (NonEmptyString.build 'R' "eturn me!")
+                Todo.fromAction (NonEmptyString.build 'R' "eturn me!")
                     |> Todo.readAction
                     |> Expect.equal "Return me!"
         , test "updates action" <|
             \_ ->
-                Todo.from (NonEmptyString.build 'C' "ange me!")
+                Todo.fromAction (NonEmptyString.build 'C' "ange me!")
                     |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
                     |> Todo.readAction
                     |> Expect.equal "Changed."
@@ -36,7 +36,7 @@ suite =
             \_ ->
                 let
                     todo =
-                        Todo.from (NonEmptyString.build 'R' "estore me!")
+                        Todo.fromAction (NonEmptyString.build 'R' "estore me!")
                 in
                 Todo.encode todo
                     |> Decode.decodeValue Todo.decoder
