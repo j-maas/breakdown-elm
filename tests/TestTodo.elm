@@ -21,6 +21,18 @@ suite =
                 Todo.fromAction action
                     |> Todo.action
                     |> Expect.equal action
+        , test "creates todo with subtodos" <|
+            \_ ->
+                let
+                    child1 =
+                        Todo.fromAction (NonEmptyString.build 'I' "'m the first child.")
+
+                    child2 =
+                        Todo.fromAction (NonEmptyString.build 'I' "'m the second child.")
+                in
+                Todo.from (NonEmptyString.build 'I' "'m the parent.") [ child1, child2 ]
+                    |> Todo.subtodos
+                    |> Expect.equal [ child1, child2 ]
         , test "readActions returns action as String" <|
             \_ ->
                 Todo.fromAction (NonEmptyString.build 'R' "eturn me!")
@@ -32,6 +44,19 @@ suite =
                     |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
                     |> Todo.readAction
                     |> Expect.equal "Changed."
+        , test "updates subtodos" <|
+            \_ ->
+                let
+                    child1 =
+                        Todo.fromAction (NonEmptyString.build 'I' "'m the first child.")
+
+                    child2 =
+                        Todo.fromAction (NonEmptyString.build 'I' "'m the second child.")
+                in
+                Todo.from (NonEmptyString.build 'R' "eplace my subtodos!") [ child1, child2 ]
+                    |> Todo.setSubtodos [ child2 ]
+                    |> Todo.subtodos
+                    |> Expect.equal [ child2 ]
         , test "encoding and decoding results in same todo" <|
             \_ ->
                 let
