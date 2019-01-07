@@ -84,7 +84,7 @@ suite =
                                 changedTodo =
                                     Todo.fromAction newAction
                             in
-                            IdList.mapTodo (Todo.setAction newAction) zipper
+                            IdList.mapItem (Todo.setAction newAction) zipper
                                 |> IdList.mapToList (\_ t -> t)
                                 |> Expect.equal [ todo1, changedTodo ]
                         )

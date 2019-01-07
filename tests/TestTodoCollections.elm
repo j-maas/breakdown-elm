@@ -108,7 +108,7 @@ suite =
                                             changedTodo =
                                                 Todo.fromAction newAction
                                         in
-                                        TodoCollection.mapTodo (Todo.setAction newAction) zipper
+                                        TodoCollection.mapItem (Todo.setAction newAction) zipper
                                             |> getTodos TodoCollection.Current
                                             |> Expect.equal [ todo1, changedTodo ]
                                     )

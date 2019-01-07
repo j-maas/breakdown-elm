@@ -4,8 +4,8 @@ module IdList exposing
     , find
     , fromList
     , insert
+    , mapItem
     , mapToList
-    , mapTodo
     , put
     , remove
     )
@@ -53,8 +53,8 @@ find id (IdList items) =
         |> Maybe.andThen (Zipper.focusIndex index)
 
 
-mapTodo : (a -> a) -> Zipper a -> IdList a
-mapTodo map zipper =
+mapItem : (a -> a) -> Zipper a -> IdList a
+mapItem map zipper =
     IdList (Zipper.mapCurrent map zipper |> Zipper.toList)
 
 
