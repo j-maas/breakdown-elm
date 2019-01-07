@@ -11,6 +11,7 @@ module Todo exposing
     , subtodos
     )
 
+import IdList exposing (IdList)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
@@ -19,7 +20,7 @@ import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 type Todo
     = Todo
         { action : NonEmptyString
-        , subtodos : List Todo
+        , subtodos : IdList Todo
         }
 
 
@@ -27,7 +28,7 @@ type Todo
 -- BUILD
 
 
-from : NonEmptyString -> List Todo -> Todo
+from : NonEmptyString -> IdList Todo -> Todo
 from act subs =
     Todo
         { action = act
@@ -37,7 +38,7 @@ from act subs =
 
 fromAction : NonEmptyString -> Todo
 fromAction act =
-    from act []
+    from act (IdList.fromList [])
 
 
 
@@ -54,7 +55,7 @@ readAction todo =
     action todo |> NonEmptyString.toString
 
 
-subtodos : Todo -> List Todo
+subtodos : Todo -> IdList Todo
 subtodos (Todo todo) =
     todo.subtodos
 
@@ -68,7 +69,7 @@ setAction newAction (Todo todo) =
     Todo { todo | action = newAction }
 
 
-setSubtodos : List Todo -> Todo -> Todo
+setSubtodos : IdList Todo -> Todo -> Todo
 setSubtodos newSubtodos (Todo todo) =
     Todo { todo | subtodos = newSubtodos }
 
@@ -89,9 +90,13 @@ subtodosField =
 
 encode : Todo -> Encode.Value
 encode todo =
+    let
+        subs =
+            IdList.mapToList (\_ t -> t) (subtodos todo)
+    in
     Encode.object
         [ ( actionField, readAction todo |> Encode.string )
-        , ( subtodosField, Encode.list encode (subtodos todo) )
+        , ( subtodosField, Encode.list encode subs )
         ]
 
 
@@ -112,6 +117,7 @@ decoder =
 
         decodeSubtodos =
             Decode.list (Decode.lazy (\_ -> decoder))
+                |> Decode.map IdList.fromList
     in
     Decode.map2
         from
