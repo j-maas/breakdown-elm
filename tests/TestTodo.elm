@@ -2,6 +2,7 @@ module TestTodo exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import IdList
 import Json.Decode as Decode
 import StringFuzz exposing (nonblankStringFuzzer, whitespaceStringFuzzer)
 import Test exposing (..)
@@ -30,8 +31,9 @@ suite =
                     child2 =
                         Todo.fromAction (NonEmptyString.build 'I' "'m the second child.")
                 in
-                Todo.from (NonEmptyString.build 'I' "'m the parent.") [ child1, child2 ]
+                Todo.from (NonEmptyString.build 'I' "'m the parent.") (IdList.fromList [ child1, child2 ])
                     |> Todo.subtodos
+                    |> IdList.mapToList (\_ todo -> todo)
                     |> Expect.equal [ child1, child2 ]
         , test "readActions returns action as String" <|
             \_ ->
@@ -53,9 +55,10 @@ suite =
                     child2 =
                         Todo.fromAction (NonEmptyString.build 'I' "'m the second child.")
                 in
-                Todo.from (NonEmptyString.build 'R' "eplace my subtodos!") [ child1, child2 ]
-                    |> Todo.setSubtodos [ child2 ]
+                Todo.from (NonEmptyString.build 'R' "eplace my subtodos!") (IdList.fromList [ child1, child2 ])
+                    |> Todo.setSubtodos (IdList.fromList [ child2 ])
                     |> Todo.subtodos
+                    |> IdList.mapToList (\_ todo -> todo)
                     |> Expect.equal [ child2 ]
         , test "encoding and decoding results in same todo" <|
             \_ ->

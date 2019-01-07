@@ -1,11 +1,11 @@
-module TestTodoList exposing (suite)
+module TestIdList exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import IdList
 import List.Zipper as Zipper
 import Test exposing (..)
 import Todo
-import TodoList
 import Utils.NonEmptyString as NonEmptyString
 
 
@@ -21,8 +21,8 @@ suite =
                     todo2 =
                         Todo.fromAction (NonEmptyString.build 'M' "e, too!")
                 in
-                TodoList.fromList [ todo1, todo2 ]
-                    |> TodoList.mapToList (\_ todo -> todo)
+                IdList.fromList [ todo1, todo2 ]
+                    |> IdList.mapToList (\_ todo -> todo)
                     |> Expect.equal [ todo1, todo2 ]
         , test "adds todo to existing list" <|
             \_ ->
@@ -33,10 +33,10 @@ suite =
                     todo2 =
                         Todo.fromAction (NonEmptyString.build 'M' "e, too!")
                 in
-                TodoList.fromList [ todo1 ]
-                    |> TodoList.insert todo2
+                IdList.fromList [ todo1 ]
+                    |> IdList.insert todo2
                     |> Tuple.second
-                    |> TodoList.mapToList (\_ todo -> todo)
+                    |> IdList.mapToList (\_ todo -> todo)
                     |> Expect.equal [ todo1, todo2 ]
         , test "finds todo by id" <|
             \_ ->
@@ -47,10 +47,10 @@ suite =
                     todo2 =
                         Todo.fromAction (NonEmptyString.build 'M' "e, too!")
                 in
-                TodoList.fromList [ todo1 ]
-                    |> TodoList.insert todo2
+                IdList.fromList [ todo1 ]
+                    |> IdList.insert todo2
                     |> (\( id, list ) ->
-                            TodoList.find id list
+                            IdList.find id list
                        )
                     |> Maybe.map
                         (\zipper ->
@@ -70,10 +70,10 @@ suite =
                     todo2 =
                         Todo.fromAction (NonEmptyString.build 'C' "hange me!")
                 in
-                TodoList.fromList [ todo1 ]
-                    |> TodoList.insert todo2
+                IdList.fromList [ todo1 ]
+                    |> IdList.insert todo2
                     |> (\( id, list ) ->
-                            TodoList.find id list
+                            IdList.find id list
                        )
                     |> Maybe.map
                         (\zipper ->
@@ -84,8 +84,8 @@ suite =
                                 changedTodo =
                                     Todo.fromAction newAction
                             in
-                            TodoList.mapTodo (Todo.setAction newAction) zipper
-                                |> TodoList.mapToList (\_ t -> t)
+                            IdList.mapTodo (Todo.setAction newAction) zipper
+                                |> IdList.mapToList (\_ t -> t)
                                 |> Expect.equal [ todo1, changedTodo ]
                         )
                     |> Maybe.withDefault (Expect.fail "Expected to find todo, but received Nothing.")
@@ -98,15 +98,15 @@ suite =
                     todo2 =
                         Todo.fromAction (NonEmptyString.build 'R' "emove me!")
                 in
-                TodoList.fromList [ todo1 ]
-                    |> TodoList.insert todo2
+                IdList.fromList [ todo1 ]
+                    |> IdList.insert todo2
                     |> (\( id, list ) ->
-                            TodoList.find id list
+                            IdList.find id list
                        )
                     |> Maybe.map
                         (\zipper ->
-                            TodoList.remove zipper
-                                |> TodoList.mapToList (\_ t -> t)
+                            IdList.remove zipper
+                                |> IdList.mapToList (\_ t -> t)
                                 |> Expect.equal [ todo1 ]
                         )
                     |> Maybe.withDefault (Expect.fail "Expected to find todo, but received Nothing.")

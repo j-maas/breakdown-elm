@@ -18,10 +18,14 @@ module TodoCollection exposing
     )
 
 import Dict exposing (Dict)
+import IdList exposing (IdList)
 import List.Zipper as GenericZipper
 import Todo exposing (Todo)
-import TodoList exposing (TodoList)
 import Utils.ZipperUtils as GenericZipper
+
+
+type alias TodoList =
+    IdList Todo
 
 
 type TodoCollection
@@ -68,8 +72,8 @@ selectorFromId (Id selector _) =
 empty : TodoCollection
 empty =
     TodoCollection
-        { current = TodoList.fromList []
-        , done = TodoList.fromList []
+        { current = IdList.fromList []
+        , done = IdList.fromList []
         }
 
 
@@ -84,7 +88,7 @@ fromList : Selector -> List Todo -> TodoCollection -> TodoCollection
 fromList selector list collection =
     let
         newTodos =
-            TodoList.fromList list
+            IdList.fromList list
     in
     mapTodoListInCollection selector (\_ -> newTodos) collection
 
@@ -92,7 +96,7 @@ fromList selector list collection =
 insert : Selector -> Todo -> TodoCollection -> ( Id, TodoCollection )
 insert selector todo collection =
     getTodoListInCollection selector collection
-        |> TodoList.insert todo
+        |> IdList.insert todo
         |> (\( id, newList ) ->
                 let
                     collectionId =
@@ -113,7 +117,7 @@ put selector todo collection =
 mapToList : Selector -> (Id -> Todo -> a) -> TodoCollection -> List a
 mapToList selector map collection =
     getTodoListInCollection selector collection
-        |> TodoList.mapToList (\listId todo -> map (Id selector listId) todo)
+        |> IdList.mapToList
 
 
 find : Id -> TodoCollection -> Maybe Zipper
@@ -125,12 +129,12 @@ find (Id selector listId) collection =
 
 mapTodo : (Todo -> Todo) -> Zipper -> TodoCollection
 mapTodo map (Zipper selector collection zipper) =
-    mapTodoListInCollection selector (\_ -> TodoList.mapTodo map zipper) collection
+    mapTodoListInCollection selector (\_ -> IdList.mapTodo map zipper) collection
 
 
 remove : Zipper -> TodoCollection
 remove (Zipper selector collection zipper) =
-    mapTodoListInCollection selector (\_ -> TodoList.remove zipper) collection
+    mapTodoListInCollection selector (\_ -> IdList.remove zipper) collection
 
 
 move : Zipper -> TodoCollection
@@ -147,8 +151,8 @@ move (Zipper selector collection zipper) =
                 Done ->
                     Current
     in
-    mapTodoListInCollection selector (\_ -> TodoList.remove zipper) collection
-        |> mapTodoListInCollection toList (\list -> TodoList.put todo list)
+    mapTodoListInCollection selector (\_ -> IdList.remove zipper) collection
+        |> mapTodoListInCollection toList (\list -> IdList.put todo list)
 
 
 

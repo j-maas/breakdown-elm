@@ -2,12 +2,16 @@ module TestTodoCollections exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import IdList exposing (IdList)
 import List.Zipper as Zipper
 import Test exposing (..)
 import Todo exposing (Todo)
 import TodoCollection exposing (TodoCollection)
-import TodoList
 import Utils.NonEmptyString as NonEmptyString
+
+
+type alias TodoList =
+    IdList Todo
 
 
 suite : Test
