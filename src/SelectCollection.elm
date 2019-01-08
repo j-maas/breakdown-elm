@@ -1,7 +1,7 @@
-module TodoCollection exposing
+module SelectCollection exposing
     ( Id
+    , SelectCollection
     , Selector(..)
-    , TodoCollection
     , Zipper
     , current
     , empty
@@ -9,8 +9,8 @@ module TodoCollection exposing
     , fromList
     , init
     , insert
+    , mapItem
     , mapToList
-    , mapTodo
     , move
     , put
     , remove
@@ -20,18 +20,13 @@ module TodoCollection exposing
 import Dict exposing (Dict)
 import IdList exposing (IdList)
 import List.Zipper as GenericZipper
-import Todo exposing (Todo)
 import Utils.ZipperUtils as GenericZipper
 
 
-type alias TodoList =
-    IdList Todo
-
-
-type TodoCollection
-    = TodoCollection
-        { current : TodoList
-        , done : TodoList
+type SelectCollection a
+    = SelectCollection
+        { current : IdList a
+        , done : IdList a
         }
 
 
@@ -40,8 +35,8 @@ type Selector
     | Done
 
 
-getTodoListInCollection : Selector -> TodoCollection -> TodoList
-getTodoListInCollection selector (TodoCollection collection) =
+getTodoListInCollection : Selector -> SelectCollection a -> IdList a
+getTodoListInCollection selector (SelectCollection collection) =
     case selector of
         Current ->
             collection.current
@@ -50,14 +45,14 @@ getTodoListInCollection selector (TodoCollection collection) =
             collection.done
 
 
-mapTodoListInCollection : Selector -> (TodoList -> TodoList) -> TodoCollection -> TodoCollection
-mapTodoListInCollection selector map (TodoCollection collection) =
+mapTodoListInCollection : Selector -> (IdList a -> IdList a) -> SelectCollection a -> SelectCollection a
+mapTodoListInCollection selector map (SelectCollection collection) =
     case selector of
         Current ->
-            TodoCollection { collection | current = map collection.current }
+            SelectCollection { collection | current = map collection.current }
 
         Done ->
-            TodoCollection { collection | done = map collection.done }
+            SelectCollection { collection | done = map collection.done }
 
 
 type Id
@@ -69,34 +64,34 @@ selectorFromId (Id selector _) =
     selector
 
 
-empty : TodoCollection
+empty : SelectCollection a
 empty =
-    TodoCollection
+    SelectCollection
         { current = IdList.fromList []
         , done = IdList.fromList []
         }
 
 
-init : { current : List Todo, done : List Todo } -> TodoCollection
+init : { current : List a, done : List a } -> SelectCollection a
 init lists =
     empty
         |> fromList Current lists.current
         |> fromList Done lists.done
 
 
-fromList : Selector -> List Todo -> TodoCollection -> TodoCollection
+fromList : Selector -> List a -> SelectCollection a -> SelectCollection a
 fromList selector list collection =
     let
-        newTodos =
+        newItems =
             IdList.fromList list
     in
-    mapTodoListInCollection selector (\_ -> newTodos) collection
+    mapTodoListInCollection selector (\_ -> newItems) collection
 
 
-insert : Selector -> Todo -> TodoCollection -> ( Id, TodoCollection )
-insert selector todo collection =
+insert : Selector -> a -> SelectCollection a -> ( Id, SelectCollection a )
+insert selector item collection =
     getTodoListInCollection selector collection
-        |> IdList.insert todo
+        |> IdList.insert item
         |> (\( id, newList ) ->
                 let
                     collectionId =
@@ -109,38 +104,38 @@ insert selector todo collection =
            )
 
 
-put : Selector -> Todo -> TodoCollection -> TodoCollection
-put selector todo collection =
-    insert selector todo collection |> Tuple.second
+put : Selector -> a -> SelectCollection a -> SelectCollection a
+put selector item collection =
+    insert selector item collection |> Tuple.second
 
 
-mapToList : Selector -> (Id -> Todo -> a) -> TodoCollection -> List a
+mapToList : Selector -> (Id -> a -> b) -> SelectCollection a -> List b
 mapToList selector map collection =
     getTodoListInCollection selector collection
-        |> IdList.mapToList (\listId todo -> map (Id selector listId) todo)
+        |> IdList.mapToList (\listId item -> map (Id selector listId) item)
 
 
-find : Id -> TodoCollection -> Maybe Zipper
+find : Id -> SelectCollection a -> Maybe (Zipper a)
 find (Id selector listId) collection =
     getTodoListInCollection selector collection
         |> IdList.find listId
         |> Maybe.map (Zipper selector collection)
 
 
-mapTodo : (Todo -> Todo) -> Zipper -> TodoCollection
-mapTodo map (Zipper selector collection zipper) =
+mapItem : (a -> a) -> Zipper a -> SelectCollection a
+mapItem map (Zipper selector collection zipper) =
     mapTodoListInCollection selector (\_ -> IdList.mapItem map zipper) collection
 
 
-remove : Zipper -> TodoCollection
+remove : Zipper a -> SelectCollection a
 remove (Zipper selector collection zipper) =
     mapTodoListInCollection selector (\_ -> IdList.remove zipper) collection
 
 
-move : Zipper -> TodoCollection
+move : Zipper a -> SelectCollection a
 move (Zipper selector collection zipper) =
     let
-        todo =
+        item =
             GenericZipper.current zipper
 
         toList =
@@ -152,17 +147,17 @@ move (Zipper selector collection zipper) =
                     Current
     in
     mapTodoListInCollection selector (\_ -> IdList.remove zipper) collection
-        |> mapTodoListInCollection toList (\list -> IdList.put todo list)
+        |> mapTodoListInCollection toList (\list -> IdList.put item list)
 
 
 
 -- ZIPPER
 
 
-type Zipper
-    = Zipper Selector TodoCollection (GenericZipper.Zipper Todo)
+type Zipper a
+    = Zipper Selector (SelectCollection a) (GenericZipper.Zipper a)
 
 
-current : Zipper -> Todo
+current : Zipper a -> a
 current (Zipper _ _ zipper) =
     GenericZipper.current zipper

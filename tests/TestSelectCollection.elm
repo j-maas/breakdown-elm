@@ -1,12 +1,12 @@
-module TestTodoCollections exposing (suite)
+module TestSelectCollection exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import IdList exposing (IdList)
 import List.Zipper as Zipper
+import SelectCollection exposing (SelectCollection)
 import Test exposing (..)
 import Todo exposing (Todo)
-import TodoCollection exposing (TodoCollection)
 import Utils.NonEmptyString as NonEmptyString
 
 
@@ -19,10 +19,10 @@ suite =
     describe "TodoCollection"
         [ test "inits empty collection" <|
             \_ ->
-                TodoCollection.empty
+                SelectCollection.empty
                     |> Expect.all
-                        [ getTodos TodoCollection.Current >> Expect.equal []
-                        , getTodos TodoCollection.Done >> Expect.equal []
+                        [ getTodos SelectCollection.Current >> Expect.equal []
+                        , getTodos SelectCollection.Done >> Expect.equal []
                         ]
         , test "inits from lists" <|
             \_ ->
@@ -36,10 +36,10 @@ suite =
                     todo3 =
                         Todo.fromAction (NonEmptyString.build 'A' "nd me, too!")
                 in
-                TodoCollection.init { current = [ todo1 ], done = [ todo2, todo3 ] }
+                SelectCollection.init { current = [ todo1 ], done = [ todo2, todo3 ] }
                     |> Expect.all
-                        [ getTodos TodoCollection.Current >> Expect.equal [ todo1 ]
-                        , getTodos TodoCollection.Done >> Expect.equal [ todo2, todo3 ]
+                        [ getTodos SelectCollection.Current >> Expect.equal [ todo1 ]
+                        , getTodos SelectCollection.Done >> Expect.equal [ todo2, todo3 ]
                         ]
         , test "puts todos from list into one collection and retrieves them" <|
             \_ ->
@@ -47,9 +47,9 @@ suite =
                     todo =
                         Todo.fromAction (NonEmptyString.build 'I' "nsert me!")
                 in
-                TodoCollection.empty
-                    |> TodoCollection.fromList TodoCollection.Current [ todo ]
-                    |> TodoCollection.mapToList TodoCollection.Current (\_ t -> t)
+                SelectCollection.empty
+                    |> SelectCollection.fromList SelectCollection.Current [ todo ]
+                    |> SelectCollection.mapToList SelectCollection.Current (\_ t -> t)
                     |> Expect.equal [ todo ]
         , test "todos added to one collection are not retrieved with another" <|
             \_ ->
@@ -57,9 +57,9 @@ suite =
                     todo =
                         Todo.fromAction (NonEmptyString.build 'D' "o not get me!")
                 in
-                TodoCollection.empty
-                    |> TodoCollection.fromList TodoCollection.Current [ todo ]
-                    |> TodoCollection.mapToList TodoCollection.Done (\_ t -> t)
+                SelectCollection.empty
+                    |> SelectCollection.fromList SelectCollection.Current [ todo ]
+                    |> SelectCollection.mapToList SelectCollection.Done (\_ t -> t)
                     |> Expect.equal []
         , test "finds todo by id across collections" <|
             \_ ->
@@ -73,13 +73,13 @@ suite =
                     todo3 =
                         Todo.fromAction (NonEmptyString.build 'G' "et me!")
                 in
-                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
-                    |> TodoCollection.insert TodoCollection.Current todo3
+                SelectCollection.init { current = [ todo1 ], done = [ todo2 ] }
+                    |> SelectCollection.insert SelectCollection.Current todo3
                     |> (\( id, collection ) ->
-                            TodoCollection.find id collection
+                            SelectCollection.find id collection
                        )
                     |> Maybe.map
-                        (TodoCollection.current
+                        (SelectCollection.current
                             >> Expect.equal todo3
                         )
                     |> Maybe.withDefault (Expect.fail "Expected to find id, but received Nothing.")
@@ -95,10 +95,10 @@ suite =
                     todo3 =
                         Todo.fromAction (NonEmptyString.build 'C' "hange me!")
                 in
-                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
-                    |> TodoCollection.insert TodoCollection.Current todo3
+                SelectCollection.init { current = [ todo1 ], done = [ todo2 ] }
+                    |> SelectCollection.insert SelectCollection.Current todo3
                     |> (\( id, collection ) ->
-                            TodoCollection.find id collection
+                            SelectCollection.find id collection
                                 |> Maybe.map
                                     (\zipper ->
                                         let
@@ -108,8 +108,8 @@ suite =
                                             changedTodo =
                                                 Todo.fromAction newAction
                                         in
-                                        TodoCollection.mapTodo (Todo.setAction newAction) zipper
-                                            |> getTodos TodoCollection.Current
+                                        SelectCollection.mapItem (Todo.setAction newAction) zipper
+                                            |> getTodos SelectCollection.Current
                                             |> Expect.equal [ todo1, changedTodo ]
                                     )
                        )
@@ -126,17 +126,17 @@ suite =
                     todo3 =
                         Todo.fromAction (NonEmptyString.build 'R' "emove me!")
                 in
-                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
-                    |> TodoCollection.insert TodoCollection.Current todo3
+                SelectCollection.init { current = [ todo1 ], done = [ todo2 ] }
+                    |> SelectCollection.insert SelectCollection.Current todo3
                     |> (\( id, collection ) ->
-                            TodoCollection.find id collection
+                            SelectCollection.find id collection
                        )
                     |> Maybe.map
                         (\zipper ->
-                            TodoCollection.remove zipper
+                            SelectCollection.remove zipper
                                 |> Expect.all
-                                    [ getTodos TodoCollection.Current >> Expect.equal [ todo1 ]
-                                    , getTodos TodoCollection.Done >> Expect.equal [ todo2 ]
+                                    [ getTodos SelectCollection.Current >> Expect.equal [ todo1 ]
+                                    , getTodos SelectCollection.Done >> Expect.equal [ todo2 ]
                                     ]
                         )
                     |> Maybe.withDefault (Expect.fail "Expected to find id, but received Nothing.")
@@ -152,23 +152,23 @@ suite =
                     todo3 =
                         Todo.fromAction (NonEmptyString.build 'M' "ove me!")
                 in
-                TodoCollection.init { current = [ todo1 ], done = [ todo2 ] }
-                    |> TodoCollection.insert TodoCollection.Current todo3
+                SelectCollection.init { current = [ todo1 ], done = [ todo2 ] }
+                    |> SelectCollection.insert SelectCollection.Current todo3
                     |> (\( id, collection ) ->
-                            TodoCollection.find id collection
+                            SelectCollection.find id collection
                        )
                     |> Maybe.map
                         (\zipper ->
-                            TodoCollection.move zipper
+                            SelectCollection.move zipper
                                 |> Expect.all
-                                    [ getTodos TodoCollection.Current >> Expect.equal [ todo1 ]
-                                    , getTodos TodoCollection.Done >> Expect.equal [ todo2, todo3 ]
+                                    [ getTodos SelectCollection.Current >> Expect.equal [ todo1 ]
+                                    , getTodos SelectCollection.Done >> Expect.equal [ todo2, todo3 ]
                                     ]
                         )
                     |> Maybe.withDefault (Expect.fail "Expected to find id, but received Nothing.")
         ]
 
 
-getTodos : TodoCollection.Selector -> TodoCollection -> List Todo
+getTodos : SelectCollection.Selector -> SelectCollection Todo -> List Todo
 getTodos selector collection =
-    TodoCollection.mapToList selector (\_ todo -> todo) collection
+    SelectCollection.mapToList selector (\_ todo -> todo) collection
