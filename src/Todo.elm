@@ -11,16 +11,21 @@ module Todo exposing
     , subtodos
     )
 
-import IdList exposing (IdList)
+import IdList
 import Json.Decode as Decode
 import Json.Encode as Encode
+import SelectCollection exposing (SelectCollection)
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
+
+
+type alias TodoCollection =
+    SelectCollection Todo
 
 
 type Todo
     = Todo
         { action : NonEmptyString
-        , subtodos : IdList Todo
+        , subtodos : TodoCollection
         }
 
 
@@ -28,7 +33,7 @@ type Todo
 -- BUILD
 
 
-from : NonEmptyString -> IdList Todo -> Todo
+from : NonEmptyString -> TodoCollection -> Todo
 from act subs =
     Todo
         { action = act
@@ -38,7 +43,7 @@ from act subs =
 
 fromAction : NonEmptyString -> Todo
 fromAction act =
-    from act (IdList.fromList [])
+    from act SelectCollection.empty
 
 
 
@@ -55,7 +60,7 @@ readAction todo =
     action todo |> NonEmptyString.toString
 
 
-subtodos : Todo -> IdList Todo
+subtodos : Todo -> TodoCollection
 subtodos (Todo todo) =
     todo.subtodos
 
@@ -69,7 +74,7 @@ setAction newAction (Todo todo) =
     Todo { todo | action = newAction }
 
 
-setSubtodos : IdList Todo -> Todo -> Todo
+setSubtodos : TodoCollection -> Todo -> Todo
 setSubtodos newSubtodos (Todo todo) =
     Todo { todo | subtodos = newSubtodos }
 
@@ -88,15 +93,33 @@ subtodosField =
     "subtodos"
 
 
+currentField : String
+currentField =
+    "currentTodos"
+
+
+doneField : String
+doneField =
+    "doneTodos"
+
+
 encode : Todo -> Encode.Value
 encode todo =
     let
-        subs =
-            IdList.mapToList (\_ t -> t) (subtodos todo)
+        currentSubtodos =
+            SelectCollection.mapToList SelectCollection.Current (\id t -> t) (subtodos todo)
+
+        doneSubtodos =
+            SelectCollection.mapToList SelectCollection.Done (\id t -> t) (subtodos todo)
     in
     Encode.object
         [ ( actionField, readAction todo |> Encode.string )
-        , ( subtodosField, Encode.list encode subs )
+        , ( subtodosField
+          , Encode.object
+                [ ( currentField, Encode.list encode currentSubtodos )
+                , ( doneField, Encode.list encode doneSubtodos )
+                ]
+          )
         ]
 
 
@@ -116,8 +139,16 @@ decoder =
                     )
 
         decodeSubtodos =
-            Decode.list (Decode.lazy (\_ -> decoder))
-                |> Decode.map IdList.fromList
+            Decode.map2
+                (\current done -> SelectCollection.init { current = current, done = done })
+                (Decode.field currentField
+                    (Decode.list (Decode.lazy (\_ -> decoder)))
+                )
+                (Decode.field doneField
+                    (Decode.list
+                        (Decode.lazy (\_ -> decoder))
+                    )
+                )
     in
     Decode.map2
         from
