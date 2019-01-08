@@ -61,7 +61,7 @@ mapTodoListInCollection selector map (TodoCollection collection) =
 
 
 type Id
-    = Id Selector TodoList.Id
+    = Id Selector IdList.Id
 
 
 selectorFromId : Id -> Selector
@@ -117,19 +117,19 @@ put selector todo collection =
 mapToList : Selector -> (Id -> Todo -> a) -> TodoCollection -> List a
 mapToList selector map collection =
     getTodoListInCollection selector collection
-        |> IdList.mapToList
+        |> IdList.mapToList (\listId todo -> map (Id selector listId) todo)
 
 
 find : Id -> TodoCollection -> Maybe Zipper
 find (Id selector listId) collection =
     getTodoListInCollection selector collection
-        |> TodoList.find listId
+        |> IdList.find listId
         |> Maybe.map (Zipper selector collection)
 
 
 mapTodo : (Todo -> Todo) -> Zipper -> TodoCollection
 mapTodo map (Zipper selector collection zipper) =
-    mapTodoListInCollection selector (\_ -> IdList.mapTodo map zipper) collection
+    mapTodoListInCollection selector (\_ -> IdList.mapItem map zipper) collection
 
 
 remove : Zipper -> TodoCollection
