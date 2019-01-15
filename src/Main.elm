@@ -20,11 +20,15 @@ import Html.Styled.Events exposing (onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import List.Zipper as Zipper exposing (Zipper)
+import SelectCollection exposing (SelectCollection)
 import Todo exposing (Todo)
-import TodoCollection exposing (TodoCollection)
 import Url exposing (Url)
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 import Utils.ZipperUtils as Zipper
+
+
+type alias TodoCollection =
+    SelectCollection Todo
 
 
 main =
@@ -51,7 +55,7 @@ type alias Model =
 
 
 type alias EditingInfo =
-    { todoId : TodoCollection.Id
+    { todoId : SelectCollection.Id
     , rawNewAction : String
     , oldAction : NonEmptyString
     }
@@ -62,7 +66,7 @@ init flags _ key =
     let
         todos =
             decodeFlags flags
-                |> Maybe.withDefault TodoCollection.empty
+                |> Maybe.withDefault SelectCollection.empty
     in
     ( { key = key
       , newTodoInput = ""
@@ -91,7 +95,7 @@ decodeFlags flags =
     in
     Result.map2
         (\current done ->
-            TodoCollection.init { current = current, done = done }
+            SelectCollection.init { current = current, done = done }
         )
         currentTodos
         doneTodos
@@ -106,10 +110,10 @@ type Msg
     = NoOp
     | UpdateNewTodoInput String
     | AddNewTodo
-    | Move TodoCollection.Id
-    | Remove TodoCollection.Id
-    | StartEdit TodoCollection.Id
-    | UpdateEdit TodoCollection.Id NonEmptyString String
+    | Move SelectCollection.Id
+    | Remove SelectCollection.Id
+    | StartEdit SelectCollection.Id
+    | UpdateEdit SelectCollection.Id NonEmptyString String
     | ApplyEdit
     | CancelEdit
 
@@ -135,12 +139,13 @@ update msg model =
             case maybeAction of
                 Just action ->
                     let
+                        todo : Todo
                         todo =
-                            Todo.from action
+                            Todo.from action SelectCollection.empty
                     in
                     ( { model
                         | newTodoInput = ""
-                        , todos = TodoCollection.put TodoCollection.Current todo model.todos
+                        , todos = SelectCollection.put SelectCollection.Current todo model.todos
                       }
                     , Cmd.none
                     )
@@ -151,23 +156,23 @@ update msg model =
         Move id ->
             ( invalidateTodoWithId id
                 model
-                TodoCollection.move
+                SelectCollection.move
             , Cmd.none
             )
 
         Remove id ->
             ( invalidateTodoWithId id
                 model
-                TodoCollection.remove
+                SelectCollection.remove
             , Cmd.none
             )
 
         StartEdit id ->
-            case TodoCollection.find id model.todos of
+            case SelectCollection.find id model.todos of
                 Just zipper ->
                     let
                         todo =
-                            TodoCollection.current zipper
+                            SelectCollection.current zipper
                     in
                     ( { model
                         | editing =
@@ -196,10 +201,10 @@ update msg model =
                     NonEmptyString.fromString editInfo.rawNewAction
                         |> Maybe.andThen
                             (\newAction ->
-                                TodoCollection.find editInfo.todoId model.todos
+                                SelectCollection.find editInfo.todoId model.todos
                                     |> Maybe.map
                                         (\zipper ->
-                                            TodoCollection.mapTodo (Todo.setAction newAction) zipper
+                                            SelectCollection.mapItem (Todo.setAction newAction) zipper
                                         )
                             )
                         |> Maybe.withDefault model.todos
@@ -215,10 +220,10 @@ update msg model =
                     model.editing
                         |> Maybe.andThen
                             (\editInfo ->
-                                TodoCollection.find editInfo.todoId model.todos
+                                SelectCollection.find editInfo.todoId model.todos
                                     |> Maybe.map
                                         (\zipper ->
-                                            TodoCollection.mapTodo (Todo.setAction editInfo.oldAction) zipper
+                                            SelectCollection.mapItem (Todo.setAction editInfo.oldAction) zipper
                                         )
                             )
                         |> Maybe.withDefault model.todos
@@ -230,7 +235,7 @@ update msg model =
            )
 
 
-invalidateTodoWithId : TodoCollection.Id -> Model -> (TodoCollection.Zipper -> TodoCollection) -> Model
+invalidateTodoWithId : SelectCollection.Id -> Model -> (SelectCollection.Zipper Todo -> TodoCollection) -> Model
 invalidateTodoWithId id model doUpdate =
     let
         newEditing =
@@ -245,7 +250,7 @@ invalidateTodoWithId id model doUpdate =
                 model.editing
 
         newTodos =
-            case TodoCollection.find id model.todos of
+            case SelectCollection.find id model.todos of
                 Just zipper ->
                     doUpdate zipper
 
@@ -261,11 +266,11 @@ save : Model -> Cmd msg
 save model =
     let
         getTodos selector =
-            TodoCollection.mapToList selector (\_ todo -> todo)
+            SelectCollection.mapToList selector (\_ todo -> todo)
     in
     Encode.object
-        [ ( "currentTodos", Encode.list Todo.encode <| getTodos TodoCollection.Current model.todos )
-        , ( "doneTodos", Encode.list Todo.encode <| getTodos TodoCollection.Done model.todos )
+        [ ( "currentTodos", Encode.list Todo.encode <| getTodos SelectCollection.Current model.todos )
+        , ( "doneTodos", Encode.list Todo.encode <| getTodos SelectCollection.Done model.todos )
         ]
         |> saveRaw
 
@@ -333,7 +338,7 @@ viewCurrentTodos : TodoCollection -> Maybe EditingInfo -> Html Msg
 viewCurrentTodos todos editing =
     ul [ css [ todoListStyle ] ]
         (todos
-            |> TodoCollection.mapToList TodoCollection.Current
+            |> SelectCollection.mapToList SelectCollection.Current
                 (\id todo ->
                     let
                         currentEdit =
@@ -363,7 +368,7 @@ viewDoneTodos : TodoCollection -> Maybe EditingInfo -> Html Msg
 viewDoneTodos todos editing =
     ul [ css [ textDecoration lineThrough, todoListStyle ] ]
         (todos
-            |> TodoCollection.mapToList TodoCollection.Done
+            |> SelectCollection.mapToList SelectCollection.Done
                 (\id todo ->
                     let
                         currentEdit =
@@ -395,15 +400,15 @@ viewDoneTodos todos editing =
         )
 
 
-viewTodo : TodoCollection.Id -> Todo -> Html Msg
+viewTodo : SelectCollection.Id -> Todo -> Html Msg
 viewTodo id todo =
     let
         ( iconName, moveText ) =
-            case TodoCollection.selectorFromId id of
-                TodoCollection.Current ->
+            case SelectCollection.selectorFromId id of
+                SelectCollection.Current ->
                     ( "done", "Mark as done" )
 
-                TodoCollection.Done ->
+                SelectCollection.Done ->
                     ( "refresh", "Mark as to do" )
     in
     div [ css [ inputContainerStyle ], onClick (StartEdit id) ]
@@ -414,7 +419,7 @@ viewTodo id todo =
         ]
 
 
-viewEditTodo : TodoCollection.Id -> Todo -> EditingInfo -> Html Msg
+viewEditTodo : SelectCollection.Id -> Todo -> EditingInfo -> Html Msg
 viewEditTodo id todo editInfo =
     div [ css [ inputContainerStyle ], onClick ApplyEdit ]
         [ Html.form [ onSubmit ApplyEdit ]
