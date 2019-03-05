@@ -1,41 +1,94 @@
-module Checklist exposing (Checklist, Id, fromList, get, insert, map, remove, update)
+module Checklist exposing
+    ( Checklist
+    , Id
+    , fromItems
+    , fromList
+    , get
+    , insert
+    , mapCurrent
+    , mapDone
+    , remove
+    , update
+    )
 
 import List.Extra as List
 
 
 type Checklist a
-    = Checklist (List a)
+    = Checklist (Items a)
+
+
+type alias Items a =
+    { current : List a, done : List a }
 
 
 type Id
-    = Id Int
+    = Id Selector Int
+
+
+type Selector
+    = Current
+    | Done
+
+
+getList : Selector -> Items a -> List a
+getList selector items =
+    case selector of
+        Current ->
+            items.current
+
+        Done ->
+            items.done
+
+
+fromItems : { current : List a, done : List a } -> Checklist a
+fromItems items =
+    Checklist items
 
 
 fromList : List a -> Checklist a
 fromList items =
-    Checklist items
+    Checklist { current = items, done = [] }
 
 
 insert : a -> Checklist a -> ( Id, Checklist a )
 insert item (Checklist existing) =
     let
         newItems =
-            existing ++ [ item ]
+            existing.current ++ [ item ]
 
         index =
-            List.length existing
+            List.length existing.current
     in
-    ( Id index, Checklist newItems )
+    ( Id Current index, Checklist { current = newItems, done = existing.done } )
 
 
 get : Id -> Checklist a -> Maybe a
-get (Id index) (Checklist items) =
-    List.getAt index items
+get (Id selector index) (Checklist items) =
+    getList selector items
+        |> List.getAt index
 
 
-map : (Id -> a -> b) -> Checklist a -> List b
-map mapping (Checklist items) =
-    List.indexedMap (\index item -> mapping (Id index) item) items
+mapCurrent : (Id -> a -> b) -> Checklist a -> List b
+mapCurrent mapping checklist =
+    map mapping Current checklist
+
+
+mapDone : (Id -> a -> b) -> Checklist a -> List b
+mapDone mapping checklist =
+    map mapping Done checklist
+
+
+map : (Id -> a -> b) -> Selector -> Checklist a -> List b
+map mapping selector (Checklist items) =
+    let
+        list =
+            getList selector items
+
+        idMapping index item =
+            mapping (Id selector index) item
+    in
+    List.indexedMap idMapping list
 
 
 update : (a -> a) -> Id -> Checklist a -> Maybe (Checklist a)
@@ -49,17 +102,34 @@ remove id checklist =
 
 
 change : (a -> Maybe a) -> Id -> Checklist a -> Maybe (Checklist a)
-change mapping (Id index) (Checklist items) =
+change mapping (Id selector index) (Checklist items) =
     if index < 0 then
         Nothing
 
     else
         let
+            list =
+                getList selector items
+
             head =
-                List.take index items
+                List.take index list
 
             tail =
-                List.drop index items
+                List.drop index list
+
+            wrap aList =
+                case selector of
+                    Current ->
+                        Checklist
+                            { current = aList
+                            , done = items.done
+                            }
+
+                    Done ->
+                        Checklist
+                            { current = items.current
+                            , done = aList
+                            }
         in
         case tail of
             x :: rest ->
@@ -72,7 +142,7 @@ change mapping (Id index) (Checklist items) =
                             Nothing ->
                                 []
                 in
-                Just (Checklist <| head ++ changed ++ rest)
+                Just (wrap <| head ++ changed ++ rest)
 
             _ ->
                 Nothing
