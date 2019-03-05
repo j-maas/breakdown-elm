@@ -1,6 +1,7 @@
 module Checklist exposing
     ( Checklist
     , Id
+    , empty
     , fromItems
     , get
     , insertCurrent
@@ -41,6 +42,11 @@ getList selector items =
 
         Done ->
             items.done
+
+
+empty : Checklist a
+empty =
+    fromItems { current = [], done = [] }
 
 
 fromItems : { current : List a, done : List a } -> Checklist a
