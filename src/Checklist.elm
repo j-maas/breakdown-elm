@@ -2,7 +2,6 @@ module Checklist exposing
     ( Checklist
     , Id
     , fromItems
-    , fromList
     , get
     , insert
     , mapCurrent
@@ -46,11 +45,6 @@ getList selector items =
 fromItems : { current : List a, done : List a } -> Checklist a
 fromItems items =
     Checklist items
-
-
-fromList : List a -> Checklist a
-fromList items =
-    Checklist { current = items, done = [] }
 
 
 insert : a -> Checklist a -> ( Id, Checklist a )
