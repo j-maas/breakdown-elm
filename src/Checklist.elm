@@ -1,4 +1,4 @@
-module Checklist exposing (Checklist, fromList, get, insert)
+module Checklist exposing (Checklist, Id, fromList, get, insert, map, remove, update)
 
 import List.Extra as List
 
@@ -31,3 +31,48 @@ insert item (Checklist existing) =
 get : Id -> Checklist a -> Maybe a
 get (Id index) (Checklist items) =
     List.getAt index items
+
+
+map : (Id -> a -> b) -> Checklist a -> List b
+map mapping (Checklist items) =
+    List.indexedMap (\index item -> mapping (Id index) item) items
+
+
+update : (a -> a) -> Id -> Checklist a -> Maybe (Checklist a)
+update mapping id checklist =
+    change (\a -> Just (mapping a)) id checklist
+
+
+remove : Id -> Checklist a -> Maybe (Checklist a)
+remove id checklist =
+    change (\a -> Nothing) id checklist
+
+
+change : (a -> Maybe a) -> Id -> Checklist a -> Maybe (Checklist a)
+change mapping (Id index) (Checklist items) =
+    if index < 0 then
+        Nothing
+
+    else
+        let
+            head =
+                List.take index items
+
+            tail =
+                List.drop index items
+        in
+        case tail of
+            x :: rest ->
+                let
+                    changed =
+                        case mapping x of
+                            Just a ->
+                                [ a ]
+
+                            Nothing ->
+                                []
+                in
+                Just (Checklist <| head ++ changed ++ rest)
+
+            _ ->
+                Nothing
