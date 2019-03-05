@@ -3,6 +3,7 @@ module TodoTree exposing
     , TodoNode(..)
     , TodoTree
     , empty
+    , encodeNode
     , fromItems
     , get
     , insertCurrent
@@ -13,11 +14,14 @@ module TodoTree exposing
     , mapDone
     , moveToCurrent
     , moveToDone
+    , nodeDecoder
     , remove
     , update
     )
 
 import Checklist exposing (Checklist)
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Todo exposing (Todo)
 
 
@@ -32,6 +36,44 @@ type TodoNode
 
 type alias Subtodos =
     Checklist TodoNode
+
+
+encodeNode : TodoNode -> Encode.Value
+encodeNode node =
+    case node of
+        SimpleTodo todo ->
+            Todo.encode todo
+
+        CompositTodo todo subtodos ->
+            Encode.object
+                [ ( "todo", Todo.encode todo )
+                , ( "current"
+                  , Encode.list identity <|
+                        Checklist.mapCurrent
+                            (\_ subnode -> encodeNode subnode)
+                            subtodos
+                  )
+                , ( "done"
+                  , Encode.list identity <|
+                        Checklist.mapDone
+                            (\_ subnode -> encodeNode subnode)
+                            subtodos
+                  )
+                ]
+
+
+nodeDecoder : Decode.Decoder TodoNode
+nodeDecoder =
+    Decode.oneOf
+        [ Todo.decoder |> Decode.map SimpleTodo
+        , Decode.map3
+            (\todo current done ->
+                CompositTodo todo (Checklist.fromItems { current = current, done = done })
+            )
+            (Decode.field "todo" Todo.decoder)
+            (Decode.field "current" (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
+            (Decode.field "done" (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
+        ]
 
 
 type Id

@@ -2,8 +2,11 @@ module TestTodoTree exposing (suite)
 
 import Checklist
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, bool, float, int, list, percentage, string)
+import Fuzz exposing (Fuzzer, bool, float, int, list, maybe, percentage, string)
+import Json.Decode as Decode
 import List.Extra as List
+import Random
+import Random.Extra as Random
 import Test exposing (..)
 import Todo exposing (Todo)
 import TodoTree exposing (TodoNode(..), TodoTree)
@@ -184,6 +187,48 @@ suite =
                         )
                     |> Maybe.map (Expect.equal expectedTree)
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
+        , fuzz todoNodeFuzzer "encoding and decoding results in same node" <|
+            \node ->
+                TodoTree.encodeNode node
+                    |> Decode.decodeValue TodoTree.nodeDecoder
+                    |> Expect.equal (Ok node)
+        ]
+
+
+todoNodeFuzzer : Fuzzer TodoNode
+todoNodeFuzzer =
+    let
+        shortList fuzzer =
+            Fuzz.map3
+                (\a b c -> List.filterMap identity [ a, b, c ])
+                (maybe fuzzer)
+                (maybe fuzzer)
+                (maybe fuzzer)
+
+        todoFuzzer =
+            Fuzz.map Todo.fromAction
+                NonEmptyString.fuzzer
+
+        simpleTodoFuzzer =
+            todoFuzzer |> Fuzz.map SimpleTodo
+
+        compositTodoFuzzer levels =
+            case levels of
+                0 ->
+                    simpleTodoFuzzer
+
+                n ->
+                    Fuzz.map3
+                        (\todo current done ->
+                            CompositTodo todo (Checklist.fromItems { current = current, done = done })
+                        )
+                        todoFuzzer
+                        (shortList <| compositTodoFuzzer (n - 1))
+                        (shortList <| compositTodoFuzzer (n - 1))
+    in
+    Fuzz.oneOf
+        [ simpleTodoFuzzer
+        , compositTodoFuzzer 2
         ]
 
 
