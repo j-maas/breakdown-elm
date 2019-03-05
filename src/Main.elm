@@ -239,7 +239,7 @@ update msg model =
                 updatedEditInfo =
                     { newEditInfo | newSubtodoInput = "" }
             in
-            ( { model | todos = Debug.log "newTodos" newTodos, editing = Just updatedEditInfo }, Cmd.none )
+            ( { model | todos = newTodos, editing = Just updatedEditInfo }, Cmd.none )
 
         ApplyEdit ->
             ( { model | editing = Nothing }, Cmd.none )
