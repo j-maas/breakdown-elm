@@ -12,27 +12,7 @@ import Utils.NonEmptyString as NonEmptyString
 suite : Test
 suite =
     describe "Todo"
-        [ test "creates todo with action" <|
-            \_ ->
-                let
-                    action =
-                        NonEmptyString.build 'C' "reate me!"
-                in
-                Todo.fromAction action
-                    |> Todo.action
-                    |> Expect.equal action
-        , test "readActions returns action as String" <|
-            \_ ->
-                Todo.fromAction (NonEmptyString.build 'R' "eturn me!")
-                    |> Todo.readAction
-                    |> Expect.equal "Return me!"
-        , test "updates action" <|
-            \_ ->
-                Todo.fromAction (NonEmptyString.build 'C' "ange me!")
-                    |> Todo.setAction (NonEmptyString.build 'C' "hanged.")
-                    |> Todo.readAction
-                    |> Expect.equal "Changed."
-        , test "encoding and decoding results in same todo" <|
+        [ test "encoding and decoding results in same todo" <|
             \_ ->
                 let
                     todo =
