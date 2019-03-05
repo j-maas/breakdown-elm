@@ -52,6 +52,7 @@ type alias EditingInfo =
     { todoId : TodoTree.Id
     , rawNewAction : String
     , oldAction : NonEmptyString
+    , newSubtodoInput : String
     }
 
 
@@ -108,7 +109,8 @@ type Msg
     | MoveToDone TodoTree.Id
     | Remove TodoTree.Id
     | StartEdit TodoTree.Id
-    | UpdateEdit TodoTree.Id NonEmptyString String
+    | UpdateEdit EditingInfo
+    | AddSubtodo EditingInfo
     | ApplyEdit
     | CancelEdit
 
@@ -189,6 +191,7 @@ update msg model =
                                 { todoId = id
                                 , rawNewAction = Todo.readAction todo
                                 , oldAction = Todo.action todo
+                                , newSubtodoInput = ""
                                 }
                       }
                     , Cmd.none
@@ -197,17 +200,10 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        UpdateEdit id oldAction rawNewAction ->
+        UpdateEdit newEditInfo ->
             let
-                editInfo : EditingInfo
-                editInfo =
-                    { todoId = id
-                    , rawNewAction = rawNewAction
-                    , oldAction = oldAction
-                    }
-
                 newTodos =
-                    NonEmptyString.fromString editInfo.rawNewAction
+                    NonEmptyString.fromString newEditInfo.rawNewAction
                         |> Maybe.andThen
                             (\newAction ->
                                 TodoTree.update
@@ -219,12 +215,31 @@ update msg model =
                                             CompositTodo t subtodos ->
                                                 CompositTodo (Todo.setAction newAction t) subtodos
                                     )
-                                    id
+                                    newEditInfo.todoId
                                     model.todos
                             )
                         |> Maybe.withDefault model.todos
             in
-            ( { model | todos = newTodos, editing = Just editInfo }, Cmd.none )
+            ( { model | todos = newTodos, editing = Just newEditInfo }, Cmd.none )
+
+        AddSubtodo newEditInfo ->
+            let
+                newTodos =
+                    NonEmptyString.fromString newEditInfo.newSubtodoInput
+                        |> Maybe.andThen
+                            (\newAction ->
+                                TodoTree.insertCurrentAt
+                                    newEditInfo.todoId
+                                    (SimpleTodo (Todo.fromAction newAction))
+                                    model.todos
+                            )
+                        |> Maybe.map Tuple.second
+                        |> Maybe.withDefault model.todos
+
+                updatedEditInfo =
+                    { newEditInfo | newSubtodoInput = "" }
+            in
+            ( { model | todos = Debug.log "newTodos" newTodos, editing = Just updatedEditInfo }, Cmd.none )
 
         ApplyEdit ->
             ( { model | editing = Nothing }, Cmd.none )
@@ -337,16 +352,21 @@ view model =
 
 newTodoInput : String -> Html Msg
 newTodoInput currentNewTodoInput =
+    newTodoInputTemplate currentNewTodoInput UpdateNewTodoInput AddNewTodo
+
+
+newTodoInputTemplate : String -> (String -> Msg) -> Msg -> Html Msg
+newTodoInputTemplate currentInput onInputMsg onSubmitMsg =
     Html.form
-        [ onSubmit AddNewTodo
+        [ onSubmit onSubmitMsg
         , css
             [ inputContainerStyle
             ]
         ]
         [ input
             [ type_ "text"
-            , onInput UpdateNewTodoInput
-            , value currentNewTodoInput
+            , onInput onInputMsg
+            , value currentInput
             , css
                 [ width (pct 100)
                 , boxSizing borderBox
@@ -438,19 +458,55 @@ viewTodo id selector node =
                 Done ->
                     ( "refresh", "Mark as to do", MoveToCurrent )
 
-        todo =
+        ( todo, maybeSubtodos ) =
             case node of
                 SimpleTodo t ->
-                    t
+                    ( t, Nothing )
 
-                CompositTodo t _ ->
-                    t
+                CompositTodo t subs ->
+                    ( t, Just subs )
     in
-    div [ css [ inputContainerStyle ], onClick (StartEdit id) ]
+    div
+        [ css
+            [ property "display" "grid"
+            , property "grid-template-columns" "1fr auto"
+            , property "grid-template-areas" "\"action button\" \"current current\" \"done done\""
+            , property "grid-gap" "0.5em"
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        , onClick (StartEdit id)
+        ]
         [ text (Todo.readAction todo)
         , div []
             [ button moveText iconName (moveMessage id)
             ]
+        , ul [ css [ todoListStyle, property "grid-area" "current" ] ]
+            (case maybeSubtodos of
+                Nothing ->
+                    []
+
+                Just subtodos ->
+                    TodoTree.mapCurrentSubtodos
+                        (\subId subNode ->
+                            li [] [ viewTodo subId Current subNode ]
+                        )
+                        id
+                        subtodos
+            )
+        , ul [ css [ textDecoration lineThrough, todoListStyle, property "grid-area" "done" ] ]
+            (case maybeSubtodos of
+                Nothing ->
+                    []
+
+                Just subtodos ->
+                    TodoTree.mapDoneSubtodos
+                        (\subId subNode ->
+                            li [] [ viewTodo subId Done subNode ]
+                        )
+                        id
+                        subtodos
+            )
         ]
 
 
@@ -465,11 +521,28 @@ viewEditTodo id node editInfo =
                 CompositTodo t _ ->
                     t
     in
-    div [ css [ inputContainerStyle ], onClick ApplyEdit ]
+    div
+        [ css
+            [ property "display" "grid"
+            , property "grid-template-columns" "auto"
+            , property "grid-gap" "0.5em"
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        , onClick ApplyEdit
+        ]
         [ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
-                , onInput (UpdateEdit id editInfo.oldAction)
+                , onInput
+                    (\newInput ->
+                        UpdateEdit
+                            { todoId = id
+                            , rawNewAction = newInput
+                            , oldAction = editInfo.oldAction
+                            , newSubtodoInput = editInfo.newSubtodoInput
+                            }
+                    )
                 , value editInfo.rawNewAction
                 , css [ width (pct 100), boxSizing borderBox ]
                 ]
@@ -479,6 +552,11 @@ viewEditTodo id node editInfo =
             [ button "Undo changes" "undo" CancelEdit
             , button "Remove" "delete" (Remove id)
             ]
+        , newTodoInputTemplate editInfo.newSubtodoInput
+            (\newSubtodoInput ->
+                UpdateEdit { editInfo | newSubtodoInput = newSubtodoInput }
+            )
+            (AddSubtodo editInfo)
         ]
 
 
