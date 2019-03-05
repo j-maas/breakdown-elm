@@ -3,7 +3,8 @@ module Checklist exposing
     , Id
     , fromItems
     , get
-    , insert
+    , insertCurrent
+    , insertDone
     , mapCurrent
     , mapDone
     , moveToCurrent
@@ -47,8 +48,8 @@ fromItems items =
     Checklist items
 
 
-insert : a -> Checklist a -> ( Id, Checklist a )
-insert item (Checklist existing) =
+insertCurrent : a -> Checklist a -> ( Id, Checklist a )
+insertCurrent item (Checklist existing) =
     let
         newItems =
             existing.current ++ [ item ]
@@ -57,6 +58,18 @@ insert item (Checklist existing) =
             List.length existing.current
     in
     ( Id Current index, Checklist { current = newItems, done = existing.done } )
+
+
+insertDone : a -> Checklist a -> ( Id, Checklist a )
+insertDone item (Checklist existing) =
+    let
+        newItems =
+            existing.done ++ [ item ]
+
+        index =
+            List.length existing.done
+    in
+    ( Id Done index, Checklist { current = existing.current, done = newItems } )
 
 
 get : Id -> Checklist a -> Maybe a

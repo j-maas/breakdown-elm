@@ -12,7 +12,7 @@ suite =
     describe "Checklist"
         [ fuzz2 checklistFuzzer int "inserts and retrieves item by id" <|
             \checklist item ->
-                Checklist.insert item checklist
+                Checklist.insertCurrent item checklist
                     |> (\( id, cl ) ->
                             Checklist.get id cl
                        )
