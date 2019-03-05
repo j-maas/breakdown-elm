@@ -11,7 +11,9 @@ module TodoTree exposing
     , insertDone
     , insertDoneAt
     , mapCurrent
+    , mapCurrentSubtodos
     , mapDone
+    , mapDoneSubtodos
     , moveToCurrent
     , moveToDone
     , nodeDecoder
@@ -115,64 +117,48 @@ insertDone node (TodoTree checklist) =
 
 
 insertCurrentAt : Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
-insertCurrentAt id node (TodoTree checklist) =
-    updateChecklistWithContext
-        (\foundId foundChecklist ->
-            let
-                item =
-                    Checklist.get foundId foundChecklist
-            in
-            case item of
-                Just (CompositTodo todo subtodos) ->
-                    let
-                        ( checklistId, newSubtodos ) =
-                            Checklist.insertCurrent node subtodos
-                    in
-                    Checklist.update
-                        (\_ -> CompositTodo todo newSubtodos)
-                        foundId
-                        foundChecklist
-                        |> Maybe.map
-                            (\updatedChecklist ->
-                                ( updatedChecklist, checklistId )
-                            )
-
-                _ ->
-                    Nothing
-        )
-        id
-        checklist
-        |> Maybe.map
-            (\( updatedChecklist, checklistId ) ->
-                ( appendId id checklistId, TodoTree updatedChecklist )
-            )
+insertCurrentAt =
+    insertAt Checklist.insertCurrent
 
 
 insertDoneAt : Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
-insertDoneAt id node (TodoTree checklist) =
+insertDoneAt =
+    insertAt Checklist.insertDone
+
+
+insertAt : (TodoNode -> Checklist TodoNode -> ( Checklist.Id, Checklist TodoNode )) -> Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
+insertAt insert id node (TodoTree checklist) =
     updateChecklistWithContext
         (\foundId foundChecklist ->
-            let
-                item =
-                    Checklist.get foundId foundChecklist
-            in
-            case item of
-                Just (CompositTodo todo subtodos) ->
-                    let
-                        ( checklistId, newSubtodos ) =
-                            Checklist.insertDone node subtodos
-                    in
-                    Checklist.update
-                        (\_ -> CompositTodo todo newSubtodos)
-                        foundId
-                        foundChecklist
-                        |> Maybe.map
-                            (\updatedChecklist ->
-                                ( updatedChecklist, checklistId )
-                            )
+            Checklist.get foundId foundChecklist
+                |> Maybe.map
+                    (\foundNode ->
+                        case foundNode of
+                            CompositTodo todo subtodos ->
+                                let
+                                    ( checklistId, newChecklist ) =
+                                        insert node subtodos
+                                in
+                                ( todo, checklistId, newChecklist )
 
-                _ ->
-                    Nothing
+                            SimpleTodo todo ->
+                                let
+                                    ( checklistId, newChecklist ) =
+                                        insert node Checklist.empty
+                                in
+                                ( todo, checklistId, newChecklist )
+                    )
+                |> Maybe.andThen
+                    (\( todo, checklistId, newSubtodos ) ->
+                        Checklist.update
+                            (\_ -> CompositTodo todo newSubtodos)
+                            foundId
+                            foundChecklist
+                            |> Maybe.map
+                                (\updatedChecklist ->
+                                    ( updatedChecklist, checklistId )
+                                )
+                    )
         )
         id
         checklist
