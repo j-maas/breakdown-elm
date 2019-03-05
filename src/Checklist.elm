@@ -7,6 +7,8 @@ module Checklist exposing
     , insert
     , mapCurrent
     , mapDone
+    , moveToCurrent
+    , moveToDone
     , remove
     , update
     )
@@ -99,6 +101,56 @@ update mapping id checklist =
 remove : Id -> Checklist a -> Maybe (Checklist a)
 remove id checklist =
     change (\a -> Nothing) id checklist
+
+
+moveToCurrent : Id -> Checklist a -> Maybe (Checklist a)
+moveToCurrent (Id selector index) (Checklist items) =
+    case selector of
+        Current ->
+            Just (Checklist items)
+
+        Done ->
+            let
+                maybeItem =
+                    List.getAt index items.done
+
+                newDone =
+                    List.removeAt index items.done
+            in
+            Maybe.map
+                (\item ->
+                    let
+                        newCurrent =
+                            items.current ++ [ item ]
+                    in
+                    Checklist { current = newCurrent, done = newDone }
+                )
+                maybeItem
+
+
+moveToDone : Id -> Checklist a -> Maybe (Checklist a)
+moveToDone (Id selector index) (Checklist items) =
+    case selector of
+        Done ->
+            Just (Checklist items)
+
+        Current ->
+            let
+                maybeItem =
+                    List.getAt index items.current
+
+                newCurrent =
+                    List.removeAt index items.current
+            in
+            Maybe.map
+                (\item ->
+                    let
+                        newDone =
+                            items.done ++ [ item ]
+                    in
+                    Checklist { current = newCurrent, done = newDone }
+                )
+                maybeItem
 
 
 change : (a -> Maybe a) -> Id -> Checklist a -> Maybe (Checklist a)

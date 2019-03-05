@@ -20,15 +20,33 @@ suite =
         , fuzz2 checkTransformOptionsFuzzer int "updates item by id" <|
             \checkTransformOptions newItem ->
                 checkTransform checkTransformOptions
-                    (Checklist.update (\_ -> newItem))
-                    (\index items ->
-                        List.setAt index newItem items
+                    (\id _ checklist -> Checklist.update (\_ -> newItem) id checklist)
+                    (\{ index, list } other ->
+                        ( List.setAt index newItem list, other )
                     )
         , fuzz checkTransformOptionsFuzzer "removes item by id" <|
             \checkTransformOptions ->
                 checkTransform checkTransformOptions
-                    Checklist.remove
-                    List.removeAt
+                    (\id _ checklist -> Checklist.remove id checklist)
+                    (\{ index, list } other -> ( List.removeAt index list, other ))
+        , fuzz checkTransformOptionsFuzzer "moves item to current" <|
+            \checkTransformOptions ->
+                let
+                    sanitizedOptions =
+                        { checkTransformOptions | selector = Done }
+                in
+                checkTransform sanitizedOptions
+                    (\id _ checklist -> Checklist.moveToCurrent id checklist)
+                    (\{ index, item, list } other -> ( List.removeAt index list, other ++ [ item ] ))
+        , fuzz checkTransformOptionsFuzzer "moves item to done" <|
+            \checkTransformOptions ->
+                let
+                    sanitizedOptions =
+                        { checkTransformOptions | selector = Current }
+                in
+                checkTransform sanitizedOptions
+                    (\id _ checklist -> Checklist.moveToDone id checklist)
+                    (\{ index, item, list } other -> ( List.removeAt index list, other ++ [ item ] ))
         ]
 
 
@@ -82,7 +100,11 @@ checkTransformOptionsFuzzer =
         (list int)
 
 
-checkTransform : CheckTransformOptions -> (Checklist.Id -> Checklist Int -> Maybe (Checklist Int)) -> (Int -> List Int -> List Int) -> Expectation
+checkTransform :
+    CheckTransformOptions
+    -> (Checklist.Id -> Int -> Checklist Int -> Maybe (Checklist Int))
+    -> ({ index : Int, item : Int, list : List Int } -> List Int -> ( List Int, List Int ))
+    -> Expectation
 checkTransform options transformChecklist transformList =
     let
         checklistBuilder nonEmpty aList =
@@ -107,13 +129,13 @@ checkTransform options transformChecklist transformList =
         check chosenIndex id item =
             let
                 newChecklist =
-                    transformChecklist id checklist
+                    transformChecklist id item checklist
 
-                newNonEmpty =
-                    transformList chosenIndex options.nonEmpty
+                ( newNonEmpty, newList ) =
+                    transformList { index = chosenIndex, item = item, list = options.nonEmpty } options.list
 
                 expectedChecklist =
-                    checklistBuilder newNonEmpty options.list
+                    checklistBuilder newNonEmpty newList
             in
             Expect.equal (Just expectedChecklist) newChecklist
     in
