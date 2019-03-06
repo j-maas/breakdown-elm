@@ -44,6 +44,10 @@ getList selector items =
             items.done
 
 
+
+-- BUILD
+
+
 empty : Checklist a
 empty =
     fromItems { current = [], done = [] }
@@ -78,6 +82,10 @@ insertDone item (Checklist existing) =
     ( Id Done index, Checklist { current = existing.current, done = newItems } )
 
 
+
+-- READ
+
+
 get : Id -> Checklist a -> Maybe a
 get (Id selector index) (Checklist items) =
     getList selector items
@@ -104,6 +112,10 @@ map mapping selector (Checklist items) =
             mapping (Id selector index) item
     in
     List.indexedMap idMapping list
+
+
+
+-- MODIFY
 
 
 update : (a -> a) -> Id -> Checklist a -> Maybe (Checklist a)

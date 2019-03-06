@@ -40,44 +40,6 @@ type alias Subtodos =
     Checklist TodoNode
 
 
-encodeNode : TodoNode -> Encode.Value
-encodeNode node =
-    case node of
-        SimpleTodo todo ->
-            Todo.encode todo
-
-        CompositTodo todo subtodos ->
-            Encode.object
-                [ ( "todo", Todo.encode todo )
-                , ( "current"
-                  , Encode.list identity <|
-                        Checklist.mapCurrent
-                            (\_ subnode -> encodeNode subnode)
-                            subtodos
-                  )
-                , ( "done"
-                  , Encode.list identity <|
-                        Checklist.mapDone
-                            (\_ subnode -> encodeNode subnode)
-                            subtodos
-                  )
-                ]
-
-
-nodeDecoder : Decode.Decoder TodoNode
-nodeDecoder =
-    Decode.oneOf
-        [ Todo.decoder |> Decode.map SimpleTodo
-        , Decode.map3
-            (\todo current done ->
-                CompositTodo todo (Checklist.fromItems { current = current, done = done })
-            )
-            (Decode.field "todo" Todo.decoder)
-            (Decode.field "current" (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
-            (Decode.field "done" (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
-        ]
-
-
 type Id
     = Id Checklist.Id (List Checklist.Id)
 
@@ -85,6 +47,10 @@ type Id
 appendId : Id -> Checklist.Id -> Id
 appendId (Id first following) newId =
     Id first (following ++ [ newId ])
+
+
+
+-- BUILD
 
 
 empty : TodoTree
@@ -168,6 +134,10 @@ insertAt insert id node (TodoTree checklist) =
             )
 
 
+
+-- READ
+
+
 mapCurrent : (Id -> TodoNode -> b) -> TodoTree -> List b
 mapCurrent mapping (TodoTree checklist) =
     Checklist.mapCurrent
@@ -213,6 +183,10 @@ get id (TodoTree checklist) =
             )
 
 
+
+-- MODIFY
+
+
 update : (TodoNode -> TodoNode) -> Id -> TodoTree -> Maybe TodoTree
 update mapping id (TodoTree checklist) =
     updateChecklist
@@ -255,6 +229,10 @@ moveToDone id (TodoTree checklist) =
         id
         checklist
         |> Maybe.map TodoTree
+
+
+
+-- HELPERS
 
 
 findChecklist : Id -> Checklist TodoNode -> Maybe ( Checklist.Id, Checklist TodoNode )
@@ -313,3 +291,57 @@ updateChecklist mapping id checklist =
         id
         checklist
         |> Maybe.map (\( updatedChecklist, _ ) -> updatedChecklist)
+
+
+
+-- JSON
+
+
+todoField =
+    "todo"
+
+
+currentField =
+    "current"
+
+
+doneField =
+    "done"
+
+
+encodeNode : TodoNode -> Encode.Value
+encodeNode node =
+    case node of
+        SimpleTodo todo ->
+            Todo.encode todo
+
+        CompositTodo todo subtodos ->
+            Encode.object
+                [ ( todoField, Todo.encode todo )
+                , ( currentField
+                  , Encode.list identity <|
+                        Checklist.mapCurrent
+                            (\_ subnode -> encodeNode subnode)
+                            subtodos
+                  )
+                , ( doneField
+                  , Encode.list identity <|
+                        Checklist.mapDone
+                            (\_ subnode -> encodeNode subnode)
+                            subtodos
+                  )
+                ]
+
+
+nodeDecoder : Decode.Decoder TodoNode
+nodeDecoder =
+    Decode.oneOf
+        [ Todo.decoder |> Decode.map SimpleTodo
+        , Decode.map3
+            (\todo current done ->
+                CompositTodo todo (Checklist.fromItems { current = current, done = done })
+            )
+            (Decode.field todoField Todo.decoder)
+            (Decode.field currentField (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
+            (Decode.field doneField (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
+        ]
