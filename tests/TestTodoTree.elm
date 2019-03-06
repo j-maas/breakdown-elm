@@ -21,18 +21,21 @@ suite =
                 let
                     testTree =
                         todoTreeForTest
-                            { current = [ L "Hi", N "Children" { current = [], done = [ L "Other hi" ] } ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            { c =
+                                [ L "Hi"
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
                         todoTreeForTest
-                            { current =
+                            { c =
                                 [ L "Hi"
-                                , N "Children" { current = [], done = [ L "Other hi" ] }
-                                , N "Inserted" { current = [ L "Inserted, too" ], done = [] }
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                , N "Inserted" { c = [ L "Inserted, too" ], d = [] }
                                 ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
                 TodoTree.insertCurrent
@@ -54,18 +57,18 @@ suite =
                 let
                     testTree =
                         todoTreeForTest
-                            { current = [ L "Hi", N "Children" { current = [], done = [ L "Other hi" ] } ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
                         todoTreeForTest
-                            { current =
+                            { c =
                                 [ L "Hi"
-                                , N "Children" { current = [], done = [ L "Other hi" ] }
-                                , N "Inserted" { current = [ L "Updated" ], done = [] }
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                , N "Inserted" { c = [ L "Updated" ], d = [] }
                                 ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
                 TodoTree.insertCurrent
@@ -90,18 +93,18 @@ suite =
                 let
                     testTree =
                         todoTreeForTest
-                            { current = [ L "Hi", N "Children" { current = [], done = [ L "Other hi" ] } ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
                         todoTreeForTest
-                            { current =
+                            { c =
                                 [ L "Hi"
-                                , N "Children" { current = [], done = [ L "Other hi" ] }
-                                , N "Inserted" { current = [], done = [] }
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                , N "Inserted" { c = [], d = [] }
                                 ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
                 TodoTree.insertCurrent
@@ -124,18 +127,18 @@ suite =
                 let
                     testTree =
                         todoTreeForTest
-                            { current = [ L "Hi", N "Children" { current = [], done = [ L "Other hi" ] } ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
                         todoTreeForTest
-                            { current =
+                            { c =
                                 [ L "Hi"
-                                , N "Children" { current = [], done = [ L "Other hi" ] }
-                                , N "Inserted" { current = [ L "Inserted, too" ], done = [] }
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                , N "Inserted" { c = [ L "Inserted, too" ], d = [] }
                                 ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
                 TodoTree.insertCurrent
@@ -158,18 +161,18 @@ suite =
                 let
                     testTree =
                         todoTreeForTest
-                            { current = [ L "Hi", N "Children" { current = [], done = [ L "Other hi" ] } ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
                         todoTreeForTest
-                            { current =
+                            { c =
                                 [ L "Hi"
-                                , N "Children" { current = [], done = [ L "Other hi" ] }
-                                , N "Inserted" { current = [], done = [ L "Inserted, too" ] }
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                , N "Inserted" { c = [], d = [ L "Inserted, too" ] }
                                 ]
-                            , done = [ N "More children" { current = [ L "Hi" ], done = [] } ]
+                            , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
                 TodoTree.insertCurrent
@@ -233,7 +236,7 @@ todoNodeFuzzer =
 
 
 type TestTree
-    = N String { current : List TestTree, done : List TestTree }
+    = N String { c : List TestTree, d : List TestTree }
     | L String
 
 
@@ -243,7 +246,7 @@ makeTodo first rest =
         |> Todo.fromAction
 
 
-todoTreeForTest : { current : List TestTree, done : List TestTree } -> TodoTree
+todoTreeForTest : { c : List TestTree, d : List TestTree } -> TodoTree
 todoTreeForTest init =
     let
         mapTree tree =
@@ -254,8 +257,8 @@ todoTreeForTest init =
                             (\action ->
                                 CompositTodo (Todo.fromAction action)
                                     (Checklist.fromItems
-                                        { current = List.filterMap mapTree children.current
-                                        , done = List.filterMap mapTree children.done
+                                        { current = List.filterMap mapTree children.c
+                                        , done = List.filterMap mapTree children.d
                                         }
                                     )
                             )
@@ -265,6 +268,6 @@ todoTreeForTest init =
                         |> Maybe.map (\action -> SimpleTodo (Todo.fromAction action))
     in
     TodoTree.fromItems
-        { current = List.filterMap mapTree init.current
-        , done = List.filterMap mapTree init.done
+        { current = List.filterMap mapTree init.c
+        , done = List.filterMap mapTree init.d
         }
