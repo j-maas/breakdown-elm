@@ -19,16 +19,10 @@ import Html.Styled.Attributes exposing (attribute, css, title, type_, value)
 import Html.Styled.Events exposing (onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
 import Json.Encode as Encode
-import List.Zipper as Zipper exposing (Zipper)
-import SelectCollection exposing (SelectCollection)
 import Todo exposing (Todo)
+import TodoTree exposing (TodoNode(..), TodoTree)
 import Url exposing (Url)
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
-import Utils.ZipperUtils as Zipper
-
-
-type alias TodoCollection =
-    SelectCollection Todo
 
 
 main =
@@ -49,15 +43,16 @@ main =
 type alias Model =
     { key : Nav.Key
     , newTodoInput : String
-    , todos : TodoCollection
+    , todos : TodoTree
     , editing : Maybe EditingInfo
     }
 
 
 type alias EditingInfo =
-    { todoId : SelectCollection.Id
+    { todoId : TodoTree.Id
     , rawNewAction : String
     , oldAction : NonEmptyString
+    , newSubtodoInput : String
     }
 
 
@@ -66,7 +61,7 @@ init flags _ key =
     let
         todos =
             decodeFlags flags
-                |> Maybe.withDefault SelectCollection.empty
+                |> Maybe.withDefault TodoTree.empty
     in
     ( { key = key
       , newTodoInput = ""
@@ -77,7 +72,7 @@ init flags _ key =
     )
 
 
-decodeFlags : Decode.Value -> Maybe TodoCollection
+decodeFlags : Decode.Value -> Maybe TodoTree
 decodeFlags flags =
     let
         currentTodos =
@@ -89,13 +84,13 @@ decodeFlags flags =
         decodeTodos field value =
             Decode.decodeValue
                 (Decode.field field
-                    (Decode.list Todo.decoder)
+                    (Decode.list TodoTree.nodeDecoder)
                 )
                 value
     in
     Result.map2
         (\current done ->
-            SelectCollection.init { current = current, done = done }
+            TodoTree.fromItems { current = current, done = done }
         )
         currentTodos
         doneTodos
@@ -110,10 +105,12 @@ type Msg
     = NoOp
     | UpdateNewTodoInput String
     | AddNewTodo
-    | Move SelectCollection.Id
-    | Remove SelectCollection.Id
-    | StartEdit SelectCollection.Id
-    | UpdateEdit SelectCollection.Id NonEmptyString String
+    | MoveToCurrent TodoTree.Id
+    | MoveToDone TodoTree.Id
+    | Remove TodoTree.Id
+    | StartEdit TodoTree.Id
+    | UpdateEdit EditingInfo
+    | AddSubtodo EditingInfo
     | ApplyEdit
     | CancelEdit
 
@@ -141,11 +138,13 @@ update msg model =
                     let
                         todo : Todo
                         todo =
-                            Todo.from action SelectCollection.empty
+                            Todo.from action
                     in
                     ( { model
                         | newTodoInput = ""
-                        , todos = SelectCollection.put SelectCollection.Current todo model.todos
+                        , todos =
+                            TodoTree.insertCurrent (SimpleTodo todo) model.todos
+                                |> Tuple.second
                       }
                     , Cmd.none
                     )
@@ -153,26 +152,38 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        Move id ->
+        MoveToCurrent id ->
             ( invalidateTodoWithId id
                 model
-                SelectCollection.move
+                (TodoTree.moveToCurrent id)
+            , Cmd.none
+            )
+
+        MoveToDone id ->
+            ( invalidateTodoWithId id
+                model
+                (TodoTree.moveToDone id)
             , Cmd.none
             )
 
         Remove id ->
             ( invalidateTodoWithId id
                 model
-                SelectCollection.remove
+                (TodoTree.remove id)
             , Cmd.none
             )
 
         StartEdit id ->
-            case SelectCollection.find id model.todos of
-                Just zipper ->
+            case TodoTree.get id model.todos of
+                Just node ->
                     let
                         todo =
-                            SelectCollection.current zipper
+                            case node of
+                                SimpleTodo t ->
+                                    t
+
+                                CompositTodo t _ ->
+                                    t
                     in
                     ( { model
                         | editing =
@@ -180,6 +191,7 @@ update msg model =
                                 { todoId = id
                                 , rawNewAction = Todo.readAction todo
                                 , oldAction = Todo.action todo
+                                , newSubtodoInput = ""
                                 }
                       }
                     , Cmd.none
@@ -188,28 +200,46 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        UpdateEdit id oldAction rawNewAction ->
+        UpdateEdit newEditInfo ->
             let
-                editInfo : EditingInfo
-                editInfo =
-                    { todoId = id
-                    , rawNewAction = rawNewAction
-                    , oldAction = oldAction
-                    }
-
                 newTodos =
-                    NonEmptyString.fromString editInfo.rawNewAction
+                    NonEmptyString.fromString newEditInfo.rawNewAction
                         |> Maybe.andThen
                             (\newAction ->
-                                SelectCollection.find editInfo.todoId model.todos
-                                    |> Maybe.map
-                                        (\zipper ->
-                                            SelectCollection.mapItem (Todo.setAction newAction) zipper
-                                        )
+                                TodoTree.update
+                                    (\node ->
+                                        case node of
+                                            SimpleTodo t ->
+                                                SimpleTodo (Todo.setAction newAction t)
+
+                                            CompositTodo t subtodos ->
+                                                CompositTodo (Todo.setAction newAction t) subtodos
+                                    )
+                                    newEditInfo.todoId
+                                    model.todos
                             )
                         |> Maybe.withDefault model.todos
             in
-            ( { model | todos = newTodos, editing = Just editInfo }, Cmd.none )
+            ( { model | todos = newTodos, editing = Just newEditInfo }, Cmd.none )
+
+        AddSubtodo newEditInfo ->
+            let
+                newTodos =
+                    NonEmptyString.fromString newEditInfo.newSubtodoInput
+                        |> Maybe.andThen
+                            (\newAction ->
+                                TodoTree.insertCurrentAt
+                                    newEditInfo.todoId
+                                    (SimpleTodo (Todo.fromAction newAction))
+                                    model.todos
+                            )
+                        |> Maybe.map Tuple.second
+                        |> Maybe.withDefault model.todos
+
+                updatedEditInfo =
+                    { newEditInfo | newSubtodoInput = "" }
+            in
+            ( { model | todos = newTodos, editing = Just updatedEditInfo }, Cmd.none )
 
         ApplyEdit ->
             ( { model | editing = Nothing }, Cmd.none )
@@ -220,11 +250,17 @@ update msg model =
                     model.editing
                         |> Maybe.andThen
                             (\editInfo ->
-                                SelectCollection.find editInfo.todoId model.todos
-                                    |> Maybe.map
-                                        (\zipper ->
-                                            SelectCollection.mapItem (Todo.setAction editInfo.oldAction) zipper
-                                        )
+                                TodoTree.update
+                                    (\node ->
+                                        case node of
+                                            SimpleTodo t ->
+                                                SimpleTodo (Todo.setAction editInfo.oldAction t)
+
+                                            CompositTodo t subtodos ->
+                                                CompositTodo (Todo.setAction editInfo.oldAction t) subtodos
+                                    )
+                                    editInfo.todoId
+                                    model.todos
                             )
                         |> Maybe.withDefault model.todos
             in
@@ -235,7 +271,7 @@ update msg model =
            )
 
 
-invalidateTodoWithId : SelectCollection.Id -> Model -> (SelectCollection.Zipper Todo -> TodoCollection) -> Model
+invalidateTodoWithId : TodoTree.Id -> Model -> (TodoTree -> Maybe TodoTree) -> Model
 invalidateTodoWithId id model doUpdate =
     let
         newEditing =
@@ -250,14 +286,15 @@ invalidateTodoWithId id model doUpdate =
                 model.editing
 
         newTodos =
-            case SelectCollection.find id model.todos of
-                Just zipper ->
-                    doUpdate zipper
-
-                Nothing ->
-                    model.todos
+            doUpdate model.todos
+                |> Maybe.withDefault model.todos
     in
     { model | editing = newEditing, todos = newTodos }
+
+
+type Selector
+    = Current
+    | Done
 
 
 {-| Command that saves the tasks collections persistently.
@@ -266,11 +303,16 @@ save : Model -> Cmd msg
 save model =
     let
         getTodos selector =
-            SelectCollection.mapToList selector (\_ todo -> todo)
+            case selector of
+                Current ->
+                    TodoTree.mapCurrent (\_ todo -> todo)
+
+                Done ->
+                    TodoTree.mapDone (\_ todo -> todo)
     in
     Encode.object
-        [ ( "currentTodos", Encode.list Todo.encode <| getTodos SelectCollection.Current model.todos )
-        , ( "doneTodos", Encode.list Todo.encode <| getTodos SelectCollection.Done model.todos )
+        [ ( "currentTodos", Encode.list TodoTree.encodeNode <| getTodos Current model.todos )
+        , ( "doneTodos", Encode.list TodoTree.encodeNode <| getTodos Done model.todos )
         ]
         |> saveRaw
 
@@ -310,16 +352,21 @@ view model =
 
 newTodoInput : String -> Html Msg
 newTodoInput currentNewTodoInput =
+    newTodoInputTemplate currentNewTodoInput UpdateNewTodoInput AddNewTodo
+
+
+newTodoInputTemplate : String -> (String -> Msg) -> Msg -> Html Msg
+newTodoInputTemplate currentInput onInputMsg onSubmitMsg =
     Html.form
-        [ onSubmit AddNewTodo
+        [ onSubmit onSubmitMsg
         , css
             [ inputContainerStyle
             ]
         ]
         [ input
             [ type_ "text"
-            , onInput UpdateNewTodoInput
-            , value currentNewTodoInput
+            , onInput onInputMsg
+            , value currentInput
             , css
                 [ width (pct 100)
                 , boxSizing borderBox
@@ -334,11 +381,11 @@ newTodoInput currentNewTodoInput =
         ]
 
 
-viewCurrentTodos : TodoCollection -> Maybe EditingInfo -> Html Msg
+viewCurrentTodos : TodoTree -> Maybe EditingInfo -> Html Msg
 viewCurrentTodos todos editing =
     ul [ css [ todoListStyle ] ]
         (todos
-            |> SelectCollection.mapToList SelectCollection.Current
+            |> TodoTree.mapCurrent
                 (\id todo ->
                     let
                         currentEdit =
@@ -358,17 +405,17 @@ viewCurrentTodos todos editing =
                                 viewEditTodo id todo editInfo
 
                             Nothing ->
-                                viewTodo id todo
+                                viewTodo id Current todo
                         ]
                 )
         )
 
 
-viewDoneTodos : TodoCollection -> Maybe EditingInfo -> Html Msg
+viewDoneTodos : TodoTree -> Maybe EditingInfo -> Html Msg
 viewDoneTodos todos editing =
     ul [ css [ textDecoration lineThrough, todoListStyle ] ]
         (todos
-            |> SelectCollection.mapToList SelectCollection.Done
+            |> TodoTree.mapDone
                 (\id todo ->
                     let
                         currentEdit =
@@ -394,38 +441,108 @@ viewDoneTodos todos editing =
                                 viewEditTodo id todo editInfo
 
                             Nothing ->
-                                viewTodo id todo
+                                viewTodo id Done todo
                         ]
                 )
         )
 
 
-viewTodo : SelectCollection.Id -> Todo -> Html Msg
-viewTodo id todo =
+viewTodo : TodoTree.Id -> Selector -> TodoNode -> Html Msg
+viewTodo id selector node =
     let
-        ( iconName, moveText ) =
-            case SelectCollection.selectorFromId id of
-                SelectCollection.Current ->
-                    ( "done", "Mark as done" )
+        ( iconName, moveText, moveMessage ) =
+            case selector of
+                Current ->
+                    ( "done", "Mark as done", MoveToDone )
 
-                SelectCollection.Done ->
-                    ( "refresh", "Mark as to do" )
+                Done ->
+                    ( "refresh", "Mark as to do", MoveToCurrent )
+
+        ( todo, maybeSubtodos ) =
+            case node of
+                SimpleTodo t ->
+                    ( t, Nothing )
+
+                CompositTodo t subs ->
+                    ( t, Just subs )
     in
-    div [ css [ inputContainerStyle ], onClick (StartEdit id) ]
+    div
+        [ css
+            [ property "display" "grid"
+            , property "grid-template-columns" "1fr auto"
+            , property "grid-template-areas" "\"action button\" \"current current\" \"done done\""
+            , property "grid-gap" "0.5em"
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        , onClick (StartEdit id)
+        ]
         [ text (Todo.readAction todo)
         , div []
-            [ button moveText iconName (Move id)
+            [ button moveText iconName (moveMessage id)
             ]
+        , ul [ css [ todoListStyle, property "grid-area" "current" ] ]
+            (case maybeSubtodos of
+                Nothing ->
+                    []
+
+                Just subtodos ->
+                    TodoTree.mapCurrentSubtodos
+                        (\subId subNode ->
+                            li [] [ viewTodo subId Current subNode ]
+                        )
+                        id
+                        subtodos
+            )
+        , ul [ css [ textDecoration lineThrough, todoListStyle, property "grid-area" "done" ] ]
+            (case maybeSubtodos of
+                Nothing ->
+                    []
+
+                Just subtodos ->
+                    TodoTree.mapDoneSubtodos
+                        (\subId subNode ->
+                            li [] [ viewTodo subId Done subNode ]
+                        )
+                        id
+                        subtodos
+            )
         ]
 
 
-viewEditTodo : SelectCollection.Id -> Todo -> EditingInfo -> Html Msg
-viewEditTodo id todo editInfo =
-    div [ css [ inputContainerStyle ], onClick ApplyEdit ]
+viewEditTodo : TodoTree.Id -> TodoNode -> EditingInfo -> Html Msg
+viewEditTodo id node editInfo =
+    let
+        todo =
+            case node of
+                SimpleTodo t ->
+                    t
+
+                CompositTodo t _ ->
+                    t
+    in
+    div
+        [ css
+            [ property "display" "grid"
+            , property "grid-template-columns" "auto"
+            , property "grid-gap" "0.5em"
+            , alignItems center
+            , padding (em 0.5)
+            ]
+        , onClick ApplyEdit
+        ]
         [ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
-                , onInput (UpdateEdit id editInfo.oldAction)
+                , onInput
+                    (\newInput ->
+                        UpdateEdit
+                            { todoId = id
+                            , rawNewAction = newInput
+                            , oldAction = editInfo.oldAction
+                            , newSubtodoInput = editInfo.newSubtodoInput
+                            }
+                    )
                 , value editInfo.rawNewAction
                 , css [ width (pct 100), boxSizing borderBox ]
                 ]
@@ -435,6 +552,11 @@ viewEditTodo id todo editInfo =
             [ button "Undo changes" "undo" CancelEdit
             , button "Remove" "delete" (Remove id)
             ]
+        , newTodoInputTemplate editInfo.newSubtodoInput
+            (\newSubtodoInput ->
+                UpdateEdit { editInfo | newSubtodoInput = newSubtodoInput }
+            )
+            (AddSubtodo editInfo)
         ]
 
 
