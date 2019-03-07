@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import Checklist exposing (Checklist)
 import Css exposing (..)
 import Css.Global as Global
 import Html.Styled as Html
@@ -344,8 +345,7 @@ view model =
                     ]
                 ]
             , newTodoInput model.newTodoInput
-            , viewCurrentTodos model.todos model.editing
-            , viewDoneTodos model.todos model.editing
+            , viewTodoList model.todos model.editing
             ]
     }
 
@@ -382,7 +382,19 @@ newTodoInputTemplate currentInput msgs =
         ]
 
 
-viewCurrentTodos : TodoTree -> Maybe EditingInfo -> Html Msg
+type alias TodoList =
+    Checklist TodoNode
+
+
+viewTodoList : TodoList -> Maybe EditingInfo -> Html Msg
+viewTodoList todos editing =
+    div []
+        [ viewCurrentTodos todos editing
+        , viewDoneTodos todos editing
+        ]
+
+
+viewCurrentTodos : TodoList -> Maybe EditingInfo -> Html Msg
 viewCurrentTodos todos editing =
     ul [ css [ todoListStyle ] ]
         (todos
@@ -554,7 +566,6 @@ viewEditTodo id node editInfo =
             , button "Remove" "delete" (Remove id)
             ]
         , newTodoInputTemplate editInfo.newSubtodoInput
-            (\newSubtodoInput ->
             { onInput =
                 \newSubtodoInput ->
                     UpdateEdit { editInfo | newSubtodoInput = newSubtodoInput }
