@@ -338,18 +338,17 @@ view model =
     { title = "Breakdown"
     , body =
         List.map Html.toUnstyled
-            ([ Global.global
+            [ Global.global
                 [ Global.body
                     [ maxWidth (em 26)
                     , margin2 (em 1) auto
                     , fontFamily sansSerif
                     ]
                 ]
-             ]
-                ++ viewTodoTree model.todos
-                    model.editing
-                    model.newTodoInput
-            )
+            , viewTodoTree model.todos
+                model.editing
+                model.newTodoInput
+            ]
     }
 
 
@@ -373,6 +372,8 @@ newTodoInputTemplate currentInput msgs =
         [ onSubmit msgs.onSubmit
         , css
             [ inputContainerStyle
+            , todoLeftMarginStyle
+            , todoRightMarginStyle
             ]
         ]
         [ input
@@ -393,44 +394,66 @@ newTodoInputTemplate currentInput msgs =
         ]
 
 
-viewTodoTree : TodoTree -> Maybe EditingInfo -> String -> List (Html Msg)
+inputContainerStyle : Css.Style
+inputContainerStyle =
+    Css.batch
+        [ property "display" "grid"
+        , property "grid-template-columns" "1fr auto"
+        , property "grid-gap" "0.5em"
+        , alignItems center
+        , todoVerticalMarginStyle
+        ]
+
+
+viewTodoTree : TodoTree -> Maybe EditingInfo -> String -> Html Msg
 viewTodoTree todos editing currentInput =
-    [ ul [ css [ todoListStyle ] ]
-        ([ newTodoInput currentInput ]
-            ++ TodoTree.mapCurrent
-                (viewTodoListItem Current editing)
+    div [ css [ todoTreeStyle ] ]
+        [ ul [ css [ todoListStyle ] ]
+            ([ li [ css [ todoListEntryStyle ] ] [ newTodoInput currentInput ] ]
+                ++ TodoTree.mapCurrent
+                    (viewTodoListItem Current editing)
+                    todos
+            )
+        , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
+            (TodoTree.mapDone
+                (viewTodoListItem Done editing)
                 todos
-        )
-    , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
-        (TodoTree.mapDone
-            (viewTodoListItem Done editing)
-            todos
-        )
-    ]
+            )
+        ]
 
 
-viewSubtodoTree : TodoTree.Id -> Subtodos -> Maybe EditingInfo -> List (Html Msg)
+viewSubtodoTree : TodoTree.Id -> Subtodos -> Maybe EditingInfo -> Html Msg
 viewSubtodoTree id subtodos editing =
-    [ ul [ css [ todoListStyle ] ]
-        ((case editingForCurrent id editing of
-            Just editInfo ->
-                [ newSubtodoInput id editInfo ]
+    div [ css [ todoTreeStyle ] ]
+        [ ul [ css [ todoListStyle ] ]
+            ((case editingForCurrent id editing of
+                Just editInfo ->
+                    [ li [ css [ todoListEntryStyle ] ] [ newSubtodoInput id editInfo ] ]
 
-            Nothing ->
-                []
-         )
-            ++ TodoTree.mapCurrentSubtodos
-                (viewTodoListItem Current editing)
+                Nothing ->
+                    []
+             )
+                ++ TodoTree.mapCurrentSubtodos
+                    (viewTodoListItem Current editing)
+                    id
+                    subtodos
+            )
+        , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
+            (TodoTree.mapDoneSubtodos
+                (viewTodoListItem Done editing)
                 id
                 subtodos
-        )
-    , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
-        (TodoTree.mapDoneSubtodos
-            (viewTodoListItem Done editing)
-            id
-            subtodos
-        )
-    ]
+            )
+        ]
+
+
+todoTreeStyle : Css.Style
+todoTreeStyle =
+    Css.batch
+        [ property "display" "grid"
+        , property "grid-template-columns" "auto"
+        , property "grid-gap" "0.5em"
+        ]
 
 
 editingForCurrent : TodoTree.Id -> Maybe EditingInfo -> Maybe EditingInfo
@@ -470,17 +493,27 @@ todoListStyle =
     Css.batch
         [ listStyle none
         , padding zero
+        , margin zero
+        , todoListEntryBorderStyle borderLeft3
+        , todoListEntryBorderStyle borderRight3
+        , Global.descendants [ Global.typeSelector "ul" [ borderRight zero ] ]
         ]
 
 
 todoListEntryStyle : Css.Style
 todoListEntryStyle =
     Css.batch
-        [ borderBottom3 (px 1) solid (hsla 0.0 0.0 0.0 0.1)
+        [ Global.adjacentSiblings [ Global.typeSelector "li" [ borderTop zero ] ]
+        , todoListEntryBorderStyle borderTop3
+        , todoListEntryBorderStyle borderBottom3
         , hover
             [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
             ]
         ]
+
+
+todoListEntryBorderStyle border =
+    border (px 1) solid (hsla 0.0 0.0 0.0 0.1)
 
 
 viewTodoNode : Selector -> Maybe EditingInfo -> TodoTree.Id -> TodoNode -> Html Msg
@@ -508,13 +541,13 @@ viewTodoNode selector editing id node =
             ]
         , onClick (StartEdit id)
         ]
-        ([ text (Todo.readAction todo)
-         , div [] [ button moveText iconName (moveMessage id) ]
+        ([ div [ css [ todoLeftMarginStyle ] ] [ text (Todo.readAction todo) ]
+         , div [ css [ todoRightMarginStyle ] ] [ button moveText iconName (moveMessage id) ]
          ]
             ++ (case maybeSubtodos of
                     Just subtodos ->
-                        [ div [ css [ property "grid-column" "1 / 3" ] ]
-                            (viewSubtodoTree id subtodos editing)
+                        [ div [ css [ subtodoTreeStyle ] ]
+                            [ viewSubtodoTree id subtodos editing ]
                         ]
 
                     Nothing ->
@@ -540,7 +573,7 @@ viewEditNode id node editInfo =
             ]
         , onClick ApplyEdit
         ]
-        ([ Html.form [ onSubmit ApplyEdit ]
+        [ Html.form [ onSubmit ApplyEdit, css [ todoLeftMarginStyle ] ]
             [ input
                 [ type_ "text"
                 , onInput
@@ -557,15 +590,13 @@ viewEditNode id node editInfo =
                 ]
                 []
             ]
-         , div []
+        , div [ css [ todoRightMarginStyle ] ]
             [ button "Undo changes" "undo" CancelEdit
             , button "Remove" "delete" (Remove id)
             ]
-         ]
-            ++ [ div [ css [ property "grid-column" "1 / 3" ] ]
-                    (viewSubtodoTree id subtodos (Just editInfo))
-               ]
-        )
+        , div [ css [ subtodoTreeStyle ] ]
+            [ viewSubtodoTree id subtodos (Just editInfo) ]
+        ]
 
 
 todoContainerStyle : Css.Style
@@ -573,8 +604,40 @@ todoContainerStyle =
     Css.batch
         [ property "display" "grid"
         , property "grid-template-columns" "1fr auto"
+        , property "grid-gap" "0.5em"
         , alignItems center
-        , padding (em 0.5)
+        , paddingTop (em 0.5)
+        , paddingBottom (em 0.5)
+        ]
+
+
+todoMargin =
+    em 0.5
+
+
+todoVerticalMarginStyle : Css.Style
+todoVerticalMarginStyle =
+    Css.batch
+        [ marginTop todoMargin
+        , marginBottom todoMargin
+        ]
+
+
+todoLeftMarginStyle : Css.Style
+todoLeftMarginStyle =
+    marginLeft todoMargin
+
+
+todoRightMarginStyle : Css.Style
+todoRightMarginStyle =
+    marginRight todoMargin
+
+
+subtodoTreeStyle : Css.Style
+subtodoTreeStyle =
+    Css.batch
+        [ property "grid-column" "1 / 3"
+        , paddingLeft (em 1)
         ]
 
 
@@ -629,17 +692,6 @@ icon iconName =
         , backgroundSize (pct 75)
         , width (em 3)
         , height (em 3)
-        ]
-
-
-inputContainerStyle : Css.Style
-inputContainerStyle =
-    Css.batch
-        [ property "display" "grid"
-        , property "grid-template-columns" "1fr auto"
-        , property "grid-gap" "0.5em"
-        , alignItems center
-        , padding (em 0.5)
         ]
 
 
