@@ -359,22 +359,12 @@ newTodoInput currentInput =
         { onInput = UpdateNewTodoInput, onSubmit = AddNewTodo }
 
 
-newSubtodoInput : TodoTree.Id -> Maybe EditingInfo -> Html Msg
-newSubtodoInput id editing =
-    let
-        ( currentInput, onInput, onSubmit ) =
-            case editing of
-                Just edit ->
-                    ( edit.newSubtodoInput
-                    , \newInput -> UpdateEdit { edit | newSubtodoInput = newInput }
-                    , AddSubtodo edit
-                    )
-
-                Nothing ->
-                    ( "", \_ -> NoOp, NoOp )
-    in
-    newTodoInputTemplate currentInput
-        { onInput = onInput, onSubmit = onSubmit }
+newSubtodoInput : TodoTree.Id -> EditingInfo -> Html Msg
+newSubtodoInput id editInfo =
+    newTodoInputTemplate editInfo.newSubtodoInput
+        { onInput = \newInput -> UpdateEdit { editInfo | newSubtodoInput = newInput }
+        , onSubmit = AddSubtodo editInfo
+        }
 
 
 newTodoInputTemplate : String -> { onInput : String -> Msg, onSubmit : Msg } -> Html Msg
@@ -422,7 +412,13 @@ viewTodoTree todos editing currentInput =
 viewSubtodoTree : TodoTree.Id -> Subtodos -> Maybe EditingInfo -> List (Html Msg)
 viewSubtodoTree id subtodos editing =
     [ ul [ css [ todoListStyle ] ]
-        ([ newSubtodoInput id editing ]
+        ((case editingForCurrent id editing of
+            Just editInfo ->
+                [ newSubtodoInput id editInfo ]
+
+            Nothing ->
+                []
+         )
             ++ TodoTree.mapCurrentSubtodos
                 (viewTodoListItem Current editing)
                 id
@@ -437,6 +433,11 @@ viewSubtodoTree id subtodos editing =
     ]
 
 
+editingForCurrent : TodoTree.Id -> Maybe EditingInfo -> Maybe EditingInfo
+editingForCurrent id editing =
+    Maybe.filter (\edit -> edit.todoId == id) editing
+
+
 viewTodoListItem : Selector -> Maybe EditingInfo -> TodoTree.Id -> TodoNode -> Html Msg
 viewTodoListItem selector editing id node =
     let
@@ -447,9 +448,6 @@ viewTodoListItem selector editing id node =
 
                 _ ->
                     []
-
-        editingInfoForCurrent =
-            Maybe.filter (\edit -> edit.todoId == id) editing
     in
     li
         [ css
@@ -458,7 +456,7 @@ viewTodoListItem selector editing id node =
                 ++ extraStyles
             )
         ]
-        [ case editingInfoForCurrent of
+        [ case editingForCurrent id editing of
             Just edit ->
                 viewEditNode id node edit
 
@@ -515,7 +513,9 @@ viewTodoNode selector editing id node =
          ]
             ++ (case maybeSubtodos of
                     Just subtodos ->
-                        viewSubtodoTree id subtodos editing
+                        [ div [ css [ property "grid-column" "1 / 3" ] ]
+                            (viewSubtodoTree id subtodos editing)
+                        ]
 
                     Nothing ->
                         []
@@ -562,7 +562,9 @@ viewEditNode id node editInfo =
             , button "Remove" "delete" (Remove id)
             ]
          ]
-            ++ viewSubtodoTree id subtodos (Just editInfo)
+            ++ [ div [ css [ property "grid-column" "1 / 3" ] ]
+                    (viewSubtodoTree id subtodos (Just editInfo))
+               ]
         )
 
 
