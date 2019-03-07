@@ -352,20 +352,21 @@ view model =
 
 newTodoInput : String -> Html Msg
 newTodoInput currentNewTodoInput =
-    newTodoInputTemplate currentNewTodoInput UpdateNewTodoInput AddNewTodo
+    newTodoInputTemplate currentNewTodoInput
+        { onInput = UpdateNewTodoInput, onSubmit = AddNewTodo }
 
 
-newTodoInputTemplate : String -> (String -> Msg) -> Msg -> Html Msg
-newTodoInputTemplate currentInput onInputMsg onSubmitMsg =
+newTodoInputTemplate : String -> { onInput : String -> Msg, onSubmit : Msg } -> Html Msg
+newTodoInputTemplate currentInput msgs =
     Html.form
-        [ onSubmit onSubmitMsg
+        [ onSubmit msgs.onSubmit
         , css
             [ inputContainerStyle
             ]
         ]
         [ input
             [ type_ "text"
-            , onInput onInputMsg
+            , onInput msgs.onInput
             , value currentInput
             , css
                 [ width (pct 100)
@@ -554,9 +555,11 @@ viewEditTodo id node editInfo =
             ]
         , newTodoInputTemplate editInfo.newSubtodoInput
             (\newSubtodoInput ->
-                UpdateEdit { editInfo | newSubtodoInput = newSubtodoInput }
-            )
-            (AddSubtodo editInfo)
+            { onInput =
+                \newSubtodoInput ->
+                    UpdateEdit { editInfo | newSubtodoInput = newSubtodoInput }
+            , onSubmit = AddSubtodo editInfo
+            }
         ]
 
 
