@@ -1,4 +1,9 @@
-language: elm
+language: node_js
+node_js:
+  - "lts/*"
+
+script:
+  yarn format --validate && yarn test
 
 before_deploy:
   - ./build.sh
