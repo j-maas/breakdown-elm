@@ -39,7 +39,7 @@ suite =
                             }
                 in
                 TodoTree.insertCurrent
-                    (CompositTodo
+                    (TodoTree.makeCompositTodo
                         (makeTodo 'I' "nserted")
                         (Checklist.fromItems { current = [], done = [] })
                     )
@@ -72,7 +72,7 @@ suite =
                             }
                 in
                 TodoTree.insertCurrent
-                    (CompositTodo
+                    (TodoTree.makeCompositTodo
                         (makeTodo 'I' "nserted")
                         (Checklist.fromItems { current = [], done = [] })
                     )
@@ -108,7 +108,7 @@ suite =
                             }
                 in
                 TodoTree.insertCurrent
-                    (CompositTodo
+                    (TodoTree.makeCompositTodo
                         (makeTodo 'I' "nserted")
                         (Checklist.fromItems { current = [], done = [] })
                     )
@@ -142,7 +142,7 @@ suite =
                             }
                 in
                 TodoTree.insertCurrent
-                    (CompositTodo
+                    (TodoTree.makeCompositTodo
                         (makeTodo 'I' "nserted")
                         (Checklist.fromItems { current = [], done = [] })
                     )
@@ -179,7 +179,7 @@ suite =
                             }
                 in
                 TodoTree.insertCurrent
-                    (CompositTodo
+                    (TodoTree.makeCompositTodo
                         (makeTodo 'I' "nserted")
                         (Checklist.fromItems { current = [], done = [] })
                     )
@@ -226,7 +226,9 @@ todoNodeFuzzer =
                 n ->
                     Fuzz.map3
                         (\todo current done ->
-                            CompositTodo todo (Checklist.fromItems { current = current, done = done })
+                            TodoTree.makeCompositTodo
+                                todo
+                                (Checklist.fromItems { current = current, done = done })
                         )
                         todoFuzzer
                         (shortList <| compositTodoFuzzer (n - 1))
@@ -258,7 +260,7 @@ todoTreeForTest init =
                     NonEmptyString.fromString string
                         |> Maybe.map
                             (\action ->
-                                CompositTodo (Todo.fromAction action)
+                                TodoTree.makeCompositTodo (Todo.fromAction action)
                                     (Checklist.fromItems
                                         { current = List.filterMap mapTree children.c
                                         , done = List.filterMap mapTree children.d

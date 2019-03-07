@@ -1,9 +1,10 @@
 module TodoTree exposing
     ( Id
+    , Subtodos
     , TodoNode(..)
     , TodoTree
-    , checklistFromTodoTree
     , empty
+    , emptySubtodos
     , encodeNode
     , fromItems
     , get
@@ -11,6 +12,7 @@ module TodoTree exposing
     , insertCurrentAt
     , insertDone
     , insertDoneAt
+    , makeCompositTodo
     , mapCurrent
     , mapCurrentSubtodos
     , mapDone
@@ -29,12 +31,7 @@ import Todo exposing (Todo)
 
 
 type TodoTree
-    = TodoTree Subtodos
-
-
-checklistFromTodoTree : TodoTree -> Subtodos
-checklistFromTodoTree (TodoTree checklist) =
-    checklist
+    = TodoTree (Checklist TodoNode)
 
 
 type TodoNode
@@ -42,8 +39,18 @@ type TodoNode
     | CompositTodo Todo Subtodos
 
 
-type alias Subtodos =
-    Checklist TodoNode
+makeCompositTodo : Todo -> Checklist TodoNode -> TodoNode
+makeCompositTodo todo checklist =
+    CompositTodo todo (Subtodos checklist)
+
+
+type Subtodos
+    = Subtodos (Checklist TodoNode)
+
+
+emptySubtodos : Subtodos
+emptySubtodos =
+    Subtodos Checklist.empty
 
 
 type Id
@@ -107,19 +114,19 @@ insertAt insert id node (TodoTree checklist) =
                 |> Maybe.map
                     (\foundNode ->
                         case foundNode of
-                            CompositTodo todo subtodos ->
+                            CompositTodo todo (Subtodos subtodos) ->
                                 let
                                     ( checklistId, newChecklist ) =
                                         insert node subtodos
                                 in
-                                ( todo, checklistId, newChecklist )
+                                ( todo, checklistId, Subtodos newChecklist )
 
                             SimpleTodo todo ->
                                 let
                                     ( checklistId, newChecklist ) =
                                         insert node Checklist.empty
                                 in
-                                ( todo, checklistId, newChecklist )
+                                ( todo, checklistId, Subtodos newChecklist )
                     )
                 |> Maybe.andThen
                     (\( todo, checklistId, newSubtodos ) ->
@@ -160,7 +167,7 @@ mapDone mapping (TodoTree checklist) =
 
 
 mapCurrentSubtodos : (Id -> TodoNode -> b) -> Id -> Subtodos -> List b
-mapCurrentSubtodos mapping (Id first following) subtodos =
+mapCurrentSubtodos mapping (Id first following) (Subtodos subtodos) =
     let
         nextId checklistId =
             Id first (following ++ [ checklistId ])
@@ -171,7 +178,7 @@ mapCurrentSubtodos mapping (Id first following) subtodos =
 
 
 mapDoneSubtodos : (Id -> TodoNode -> b) -> Id -> Subtodos -> List b
-mapDoneSubtodos mapping (Id first following) subtodos =
+mapDoneSubtodos mapping (Id first following) (Subtodos subtodos) =
     let
         nextId checklistId =
             Id first (following ++ [ checklistId ])
@@ -250,7 +257,7 @@ findChecklist (Id first following) checklist =
 
         nextId :: remaining ->
             case Checklist.get first checklist of
-                Just (CompositTodo todo subtodos) ->
+                Just (CompositTodo todo (Subtodos subtodos)) ->
                     findChecklist (Id nextId remaining) subtodos
 
                 _ ->
@@ -269,10 +276,10 @@ updateChecklistWithContext mapping (Id first following) checklist =
 
         nextId :: remaining ->
             case Checklist.get first checklist of
-                Just (CompositTodo todo subtodos) ->
+                Just (CompositTodo todo (Subtodos subtodos)) ->
                     case updateChecklistWithContext mapping (Id nextId remaining) subtodos of
                         Just ( newSubtodos, a ) ->
-                            Checklist.update (\_ -> CompositTodo todo newSubtodos)
+                            Checklist.update (\_ -> CompositTodo todo (Subtodos newSubtodos))
                                 first
                                 checklist
                                 |> Maybe.map (\newChecklist -> ( newChecklist, a ))
@@ -322,7 +329,7 @@ encodeNode node =
         SimpleTodo todo ->
             Todo.encode todo
 
-        CompositTodo todo subtodos ->
+        CompositTodo todo (Subtodos subtodos) ->
             Encode.object
                 [ ( todoField, Todo.encode todo )
                 , ( currentField
@@ -346,7 +353,7 @@ nodeDecoder =
         [ Todo.decoder |> Decode.map SimpleTodo
         , Decode.map3
             (\todo current done ->
-                CompositTodo todo (Checklist.fromItems { current = current, done = done })
+                CompositTodo todo (Subtodos <| Checklist.fromItems { current = current, done = done })
             )
             (Decode.field todoField Todo.decoder)
             (Decode.field currentField (Decode.list (Decode.lazy (\_ -> nodeDecoder))))
