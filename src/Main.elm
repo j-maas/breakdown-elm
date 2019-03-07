@@ -22,7 +22,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe.Extra as Maybe
 import Todo exposing (Todo)
-import TodoTree exposing (TodoNode(..), TodoTree)
+import TodoTree exposing (Subtodos, TodoNode(..), TodoTree)
 import Url exposing (Url)
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
@@ -346,7 +346,9 @@ view model =
                     ]
                 ]
              ]
-                ++ viewTodoTree model.todos model.editing (newTodoInput model.newTodoInput)
+                ++ viewTodoTree model.todos
+                    model.editing
+                    model.newTodoInput
             )
     }
 
@@ -401,10 +403,10 @@ newTodoInputTemplate currentInput msgs =
         ]
 
 
-viewTodoTree : TodoTree -> Maybe EditingInfo -> Html Msg -> List (Html Msg)
-viewTodoTree todos editing newTodoInputHtml =
+viewTodoTree : TodoTree -> Maybe EditingInfo -> String -> List (Html Msg)
+viewTodoTree todos editing currentInput =
     [ ul [ css [ todoListStyle ] ]
-        ([ newTodoInputHtml ]
+        ([ newTodoInput currentInput ]
             ++ TodoTree.mapCurrent
                 (viewTodoListItem Current editing)
                 todos
@@ -413,6 +415,24 @@ viewTodoTree todos editing newTodoInputHtml =
         (TodoTree.mapDone
             (viewTodoListItem Done editing)
             todos
+        )
+    ]
+
+
+viewSubtodoTree : TodoTree.Id -> Subtodos -> Maybe EditingInfo -> List (Html Msg)
+viewSubtodoTree id subtodos editing =
+    [ ul [ css [ todoListStyle ] ]
+        ([ newSubtodoInput id editing ]
+            ++ TodoTree.mapCurrentSubtodos
+                (viewTodoListItem Current editing)
+                id
+                subtodos
+        )
+    , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
+        (TodoTree.mapDoneSubtodos
+            (viewTodoListItem Done editing)
+            id
+            subtodos
         )
     ]
 
@@ -495,7 +515,7 @@ viewTodoNode selector editing id node =
          ]
             ++ (case maybeSubtodos of
                     Just subtodos ->
-                        viewTodoTree subtodos editing (newSubtodoInput id editing)
+                        viewSubtodoTree id subtodos editing
 
                     Nothing ->
                         []
@@ -509,7 +529,7 @@ viewEditNode id node editInfo =
         ( todo, subtodos ) =
             case node of
                 SimpleTodo t ->
-                    ( t, TodoTree.empty )
+                    ( t, TodoTree.emptySubtodos )
 
                 CompositTodo t subs ->
                     ( t, subs )
@@ -542,7 +562,7 @@ viewEditNode id node editInfo =
             , button "Remove" "delete" (Remove id)
             ]
          ]
-            ++ viewTodoTree subtodos (Just editInfo) (newSubtodoInput id (Just editInfo))
+            ++ viewSubtodoTree id subtodos (Just editInfo)
         )
 
 
