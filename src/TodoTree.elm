@@ -27,8 +27,8 @@ import Json.Encode as Encode
 import Todo exposing (Todo)
 
 
-type TodoTree
-    = TodoTree Subtodos
+type alias TodoTree =
+    Subtodos
 
 
 type TodoNode
@@ -55,31 +55,30 @@ appendId (Id first following) newId =
 
 empty : TodoTree
 empty =
-    TodoTree <| Checklist.fromItems { current = [], done = [] }
+    Checklist.fromItems { current = [], done = [] }
 
 
 fromItems : { current : List TodoNode, done : List TodoNode } -> TodoTree
 fromItems items =
     Checklist.fromItems items
-        |> TodoTree
 
 
 insertCurrent : TodoNode -> TodoTree -> ( Id, TodoTree )
-insertCurrent node (TodoTree checklist) =
+insertCurrent node checklist =
     let
         ( checklistId, newChecklist ) =
             Checklist.insertCurrent node checklist
     in
-    ( Id checklistId [], TodoTree newChecklist )
+    ( Id checklistId [], newChecklist )
 
 
 insertDone : TodoNode -> TodoTree -> ( Id, TodoTree )
-insertDone node (TodoTree checklist) =
+insertDone node checklist =
     let
         ( checklistId, newChecklist ) =
             Checklist.insertDone node checklist
     in
-    ( Id checklistId [], TodoTree newChecklist )
+    ( Id checklistId [], newChecklist )
 
 
 insertCurrentAt : Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
@@ -93,7 +92,7 @@ insertDoneAt =
 
 
 insertAt : (TodoNode -> Checklist TodoNode -> ( Checklist.Id, Checklist TodoNode )) -> Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
-insertAt insert id node (TodoTree checklist) =
+insertAt insert id node checklist =
     updateChecklistWithContext
         (\foundId foundChecklist ->
             Checklist.get foundId foundChecklist
@@ -130,7 +129,7 @@ insertAt insert id node (TodoTree checklist) =
         checklist
         |> Maybe.map
             (\( updatedChecklist, checklistId ) ->
-                ( appendId id checklistId, TodoTree updatedChecklist )
+                ( appendId id checklistId, updatedChecklist )
             )
 
 
@@ -139,14 +138,14 @@ insertAt insert id node (TodoTree checklist) =
 
 
 mapCurrent : (Id -> TodoNode -> b) -> TodoTree -> List b
-mapCurrent mapping (TodoTree checklist) =
+mapCurrent mapping checklist =
     Checklist.mapCurrent
         (\checklistId node -> mapping (Id checklistId []) node)
         checklist
 
 
 mapDone : (Id -> TodoNode -> b) -> TodoTree -> List b
-mapDone mapping (TodoTree checklist) =
+mapDone mapping checklist =
     Checklist.mapDone
         (\checklistId node -> mapping (Id checklistId []) node)
         checklist
@@ -175,7 +174,7 @@ mapDoneSubtodos mapping (Id first following) subtodos =
 
 
 get : Id -> TodoTree -> Maybe TodoNode
-get id (TodoTree checklist) =
+get id checklist =
     findChecklist id checklist
         |> Maybe.andThen
             (\( foundId, foundChecklist ) ->
@@ -188,47 +187,43 @@ get id (TodoTree checklist) =
 
 
 update : (TodoNode -> TodoNode) -> Id -> TodoTree -> Maybe TodoTree
-update mapping id (TodoTree checklist) =
+update mapping id checklist =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.update mapping foundId foundChecklist
         )
         id
         checklist
-        |> Maybe.map TodoTree
 
 
 remove : Id -> TodoTree -> Maybe TodoTree
-remove id (TodoTree checklist) =
+remove id checklist =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.remove foundId foundChecklist
         )
         id
         checklist
-        |> Maybe.map TodoTree
 
 
 moveToCurrent : Id -> TodoTree -> Maybe TodoTree
-moveToCurrent id (TodoTree checklist) =
+moveToCurrent id checklist =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.moveToCurrent foundId foundChecklist
         )
         id
         checklist
-        |> Maybe.map TodoTree
 
 
 moveToDone : Id -> TodoTree -> Maybe TodoTree
-moveToDone id (TodoTree checklist) =
+moveToDone id checklist =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.moveToDone foundId foundChecklist
         )
         id
         checklist
-        |> Maybe.map TodoTree
 
 
 
