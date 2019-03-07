@@ -1,4 +1,4 @@
-language: npm
+language: node_js
 
 script:
   yarn format --validate && yarn test
