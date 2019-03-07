@@ -20,6 +20,7 @@ import Html.Styled.Attributes exposing (attribute, css, title, type_, value)
 import Html.Styled.Events exposing (onInput, onSubmit, stopPropagationOn)
 import Json.Decode as Decode
 import Json.Encode as Encode
+import Maybe.Extra as Maybe
 import Todo exposing (Todo)
 import TodoTree exposing (TodoNode(..), TodoTree)
 import Url exposing (Url)
@@ -337,23 +338,41 @@ view model =
     { title = "Breakdown"
     , body =
         List.map Html.toUnstyled
-            [ Global.global
+            ([ Global.global
                 [ Global.body
                     [ maxWidth (em 26)
                     , margin2 (em 1) auto
                     , fontFamily sansSerif
                     ]
                 ]
-            , newTodoInput model.newTodoInput
-            , viewTodoList model.todos model.editing
-            ]
+             ]
+                ++ viewTodoTree model.todos model.editing (newTodoInput model.newTodoInput)
+            )
     }
 
 
 newTodoInput : String -> Html Msg
-newTodoInput currentNewTodoInput =
-    newTodoInputTemplate currentNewTodoInput
+newTodoInput currentInput =
+    newTodoInputTemplate currentInput
         { onInput = UpdateNewTodoInput, onSubmit = AddNewTodo }
+
+
+newSubtodoInput : TodoTree.Id -> Maybe EditingInfo -> Html Msg
+newSubtodoInput id editing =
+    let
+        ( currentInput, onInput, onSubmit ) =
+            case editing of
+                Just edit ->
+                    ( edit.newSubtodoInput
+                    , \newInput -> UpdateEdit { edit | newSubtodoInput = newInput }
+                    , AddSubtodo edit
+                    )
+
+                Nothing ->
+                    ( "", \_ -> NoOp, NoOp )
+    in
+    newTodoInputTemplate currentInput
+        { onInput = onInput, onSubmit = onSubmit }
 
 
 newTodoInputTemplate : String -> { onInput : String -> Msg, onSubmit : Msg } -> Html Msg
@@ -382,86 +401,72 @@ newTodoInputTemplate currentInput msgs =
         ]
 
 
-type alias TodoList =
-    Checklist TodoNode
+viewTodoTree : TodoTree -> Maybe EditingInfo -> Html Msg -> List (Html Msg)
+viewTodoTree todos editing newTodoInputHtml =
+    [ ul [ css [ todoListStyle ] ]
+        ([ newTodoInputHtml ]
+            ++ TodoTree.mapCurrent
+                (viewTodoListItem Current editing)
+                todos
+        )
+    , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
+        (TodoTree.mapDone
+            (viewTodoListItem Done editing)
+            todos
+        )
+    ]
 
 
-viewTodoList : TodoList -> Maybe EditingInfo -> Html Msg
-viewTodoList todos editing =
-    div []
-        [ viewCurrentTodos todos editing
-        , viewDoneTodos todos editing
+viewTodoListItem : Selector -> Maybe EditingInfo -> TodoTree.Id -> TodoNode -> Html Msg
+viewTodoListItem selector editing id node =
+    let
+        extraStyles =
+            case selector of
+                Done ->
+                    [ hover [ opacity (num 1) ], opacity (num 0.6) ]
+
+                _ ->
+                    []
+
+        editingInfoForCurrent =
+            Maybe.filter (\edit -> edit.todoId == id) editing
+    in
+    li
+        [ css
+            ([ todoListEntryStyle
+             ]
+                ++ extraStyles
+            )
+        ]
+        [ case editingInfoForCurrent of
+            Just edit ->
+                viewEditNode id node edit
+
+            Nothing ->
+                viewTodoNode selector editing id node
         ]
 
 
-viewCurrentTodos : TodoList -> Maybe EditingInfo -> Html Msg
-viewCurrentTodos todos editing =
-    ul [ css [ todoListStyle ] ]
-        (todos
-            |> TodoTree.mapCurrent
-                (\id todo ->
-                    let
-                        currentEdit =
-                            Maybe.andThen
-                                (\editInfo ->
-                                    if editInfo.todoId == id then
-                                        Just editInfo
-
-                                    else
-                                        Nothing
-                                )
-                                editing
-                    in
-                    li [ css [ todoListEntryStyle ] ]
-                        [ case currentEdit of
-                            Just editInfo ->
-                                viewEditTodo id todo editInfo
-
-                            Nothing ->
-                                viewTodo id Current todo
-                        ]
-                )
-        )
+todoListStyle : Css.Style
+todoListStyle =
+    Css.batch
+        [ listStyle none
+        , padding zero
+        ]
 
 
-viewDoneTodos : TodoTree -> Maybe EditingInfo -> Html Msg
-viewDoneTodos todos editing =
-    ul [ css [ textDecoration lineThrough, todoListStyle ] ]
-        (todos
-            |> TodoTree.mapDone
-                (\id todo ->
-                    let
-                        currentEdit =
-                            Maybe.andThen
-                                (\editInfo ->
-                                    if editInfo.todoId == id then
-                                        Just editInfo
-
-                                    else
-                                        Nothing
-                                )
-                                editing
-                    in
-                    li
-                        [ css
-                            [ hover [ opacity (num 1) ]
-                            , opacity (num 0.6)
-                            , todoListEntryStyle
-                            ]
-                        ]
-                        [ case currentEdit of
-                            Just editInfo ->
-                                viewEditTodo id todo editInfo
-
-                            Nothing ->
-                                viewTodo id Done todo
-                        ]
-                )
-        )
+todoListEntryStyle : Css.Style
+todoListEntryStyle =
+    Css.batch
+        [ borderBottom3 (px 1) solid (hsla 0.0 0.0 0.0 0.1)
+        , hover
+            [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
+            ]
+        ]
 
 
-viewTodo : TodoTree.Id -> Selector -> TodoNode -> Html Msg
-viewTodo id selector node =
+viewTodoNode : Selector -> Maybe EditingInfo -> TodoTree.Id -> TodoNode -> Html Msg
+viewTodoNode selector editing id node =
     let
         ( iconName, moveText, moveMessage ) =
             case selector of
@@ -481,70 +486,41 @@ viewTodo id selector node =
     in
     div
         [ css
-            [ property "display" "grid"
-            , property "grid-template-columns" "1fr auto"
-            , property "grid-template-areas" "\"action button\" \"current current\" \"done done\""
-            , property "grid-gap" "0.5em"
-            , alignItems center
-            , padding (em 0.5)
+            [ todoContainerStyle
             ]
         , onClick (StartEdit id)
         ]
-        [ text (Todo.readAction todo)
-        , div []
-            [ button moveText iconName (moveMessage id)
-            ]
-        , ul [ css [ todoListStyle, property "grid-area" "current" ] ]
-            (case maybeSubtodos of
-                Nothing ->
-                    []
+        ([ text (Todo.readAction todo)
+         , div [] [ button moveText iconName (moveMessage id) ]
+         ]
+            ++ (case maybeSubtodos of
+                    Just subtodos ->
+                        viewTodoTree subtodos editing (newSubtodoInput id editing)
 
-                Just subtodos ->
-                    TodoTree.mapCurrentSubtodos
-                        (\subId subNode ->
-                            li [] [ viewTodo subId Current subNode ]
-                        )
-                        id
-                        subtodos
-            )
-        , ul [ css [ textDecoration lineThrough, todoListStyle, property "grid-area" "done" ] ]
-            (case maybeSubtodos of
-                Nothing ->
-                    []
-
-                Just subtodos ->
-                    TodoTree.mapDoneSubtodos
-                        (\subId subNode ->
-                            li [] [ viewTodo subId Done subNode ]
-                        )
-                        id
-                        subtodos
-            )
-        ]
+                    Nothing ->
+                        []
+               )
+        )
 
 
-viewEditTodo : TodoTree.Id -> TodoNode -> EditingInfo -> Html Msg
-viewEditTodo id node editInfo =
+viewEditNode : TodoTree.Id -> TodoNode -> EditingInfo -> Html Msg
+viewEditNode id node editInfo =
     let
-        todo =
+        ( todo, subtodos ) =
             case node of
                 SimpleTodo t ->
-                    t
+                    ( t, TodoTree.empty )
 
-                CompositTodo t _ ->
-                    t
+                CompositTodo t subs ->
+                    ( t, subs )
     in
     div
         [ css
-            [ property "display" "grid"
-            , property "grid-template-columns" "auto"
-            , property "grid-gap" "0.5em"
-            , alignItems center
-            , padding (em 0.5)
+            [ todoContainerStyle
             ]
         , onClick ApplyEdit
         ]
-        [ Html.form [ onSubmit ApplyEdit ]
+        ([ Html.form [ onSubmit ApplyEdit ]
             [ input
                 [ type_ "text"
                 , onInput
@@ -561,16 +537,22 @@ viewEditTodo id node editInfo =
                 ]
                 []
             ]
-        , div []
+         , div []
             [ button "Undo changes" "undo" CancelEdit
             , button "Remove" "delete" (Remove id)
             ]
-        , newTodoInputTemplate editInfo.newSubtodoInput
-            { onInput =
-                \newSubtodoInput ->
-                    UpdateEdit { editInfo | newSubtodoInput = newSubtodoInput }
-            , onSubmit = AddSubtodo editInfo
-            }
+         ]
+            ++ viewTodoTree subtodos (Just editInfo) (newSubtodoInput id (Just editInfo))
+        )
+
+
+todoContainerStyle : Css.Style
+todoContainerStyle =
+    Css.batch
+        [ property "display" "grid"
+        , property "grid-template-columns" "1fr auto"
+        , alignItems center
+        , padding (em 0.5)
         ]
 
 
@@ -625,24 +607,6 @@ icon iconName =
         , backgroundSize (pct 75)
         , width (em 3)
         , height (em 3)
-        ]
-
-
-todoListStyle : Css.Style
-todoListStyle =
-    Css.batch
-        [ listStyle none
-        , padding zero
-        ]
-
-
-todoListEntryStyle : Css.Style
-todoListEntryStyle =
-    Css.batch
-        [ borderBottom3 (px 1) solid (hsla 0.0 0.0 0.0 0.1)
-        , hover
-            [ backgroundColor (hsla 0.0 0.0 0.0 0.02)
-            ]
         ]
 
 
