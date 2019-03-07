@@ -161,7 +161,10 @@ suite =
                 let
                     testTree =
                         todoTreeForTest
-                            { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
+                            { c =
+                                [ L "Hi"
+                                , N "Children" { c = [], d = [ L "Other hi" ] }
+                                ]
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
