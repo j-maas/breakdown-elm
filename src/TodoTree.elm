@@ -2,6 +2,7 @@ module TodoTree exposing
     ( Id
     , TodoNode(..)
     , TodoTree
+    , checklistFromTodoTree
     , empty
     , encodeNode
     , fromItems
@@ -27,8 +28,13 @@ import Json.Encode as Encode
 import Todo exposing (Todo)
 
 
-type alias TodoTree =
-    Subtodos
+type TodoTree
+    = TodoTree Subtodos
+
+
+checklistFromTodoTree : TodoTree -> Subtodos
+checklistFromTodoTree (TodoTree checklist) =
+    checklist
 
 
 type TodoNode
@@ -56,29 +62,31 @@ appendId (Id first following) newId =
 empty : TodoTree
 empty =
     Checklist.fromItems { current = [], done = [] }
+        |> TodoTree
 
 
 fromItems : { current : List TodoNode, done : List TodoNode } -> TodoTree
 fromItems items =
     Checklist.fromItems items
+        |> TodoTree
 
 
 insertCurrent : TodoNode -> TodoTree -> ( Id, TodoTree )
-insertCurrent node checklist =
+insertCurrent node (TodoTree checklist) =
     let
         ( checklistId, newChecklist ) =
             Checklist.insertCurrent node checklist
     in
-    ( Id checklistId [], newChecklist )
+    ( Id checklistId [], TodoTree newChecklist )
 
 
 insertDone : TodoNode -> TodoTree -> ( Id, TodoTree )
-insertDone node checklist =
+insertDone node (TodoTree checklist) =
     let
         ( checklistId, newChecklist ) =
             Checklist.insertDone node checklist
     in
-    ( Id checklistId [], newChecklist )
+    ( Id checklistId [], TodoTree newChecklist )
 
 
 insertCurrentAt : Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
@@ -92,7 +100,7 @@ insertDoneAt =
 
 
 insertAt : (TodoNode -> Checklist TodoNode -> ( Checklist.Id, Checklist TodoNode )) -> Id -> TodoNode -> TodoTree -> Maybe ( Id, TodoTree )
-insertAt insert id node checklist =
+insertAt insert id node (TodoTree checklist) =
     updateChecklistWithContext
         (\foundId foundChecklist ->
             Checklist.get foundId foundChecklist
@@ -129,7 +137,7 @@ insertAt insert id node checklist =
         checklist
         |> Maybe.map
             (\( updatedChecklist, checklistId ) ->
-                ( appendId id checklistId, updatedChecklist )
+                ( appendId id checklistId, TodoTree updatedChecklist )
             )
 
 
@@ -138,14 +146,14 @@ insertAt insert id node checklist =
 
 
 mapCurrent : (Id -> TodoNode -> b) -> TodoTree -> List b
-mapCurrent mapping checklist =
+mapCurrent mapping (TodoTree checklist) =
     Checklist.mapCurrent
         (\checklistId node -> mapping (Id checklistId []) node)
         checklist
 
 
 mapDone : (Id -> TodoNode -> b) -> TodoTree -> List b
-mapDone mapping checklist =
+mapDone mapping (TodoTree checklist) =
     Checklist.mapDone
         (\checklistId node -> mapping (Id checklistId []) node)
         checklist
@@ -174,7 +182,7 @@ mapDoneSubtodos mapping (Id first following) subtodos =
 
 
 get : Id -> TodoTree -> Maybe TodoNode
-get id checklist =
+get id (TodoTree checklist) =
     findChecklist id checklist
         |> Maybe.andThen
             (\( foundId, foundChecklist ) ->
@@ -187,43 +195,47 @@ get id checklist =
 
 
 update : (TodoNode -> TodoNode) -> Id -> TodoTree -> Maybe TodoTree
-update mapping id checklist =
+update mapping id (TodoTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.update mapping foundId foundChecklist
         )
         id
         checklist
+        |> Maybe.map TodoTree
 
 
 remove : Id -> TodoTree -> Maybe TodoTree
-remove id checklist =
+remove id (TodoTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.remove foundId foundChecklist
         )
         id
         checklist
+        |> Maybe.map TodoTree
 
 
 moveToCurrent : Id -> TodoTree -> Maybe TodoTree
-moveToCurrent id checklist =
+moveToCurrent id (TodoTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.moveToCurrent foundId foundChecklist
         )
         id
         checklist
+        |> Maybe.map TodoTree
 
 
 moveToDone : Id -> TodoTree -> Maybe TodoTree
-moveToDone id checklist =
+moveToDone id (TodoTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
             Checklist.moveToDone foundId foundChecklist
         )
         id
         checklist
+        |> Maybe.map TodoTree
 
 
 
