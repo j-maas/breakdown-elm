@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "elm-live src/Main.elm --path-to-elm=node_modules/.bin/elm --dir=dist/ --before-build=./build.sh --start-page=./index.html",
-    "start:dev": "elm-live src/Main.elm --path-to-elm=node_modules/.bin/elm --dir=static/ --start-page=../index.html",
+    "start:no-sw": "elm-live src/Main.elm --path-to-elm=node_modules/.bin/elm --dir=dist/ --before-build=./build-no-sw.sh --start-page=./index.html",
     "test": "elm-test",
     "format": "elm-format ."
   }
