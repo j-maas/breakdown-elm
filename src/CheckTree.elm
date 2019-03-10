@@ -12,7 +12,7 @@ module CheckTree exposing
     , insertCurrentAt
     , insertDone
     , insertDoneAt
-    , makeCompositTodo
+    , makeCompositNode
     , mapCurrent
     , mapCurrentSubtodos
     , mapDone
@@ -42,8 +42,8 @@ type Node a
     | CompositNode a (Subnodes a)
 
 
-makeCompositTodo : a -> Entries a -> Node a
-makeCompositTodo todo entries =
+makeCompositNode : a -> Entries a -> Node a
+makeCompositNode todo entries =
     CompositNode todo (Subnodes entries)
 
 
