@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import CheckTree exposing (CheckTree, Node(..), Subnodes)
 import Checklist exposing (Checklist)
 import Css exposing (..)
 import Css.Global as Global
@@ -22,7 +23,6 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe.Extra as Maybe
 import Todo exposing (Todo)
-import TodoTree exposing (Subtodos, TodoNode(..), TodoTree)
 import Url exposing (Url)
 import Utils.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
@@ -50,8 +50,12 @@ type alias Model =
     }
 
 
+type alias TodoTree =
+    CheckTree Todo
+
+
 type alias EditingInfo =
-    { todoId : TodoTree.Id
+    { todoId : CheckTree.Id
     , rawNewAction : String
     , oldAction : NonEmptyString
     , newSubtodoInput : String
@@ -63,7 +67,7 @@ init flags _ key =
     let
         todos =
             decodeFlags flags
-                |> Maybe.withDefault TodoTree.empty
+                |> Maybe.withDefault CheckTree.empty
     in
     ( { key = key
       , newTodoInput = ""
@@ -86,13 +90,13 @@ decodeFlags flags =
         decodeTodos field value =
             Decode.decodeValue
                 (Decode.field field
-                    (Decode.list TodoTree.nodeDecoder)
+                    (Decode.list <| CheckTree.nodeDecoder Todo.decoder)
                 )
                 value
     in
     Result.map2
         (\current done ->
-            TodoTree.fromItems { current = current, done = done }
+            CheckTree.fromItems { current = current, done = done }
         )
         currentTodos
         doneTodos
@@ -107,10 +111,10 @@ type Msg
     = NoOp
     | UpdateNewTodoInput String
     | AddNewTodo
-    | MoveToCurrent TodoTree.Id
-    | MoveToDone TodoTree.Id
-    | Remove TodoTree.Id
-    | StartEdit TodoTree.Id
+    | MoveToCurrent CheckTree.Id
+    | MoveToDone CheckTree.Id
+    | Remove CheckTree.Id
+    | StartEdit CheckTree.Id
     | UpdateEdit EditingInfo
     | AddSubtodo EditingInfo
     | ApplyEdit
@@ -145,7 +149,7 @@ update msg model =
                     ( { model
                         | newTodoInput = ""
                         , todos =
-                            TodoTree.insertCurrent (SimpleTodo todo) model.todos
+                            CheckTree.insertCurrent (SimpleNode todo) model.todos
                                 |> Tuple.second
                       }
                     , Cmd.none
@@ -157,34 +161,34 @@ update msg model =
         MoveToCurrent id ->
             ( invalidateTodoWithId id
                 model
-                (TodoTree.moveToCurrent id)
+                (CheckTree.moveToCurrent id)
             , Cmd.none
             )
 
         MoveToDone id ->
             ( invalidateTodoWithId id
                 model
-                (TodoTree.moveToDone id)
+                (CheckTree.moveToDone id)
             , Cmd.none
             )
 
         Remove id ->
             ( invalidateTodoWithId id
                 model
-                (TodoTree.remove id)
+                (CheckTree.remove id)
             , Cmd.none
             )
 
         StartEdit id ->
-            case TodoTree.get id model.todos of
+            case CheckTree.get id model.todos of
                 Just node ->
                     let
                         todo =
                             case node of
-                                SimpleTodo t ->
+                                SimpleNode t ->
                                     t
 
-                                CompositTodo t _ ->
+                                CompositNode t _ ->
                                     t
                     in
                     ( { model
@@ -208,14 +212,14 @@ update msg model =
                     NonEmptyString.fromString newEditInfo.rawNewAction
                         |> Maybe.andThen
                             (\newAction ->
-                                TodoTree.update
+                                CheckTree.update
                                     (\node ->
                                         case node of
-                                            SimpleTodo t ->
-                                                SimpleTodo (Todo.setAction newAction t)
+                                            SimpleNode t ->
+                                                SimpleNode (Todo.setAction newAction t)
 
-                                            CompositTodo t subtodos ->
-                                                CompositTodo (Todo.setAction newAction t) subtodos
+                                            CompositNode t subtodos ->
+                                                CompositNode (Todo.setAction newAction t) subtodos
                                     )
                                     newEditInfo.todoId
                                     model.todos
@@ -230,9 +234,9 @@ update msg model =
                     NonEmptyString.fromString newEditInfo.newSubtodoInput
                         |> Maybe.andThen
                             (\newAction ->
-                                TodoTree.insertCurrentAt
+                                CheckTree.insertCurrentAt
                                     newEditInfo.todoId
-                                    (SimpleTodo (Todo.fromAction newAction))
+                                    (SimpleNode (Todo.fromAction newAction))
                                     model.todos
                             )
                         |> Maybe.map Tuple.second
@@ -252,14 +256,14 @@ update msg model =
                     model.editing
                         |> Maybe.andThen
                             (\editInfo ->
-                                TodoTree.update
+                                CheckTree.update
                                     (\node ->
                                         case node of
-                                            SimpleTodo t ->
-                                                SimpleTodo (Todo.setAction editInfo.oldAction t)
+                                            SimpleNode t ->
+                                                SimpleNode (Todo.setAction editInfo.oldAction t)
 
-                                            CompositTodo t subtodos ->
-                                                CompositTodo (Todo.setAction editInfo.oldAction t) subtodos
+                                            CompositNode t subtodos ->
+                                                CompositNode (Todo.setAction editInfo.oldAction t) subtodos
                                     )
                                     editInfo.todoId
                                     model.todos
@@ -273,7 +277,7 @@ update msg model =
            )
 
 
-invalidateTodoWithId : TodoTree.Id -> Model -> (TodoTree -> Maybe TodoTree) -> Model
+invalidateTodoWithId : CheckTree.Id -> Model -> (TodoTree -> Maybe TodoTree) -> Model
 invalidateTodoWithId id model doUpdate =
     let
         newEditing =
@@ -307,14 +311,14 @@ save model =
         getTodos selector =
             case selector of
                 Current ->
-                    TodoTree.mapCurrent (\_ todo -> todo)
+                    CheckTree.mapCurrent (\_ todo -> todo)
 
                 Done ->
-                    TodoTree.mapDone (\_ todo -> todo)
+                    CheckTree.mapDone (\_ todo -> todo)
     in
     Encode.object
-        [ ( "currentTodos", Encode.list TodoTree.encodeNode <| getTodos Current model.todos )
-        , ( "doneTodos", Encode.list TodoTree.encodeNode <| getTodos Done model.todos )
+        [ ( "currentTodos", Encode.list (CheckTree.encodeNode Todo.encode) <| getTodos Current model.todos )
+        , ( "doneTodos", Encode.list (CheckTree.encodeNode Todo.encode) <| getTodos Done model.todos )
         ]
         |> saveRaw
 
@@ -358,7 +362,7 @@ newTodoInput currentInput =
         { onInput = UpdateNewTodoInput, onSubmit = AddNewTodo }
 
 
-newSubtodoInput : TodoTree.Id -> EditingInfo -> Html Msg
+newSubtodoInput : CheckTree.Id -> EditingInfo -> Html Msg
 newSubtodoInput id editInfo =
     newTodoInputTemplate editInfo.newSubtodoInput
         { onInput = \newInput -> UpdateEdit { editInfo | newSubtodoInput = newInput }
@@ -410,19 +414,19 @@ viewTodoTree todos editing currentInput =
     div [ css [ todoTreeStyle ] ]
         [ ul [ css [ todoListStyle ] ]
             ([ li [ css [ todoListEntryStyle ] ] [ newTodoInput currentInput ] ]
-                ++ TodoTree.mapCurrent
+                ++ CheckTree.mapCurrent
                     (viewTodoListItem Current editing)
                     todos
             )
         , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
-            (TodoTree.mapDone
+            (CheckTree.mapDone
                 (viewTodoListItem Done editing)
                 todos
             )
         ]
 
 
-viewSubtodoTree : TodoTree.Id -> Subtodos -> Maybe EditingInfo -> Html Msg
+viewSubtodoTree : CheckTree.Id -> Subnodes Todo -> Maybe EditingInfo -> Html Msg
 viewSubtodoTree id subtodos editing =
     div [ css [ todoTreeStyle ] ]
         [ ul [ css [ todoListStyle ] ]
@@ -433,13 +437,13 @@ viewSubtodoTree id subtodos editing =
                 Nothing ->
                     []
              )
-                ++ TodoTree.mapCurrentSubtodos
+                ++ CheckTree.mapCurrentSubtodos
                     (viewTodoListItem Current editing)
                     id
                     subtodos
             )
         , ul [ css [ textDecoration lineThrough, todoListStyle ] ]
-            (TodoTree.mapDoneSubtodos
+            (CheckTree.mapDoneSubtodos
                 (viewTodoListItem Done editing)
                 id
                 subtodos
@@ -456,12 +460,12 @@ todoTreeStyle =
         ]
 
 
-editingForCurrent : TodoTree.Id -> Maybe EditingInfo -> Maybe EditingInfo
+editingForCurrent : CheckTree.Id -> Maybe EditingInfo -> Maybe EditingInfo
 editingForCurrent id editing =
     Maybe.filter (\edit -> edit.todoId == id) editing
 
 
-viewTodoListItem : Selector -> Maybe EditingInfo -> TodoTree.Id -> TodoNode -> Html Msg
+viewTodoListItem : Selector -> Maybe EditingInfo -> CheckTree.Id -> Node Todo -> Html Msg
 viewTodoListItem selector editing id node =
     let
         extraStyles =
@@ -516,7 +520,7 @@ todoListEntryBorderStyle border =
     border (px 1) solid (hsla 0.0 0.0 0.0 0.1)
 
 
-viewTodoNode : Selector -> Maybe EditingInfo -> TodoTree.Id -> TodoNode -> Html Msg
+viewTodoNode : Selector -> Maybe EditingInfo -> CheckTree.Id -> Node Todo -> Html Msg
 viewTodoNode selector editing id node =
     let
         ( iconName, moveText, moveMessage ) =
@@ -529,10 +533,10 @@ viewTodoNode selector editing id node =
 
         ( todo, maybeSubtodos ) =
             case node of
-                SimpleTodo t ->
+                SimpleNode t ->
                     ( t, Nothing )
 
-                CompositTodo t subs ->
+                CompositNode t subs ->
                     ( t, Just subs )
     in
     div
@@ -556,15 +560,15 @@ viewTodoNode selector editing id node =
         )
 
 
-viewEditNode : TodoTree.Id -> TodoNode -> EditingInfo -> Html Msg
+viewEditNode : CheckTree.Id -> Node Todo -> EditingInfo -> Html Msg
 viewEditNode id node editInfo =
     let
         ( todo, subtodos ) =
             case node of
-                SimpleTodo t ->
-                    ( t, TodoTree.emptySubtodos )
+                SimpleNode t ->
+                    ( t, CheckTree.emptySubnodes )
 
-                CompositTodo t subs ->
+                CompositNode t subs ->
                     ( t, subs )
     in
     div
