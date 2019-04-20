@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import CheckTree exposing (CheckTree, Node(..), Subnodes)
 import Checklist exposing (Checklist)
 import Css exposing (..)
-import Css.Global as Global
+import Css.Global as Css
 import Html.Styled as Html
     exposing
         ( Html
@@ -109,16 +109,17 @@ decodeFlags flags =
 
 type Msg
     = NoOp
-    | UpdateNewTodoInput String
+    | ChangedNewTodoInput String
     | AddNewTodo
     | MoveToCurrent CheckTree.Id
     | MoveToDone CheckTree.Id
     | Remove CheckTree.Id
-    | StartEdit CheckTree.Id
+    | DoubleClickedTodo CheckTree.Id
     | UpdateEdit EditingInfo
     | AddSubtodo EditingInfo
     | ApplyEdit
     | CancelEdit
+    | BackgroundClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -127,7 +128,7 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        UpdateNewTodoInput newTodo ->
+        ChangedNewTodoInput newTodo ->
             let
                 newModel =
                     { model | newTodoInput = newTodo }
@@ -179,7 +180,7 @@ update msg model =
             , Cmd.none
             )
 
-        StartEdit id ->
+        DoubleClickedTodo id ->
             case CheckTree.get id model.todos of
                 Just node ->
                     let
@@ -251,30 +252,38 @@ update msg model =
             ( { model | editing = Nothing }, Cmd.none )
 
         CancelEdit ->
-            let
-                newTodos =
-                    model.editing
-                        |> Maybe.andThen
-                            (\editInfo ->
-                                CheckTree.update
-                                    (\node ->
-                                        case node of
-                                            SimpleNode t ->
-                                                SimpleNode (Todo.setAction editInfo.oldAction t)
+            ( cancelEdit model, Cmd.none )
 
-                                            CompositNode t subtodos ->
-                                                CompositNode (Todo.setAction editInfo.oldAction t) subtodos
-                                    )
-                                    editInfo.todoId
-                                    model.todos
-                            )
-                        |> Maybe.withDefault model.todos
-            in
-            ( { model | todos = newTodos, editing = Nothing }, Cmd.none )
+        BackgroundClicked ->
+            ( cancelEdit model, Cmd.none )
     )
         |> (\( mdl, cmd ) ->
                 ( mdl, Cmd.batch [ cmd, save mdl ] )
            )
+
+
+cancelEdit : Model -> Model
+cancelEdit model =
+    let
+        newTodos =
+            model.editing
+                |> Maybe.andThen
+                    (\editInfo ->
+                        CheckTree.update
+                            (\node ->
+                                case node of
+                                    SimpleNode t ->
+                                        SimpleNode (Todo.setAction editInfo.oldAction t)
+
+                                    CompositNode t subtodos ->
+                                        CompositNode (Todo.setAction editInfo.oldAction t) subtodos
+                            )
+                            editInfo.todoId
+                            model.todos
+                    )
+                |> Maybe.withDefault model.todos
+    in
+    { model | todos = newTodos, editing = Nothing }
 
 
 invalidateTodoWithId : CheckTree.Id -> Model -> (TodoTree -> Maybe TodoTree) -> Model
@@ -342,16 +351,31 @@ view model =
     { title = "Breakdown"
     , body =
         List.map Html.toUnstyled
-            [ Global.global
-                [ Global.body
-                    [ maxWidth (em 26)
-                    , margin2 (em 1) auto
-                    , fontFamily sansSerif
+            [ Css.global
+                [ Css.body
+                    [ margin zero
                     ]
                 ]
-            , viewTodoTree model.todos
-                model.editing
-                model.newTodoInput
+            , div
+                [ css
+                    [ width (vw 100)
+                    , height (vh 100)
+                    ]
+                , onClick BackgroundClicked
+                ]
+                [ Html.main_
+                    [ css
+                        [ maxWidth (em 26)
+                        , margin2 zero auto
+                        , padding2 (em 1) zero
+                        , fontFamily sansSerif
+                        ]
+                    ]
+                    [ viewTodoTree model.todos
+                        model.editing
+                        model.newTodoInput
+                    ]
+                ]
             ]
     }
 
@@ -359,7 +383,7 @@ view model =
 newTodoInput : String -> Html Msg
 newTodoInput currentInput =
     newTodoInputTemplate currentInput
-        { onInput = UpdateNewTodoInput, onSubmit = AddNewTodo }
+        { onInput = ChangedNewTodoInput, onSubmit = AddNewTodo }
 
 
 newSubtodoInput : CheckTree.Id -> EditingInfo -> Html Msg
@@ -500,14 +524,14 @@ todoListStyle =
         , margin zero
         , todoListEntryBorderStyle borderLeft3
         , todoListEntryBorderStyle borderRight3
-        , Global.descendants [ Global.typeSelector "ul" [ borderRight zero ] ]
+        , Css.descendants [ Css.typeSelector "ul" [ borderRight zero ] ]
         ]
 
 
 todoListEntryStyle : Css.Style
 todoListEntryStyle =
     Css.batch
-        [ Global.adjacentSiblings [ Global.typeSelector "li" [ borderTop zero ] ]
+        [ Css.adjacentSiblings [ Css.typeSelector "li" [ borderTop zero ] ]
         , todoListEntryBorderStyle borderTop3
         , todoListEntryBorderStyle borderBottom3
         , hover
@@ -543,7 +567,7 @@ viewTodoNode selector editing id node =
         [ css
             [ todoContainerStyle
             ]
-        , onClick (StartEdit id)
+        , onDoubleClick (DoubleClickedTodo id)
         ]
         ([ div [ css [ todoLeftMarginStyle ] ] [ text (Todo.readAction todo) ]
          , div [ css [ todoRightMarginStyle ] ] [ button moveText iconName (moveMessage id) ]
@@ -734,3 +758,8 @@ stopPropagation =
 onClick : Msg -> Html.Attribute Msg
 onClick msg =
     stopPropagationOn "click" (Decode.succeed ( msg, True ))
+
+
+onDoubleClick : Msg -> Html.Attribute Msg
+onDoubleClick msg =
+    stopPropagationOn "dblclick" (Decode.succeed ( msg, True ))
