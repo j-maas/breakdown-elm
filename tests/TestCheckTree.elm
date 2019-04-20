@@ -48,6 +48,7 @@ suite =
                     |> (\( id, tree ) ->
                             CheckTree.insertCurrentAt id
                                 (SimpleNode "Inserted, too")
+                                identity
                                 tree
                        )
                     |> Maybe.map
@@ -83,6 +84,7 @@ suite =
                     |> (\( id, tree ) ->
                             CheckTree.insertCurrentAt id
                                 (SimpleNode "Inserted, too")
+                                identity
                                 tree
                        )
                     |> Maybe.andThen
@@ -121,6 +123,7 @@ suite =
                     |> (\( id, tree ) ->
                             CheckTree.insertCurrentAt id
                                 (SimpleNode "Inserted, too")
+                                identity
                                 tree
                        )
                     |> Maybe.andThen
@@ -157,6 +160,7 @@ suite =
                     |> (\( id, tree ) ->
                             CheckTree.insertDoneAt id
                                 (SimpleNode "Inserted, too")
+                                identity
                                 tree
                        )
                     |> Maybe.andThen
@@ -196,6 +200,7 @@ suite =
                     |> (\( id, tree ) ->
                             CheckTree.insertCurrentAt id
                                 (SimpleNode "Inserted, too")
+                                identity
                                 tree
                        )
                     |> Maybe.andThen
@@ -206,13 +211,13 @@ suite =
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
         , fuzz nodeFuzzer "encoding and decoding results in same node" <|
             \node ->
-                CheckTree.encodeNode Encode.int node
-                    |> Decode.decodeValue (CheckTree.nodeDecoder Decode.int)
+                CheckTree.encodeNode Encode.int Encode.int node
+                    |> Decode.decodeValue (CheckTree.nodeDecoder Decode.int Decode.int)
                     |> Expect.equal (Ok node)
         ]
 
 
-nodeFuzzer : Fuzzer (Node Int)
+nodeFuzzer : Fuzzer (Node Int Int)
 nodeFuzzer =
     let
         shortList fuzzer =
@@ -252,10 +257,10 @@ type TestTree
     | L String
 
 
-checkTreeForTest : { c : List TestTree, d : List TestTree } -> CheckTree String
+checkTreeForTest : { c : List TestTree, d : List TestTree } -> CheckTree String String
 checkTreeForTest init =
     let
-        mapTree : TestTree -> Node String
+        mapTree : TestTree -> Node String String
         mapTree tree =
             case tree of
                 N string children ->
