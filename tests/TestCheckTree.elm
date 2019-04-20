@@ -1,26 +1,27 @@
-module TestTodoTree exposing (suite)
+module TestCheckTree exposing (suite)
 
+import CheckTree exposing (CheckTree, Node(..))
 import Checklist
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, bool, float, int, list, maybe, percentage, string)
 import Json.Decode as Decode
+import Json.Encode as Encode
 import List.Extra as List
 import Random
 import Random.Extra as Random
 import Test exposing (..)
 import Todo exposing (Todo)
-import TodoTree exposing (TodoNode(..), TodoTree)
 import Utils.NonEmptyString as NonEmptyString
 
 
 suite : Test
 suite =
-    describe "TodoTree"
-        [ test "returns TodoNode by id" <|
+    describe "CheckTree"
+        [ test "returns Node by id" <|
             \_ ->
                 let
                     testTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -29,7 +30,7 @@ suite =
                             }
 
                     expectedTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -38,31 +39,34 @@ suite =
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
-                TodoTree.insertCurrent
-                    (TodoTree.makeCompositTodo
-                        (makeTodo 'I' "nserted")
+                CheckTree.insertCurrent
+                    (CheckTree.makeCompositNode
+                        "Inserted"
                         (Checklist.fromItems { current = [], done = [] })
                     )
                     testTree
                     |> (\( id, tree ) ->
-                            TodoTree.insertCurrentAt id (SimpleTodo (makeTodo 'I' "nserted, too")) tree
+                            CheckTree.insertCurrentAt id
+                                (SimpleNode "Inserted, too")
+                                identity
+                                tree
                        )
                     |> Maybe.map
                         (\( id, tree ) ->
                             Expect.equal expectedTree tree
                         )
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
-        , test "updates TodoNode by id" <|
+        , test "updates Node by id" <|
             \_ ->
                 let
                     testTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -71,34 +75,37 @@ suite =
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
-                TodoTree.insertCurrent
-                    (TodoTree.makeCompositTodo
-                        (makeTodo 'I' "nserted")
+                CheckTree.insertCurrent
+                    (CheckTree.makeCompositNode
+                        "Inserted"
                         (Checklist.fromItems { current = [], done = [] })
                     )
                     testTree
                     |> (\( id, tree ) ->
-                            TodoTree.insertCurrentAt id (SimpleTodo (makeTodo 'I' "nserted, too")) tree
+                            CheckTree.insertCurrentAt id
+                                (SimpleNode "Inserted, too")
+                                identity
+                                tree
                        )
                     |> Maybe.andThen
                         (\( id, tree ) ->
-                            TodoTree.update (\_ -> SimpleTodo (makeTodo 'U' "pdated"))
+                            CheckTree.update (\_ -> SimpleNode "Updated")
                                 id
                                 tree
                         )
                     |> Maybe.map (Expect.equal expectedTree)
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
-        , test "removes TodoNode by id" <|
+        , test "removes Node by id" <|
             \_ ->
                 let
                     testTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -107,18 +114,21 @@ suite =
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
-                TodoTree.insertCurrent
-                    (TodoTree.makeCompositTodo
-                        (makeTodo 'I' "nserted")
+                CheckTree.insertCurrent
+                    (CheckTree.makeCompositNode
+                        "Inserted"
                         (Checklist.fromItems { current = [], done = [] })
                     )
                     testTree
                     |> (\( id, tree ) ->
-                            TodoTree.insertCurrentAt id (SimpleTodo (makeTodo 'I' "nserted, too")) tree
+                            CheckTree.insertCurrentAt id
+                                (SimpleNode "Inserted, too")
+                                identity
+                                tree
                        )
                     |> Maybe.andThen
                         (\( id, tree ) ->
-                            TodoTree.remove id tree
+                            CheckTree.remove id tree
                         )
                     |> Maybe.map (Expect.equal expectedTree)
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
@@ -126,13 +136,13 @@ suite =
             \_ ->
                 let
                     testTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c = [ L "Hi", N "Children" { c = [], d = [ L "Other hi" ] } ]
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
 
                     expectedTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -141,18 +151,21 @@ suite =
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
-                TodoTree.insertCurrent
-                    (TodoTree.makeCompositTodo
-                        (makeTodo 'I' "nserted")
+                CheckTree.insertCurrent
+                    (CheckTree.makeCompositNode
+                        "Inserted"
                         (Checklist.fromItems { current = [], done = [] })
                     )
                     testTree
                     |> (\( id, tree ) ->
-                            TodoTree.insertDoneAt id (SimpleTodo (makeTodo 'I' "nserted, too")) tree
+                            CheckTree.insertDoneAt id
+                                (SimpleNode "Inserted, too")
+                                identity
+                                tree
                        )
                     |> Maybe.andThen
                         (\( id, tree ) ->
-                            TodoTree.moveToCurrent id tree
+                            CheckTree.moveToCurrent id tree
                         )
                     |> Maybe.map (Expect.equal expectedTree)
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
@@ -160,7 +173,7 @@ suite =
             \_ ->
                 let
                     testTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -169,7 +182,7 @@ suite =
                             }
 
                     expectedTree =
-                        todoTreeForTest
+                        checkTreeForTest
                             { c =
                                 [ L "Hi"
                                 , N "Children" { c = [], d = [ L "Other hi" ] }
@@ -178,31 +191,34 @@ suite =
                             , d = [ N "More children" { c = [ L "Hi" ], d = [] } ]
                             }
                 in
-                TodoTree.insertCurrent
-                    (TodoTree.makeCompositTodo
-                        (makeTodo 'I' "nserted")
+                CheckTree.insertCurrent
+                    (CheckTree.makeCompositNode
+                        "Inserted"
                         (Checklist.fromItems { current = [], done = [] })
                     )
                     testTree
                     |> (\( id, tree ) ->
-                            TodoTree.insertCurrentAt id (SimpleTodo (makeTodo 'I' "nserted, too")) tree
+                            CheckTree.insertCurrentAt id
+                                (SimpleNode "Inserted, too")
+                                identity
+                                tree
                        )
                     |> Maybe.andThen
                         (\( id, tree ) ->
-                            TodoTree.moveToDone id tree
+                            CheckTree.moveToDone id tree
                         )
                     |> Maybe.map (Expect.equal expectedTree)
                     |> Maybe.withDefault (Expect.fail "Expected to find id.")
-        , fuzz todoNodeFuzzer "encoding and decoding results in same node" <|
+        , fuzz nodeFuzzer "encoding and decoding results in same node" <|
             \node ->
-                TodoTree.encodeNode node
-                    |> Decode.decodeValue TodoTree.nodeDecoder
+                CheckTree.encodeNode Encode.int Encode.int node
+                    |> Decode.decodeValue (CheckTree.nodeDecoder Decode.int Decode.int)
                     |> Expect.equal (Ok node)
         ]
 
 
-todoNodeFuzzer : Fuzzer TodoNode
-todoNodeFuzzer =
+nodeFuzzer : Fuzzer (Node Int Int)
+nodeFuzzer =
     let
         shortList fuzzer =
             Fuzz.map3
@@ -211,32 +227,28 @@ todoNodeFuzzer =
                 (maybe fuzzer)
                 (maybe fuzzer)
 
-        todoFuzzer =
-            Fuzz.map Todo.fromAction
-                NonEmptyString.fuzzer
+        simpleNodeFuzzer =
+            Fuzz.map SimpleNode int
 
-        simpleTodoFuzzer =
-            todoFuzzer |> Fuzz.map SimpleTodo
-
-        compositTodoFuzzer levels =
+        compositNodeFuzzer levels =
             case levels of
                 0 ->
-                    simpleTodoFuzzer
+                    simpleNodeFuzzer
 
                 n ->
                     Fuzz.map3
-                        (\todo current done ->
-                            TodoTree.makeCompositTodo
-                                todo
+                        (\node current done ->
+                            CheckTree.makeCompositNode
+                                node
                                 (Checklist.fromItems { current = current, done = done })
                         )
-                        todoFuzzer
-                        (shortList <| compositTodoFuzzer (n - 1))
-                        (shortList <| compositTodoFuzzer (n - 1))
+                        int
+                        (shortList <| compositNodeFuzzer (n - 1))
+                        (shortList <| compositNodeFuzzer (n - 1))
     in
     Fuzz.oneOf
-        [ simpleTodoFuzzer
-        , compositTodoFuzzer 2
+        [ simpleNodeFuzzer
+        , compositNodeFuzzer 2
         ]
 
 
@@ -245,34 +257,24 @@ type TestTree
     | L String
 
 
-makeTodo : Char -> String -> Todo
-makeTodo first rest =
-    NonEmptyString.build first rest
-        |> Todo.fromAction
-
-
-todoTreeForTest : { c : List TestTree, d : List TestTree } -> TodoTree
-todoTreeForTest init =
+checkTreeForTest : { c : List TestTree, d : List TestTree } -> CheckTree String String
+checkTreeForTest init =
     let
+        mapTree : TestTree -> Node String String
         mapTree tree =
             case tree of
                 N string children ->
-                    NonEmptyString.fromString string
-                        |> Maybe.map
-                            (\action ->
-                                TodoTree.makeCompositTodo (Todo.fromAction action)
-                                    (Checklist.fromItems
-                                        { current = List.filterMap mapTree children.c
-                                        , done = List.filterMap mapTree children.d
-                                        }
-                                    )
-                            )
+                    CheckTree.makeCompositNode string
+                        (Checklist.fromItems
+                            { current = List.map mapTree children.c
+                            , done = List.map mapTree children.d
+                            }
+                        )
 
                 L string ->
-                    NonEmptyString.fromString string
-                        |> Maybe.map (\action -> SimpleTodo (Todo.fromAction action))
+                    SimpleNode string
     in
-    TodoTree.fromItems
-        { current = List.filterMap mapTree init.c
-        , done = List.filterMap mapTree init.d
+    CheckTree.fromItems
+        { current = List.map mapTree init.c
+        , done = List.map mapTree init.d
         }
