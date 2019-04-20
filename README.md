@@ -6,8 +6,9 @@ Divide and conquer your tasks.
 
 # Development
 
+Install with `yarn install`.
+
 Launch a development server with live reload using the npm script.
 ```bash
 yarn start:dev
 ```
-This requires the dependencies to be installed via `yarn install`.
