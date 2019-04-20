@@ -29,31 +29,31 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 
 
-type CheckTree a
-    = CheckTree (Entries a)
+type CheckTree a b
+    = CheckTree (Entries a b)
 
 
-type alias Entries a =
-    Checklist (Node a)
+type alias Entries a b =
+    Checklist (Node a b)
 
 
-type Node a
+type Node a b
     = SimpleNode a
-    | CompositNode a (Subnodes a)
+    | CompositNode b (Subnodes a b)
 
 
-makeCompositNode : a -> Entries a -> Node a
-makeCompositNode todo entries =
-    CompositNode todo (Subnodes entries)
+makeCompositNode : b -> Entries a b -> Node a b
+makeCompositNode item entries =
+    CompositNode item (Subnodes entries)
 
 
 {-| Separate type from CheckTree to ensure ID safety.
 -}
-type Subnodes a
-    = Subnodes (Entries a)
+type Subnodes a b
+    = Subnodes (Entries a b)
 
 
-emptySubnodes : Subnodes a
+emptySubnodes : Subnodes a b
 emptySubnodes =
     Subnodes Checklist.empty
 
@@ -71,19 +71,19 @@ appendId (Id first following) newId =
 -- BUILD
 
 
-empty : CheckTree a
+empty : CheckTree a b
 empty =
     Checklist.fromItems { current = [], done = [] }
         |> CheckTree
 
 
-fromItems : { current : List (Node a), done : List (Node a) } -> CheckTree a
+fromItems : { current : List (Node a b), done : List (Node a b) } -> CheckTree a b
 fromItems items =
     Checklist.fromItems items
         |> CheckTree
 
 
-insertCurrent : Node a -> CheckTree a -> ( Id, CheckTree a )
+insertCurrent : Node a b -> CheckTree a b -> ( Id, CheckTree a b )
 insertCurrent node (CheckTree checklist) =
     let
         ( checklistId, newChecklist ) =
@@ -92,7 +92,7 @@ insertCurrent node (CheckTree checklist) =
     ( Id checklistId [], CheckTree newChecklist )
 
 
-insertDone : Node a -> CheckTree a -> ( Id, CheckTree a )
+insertDone : Node a b -> CheckTree a b -> ( Id, CheckTree a b )
 insertDone node (CheckTree checklist) =
     let
         ( checklistId, newChecklist ) =
@@ -101,42 +101,43 @@ insertDone node (CheckTree checklist) =
     ( Id checklistId [], CheckTree newChecklist )
 
 
-insertCurrentAt : Id -> Node a -> CheckTree a -> Maybe ( Id, CheckTree a )
+insertCurrentAt : Id -> Node a b -> (a -> b) -> CheckTree a b -> Maybe ( Id, CheckTree a b )
 insertCurrentAt =
     insertAt Checklist.insertCurrent
 
 
-insertDoneAt : Id -> Node a -> CheckTree a -> Maybe ( Id, CheckTree a )
+insertDoneAt : Id -> Node a b -> (a -> b) -> CheckTree a b -> Maybe ( Id, CheckTree a b )
 insertDoneAt =
     insertAt Checklist.insertDone
 
 
 insertAt :
-    (Node a -> Entries a -> ( Checklist.Id, Entries a ))
+    (Node a b -> Entries a b -> ( Checklist.Id, Entries a b ))
     -> Id
-    -> Node a
-    -> CheckTree a
-    -> Maybe ( Id, CheckTree a )
-insertAt insert id node (CheckTree checklist) =
+    -> Node a b
+    -> (a -> b)
+    -> CheckTree a b
+    -> Maybe ( Id, CheckTree a b )
+insertAt insert id node makeComposit (CheckTree checklist) =
     updateChecklistWithContext
         (\foundId foundChecklist ->
             Checklist.get foundId foundChecklist
                 |> Maybe.map
                     (\foundNode ->
                         case foundNode of
-                            CompositNode todo (Subnodes subtodos) ->
+                            CompositNode item (Subnodes subtodos) ->
                                 let
                                     ( checklistId, newChecklist ) =
                                         insert node subtodos
                                 in
-                                ( todo, checklistId, Subnodes newChecklist )
+                                ( item, checklistId, Subnodes newChecklist )
 
-                            SimpleNode todo ->
+                            SimpleNode item ->
                                 let
                                     ( checklistId, newChecklist ) =
                                         insert node Checklist.empty
                                 in
-                                ( todo, checklistId, Subnodes newChecklist )
+                                ( makeComposit item, checklistId, Subnodes newChecklist )
                     )
                 |> Maybe.andThen
                     (\( todo, checklistId, newSubtodos ) ->
@@ -162,21 +163,21 @@ insertAt insert id node (CheckTree checklist) =
 -- READ
 
 
-mapCurrent : (Id -> Node a -> b) -> CheckTree a -> List b
+mapCurrent : (Id -> Node a b -> c) -> CheckTree a b -> List c
 mapCurrent mapping (CheckTree checklist) =
     Checklist.mapCurrent
         (\checklistId node -> mapping (Id checklistId []) node)
         checklist
 
 
-mapDone : (Id -> Node a -> b) -> CheckTree a -> List b
+mapDone : (Id -> Node a b -> c) -> CheckTree a b -> List c
 mapDone mapping (CheckTree checklist) =
     Checklist.mapDone
         (\checklistId node -> mapping (Id checklistId []) node)
         checklist
 
 
-mapCurrentSubtodos : (Id -> Node a -> b) -> Id -> Subnodes a -> List b
+mapCurrentSubtodos : (Id -> Node a b -> c) -> Id -> Subnodes a b -> List c
 mapCurrentSubtodos mapping (Id first following) (Subnodes subtodos) =
     let
         nextId checklistId =
@@ -187,7 +188,7 @@ mapCurrentSubtodos mapping (Id first following) (Subnodes subtodos) =
         subtodos
 
 
-mapDoneSubtodos : (Id -> Node a -> b) -> Id -> Subnodes a -> List b
+mapDoneSubtodos : (Id -> Node a b -> c) -> Id -> Subnodes a b -> List c
 mapDoneSubtodos mapping (Id first following) (Subnodes subtodos) =
     let
         nextId checklistId =
@@ -198,7 +199,7 @@ mapDoneSubtodos mapping (Id first following) (Subnodes subtodos) =
         subtodos
 
 
-get : Id -> CheckTree a -> Maybe (Node a)
+get : Id -> CheckTree a b -> Maybe (Node a b)
 get id (CheckTree checklist) =
     findChecklist id checklist
         |> Maybe.andThen
@@ -211,7 +212,7 @@ get id (CheckTree checklist) =
 -- MODIFY
 
 
-update : (Node a -> Node a) -> Id -> CheckTree a -> Maybe (CheckTree a)
+update : (Node a b -> Node a b) -> Id -> CheckTree a b -> Maybe (CheckTree a b)
 update mapping id (CheckTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
@@ -222,7 +223,7 @@ update mapping id (CheckTree checklist) =
         |> Maybe.map CheckTree
 
 
-remove : Id -> CheckTree a -> Maybe (CheckTree a)
+remove : Id -> CheckTree a b -> Maybe (CheckTree a b)
 remove id (CheckTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
@@ -233,7 +234,7 @@ remove id (CheckTree checklist) =
         |> Maybe.map CheckTree
 
 
-moveToCurrent : Id -> CheckTree a -> Maybe (CheckTree a)
+moveToCurrent : Id -> CheckTree a b -> Maybe (CheckTree a b)
 moveToCurrent id (CheckTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
@@ -244,7 +245,7 @@ moveToCurrent id (CheckTree checklist) =
         |> Maybe.map CheckTree
 
 
-moveToDone : Id -> CheckTree a -> Maybe (CheckTree a)
+moveToDone : Id -> CheckTree a b -> Maybe (CheckTree a b)
 moveToDone id (CheckTree checklist) =
     updateChecklist
         (\foundId foundChecklist ->
@@ -259,7 +260,7 @@ moveToDone id (CheckTree checklist) =
 -- HELPERS
 
 
-findChecklist : Id -> Entries a -> Maybe ( Checklist.Id, Entries a )
+findChecklist : Id -> Entries a b -> Maybe ( Checklist.Id, Entries a b )
 findChecklist (Id first following) checklist =
     case following of
         [] ->
@@ -275,10 +276,10 @@ findChecklist (Id first following) checklist =
 
 
 updateChecklistWithContext :
-    (Checklist.Id -> Entries a -> Maybe ( Entries a, b ))
+    (Checklist.Id -> Entries a b -> Maybe ( Entries a b, c ))
     -> Id
-    -> Entries a
-    -> Maybe ( Entries a, b )
+    -> Entries a b
+    -> Maybe ( Entries a b, c )
 updateChecklistWithContext mapping (Id first following) checklist =
     case following of
         [] ->
@@ -302,10 +303,10 @@ updateChecklistWithContext mapping (Id first following) checklist =
 
 
 updateChecklist :
-    (Checklist.Id -> Entries a -> Maybe (Entries a))
+    (Checklist.Id -> Entries a b -> Maybe (Entries a b))
     -> Id
-    -> Entries a
-    -> Maybe (Entries a)
+    -> Entries a b
+    -> Maybe (Entries a b)
 updateChecklist mapping id checklist =
     updateChecklistWithContext
         (\foundId foundChecklist ->
@@ -333,39 +334,39 @@ doneField =
     "done"
 
 
-encodeNode : (a -> Encode.Value) -> Node a -> Encode.Value
-encodeNode encodeContent node =
+encodeNode : (a -> Encode.Value) -> (b -> Encode.Value) -> Node a b -> Encode.Value
+encodeNode encodeSimple encodeComposit node =
     case node of
         SimpleNode content ->
-            encodeContent content
+            encodeSimple content
 
         CompositNode content (Subnodes subtodos) ->
             Encode.object
-                [ ( contentField, encodeContent content )
+                [ ( contentField, encodeComposit content )
                 , ( currentField
                   , Encode.list identity <|
                         Checklist.mapCurrent
-                            (\_ subnode -> encodeNode encodeContent subnode)
+                            (\_ subnode -> encodeNode encodeSimple encodeComposit subnode)
                             subtodos
                   )
                 , ( doneField
                   , Encode.list identity <|
                         Checklist.mapDone
-                            (\_ subnode -> encodeNode encodeContent subnode)
+                            (\_ subnode -> encodeNode encodeSimple encodeComposit subnode)
                             subtodos
                   )
                 ]
 
 
-nodeDecoder : Decode.Decoder a -> Decode.Decoder (Node a)
-nodeDecoder contentDecoder =
+nodeDecoder : Decode.Decoder a -> Decode.Decoder b -> Decode.Decoder (Node a b)
+nodeDecoder simpleContentDecoder compositContentDecoder =
     Decode.oneOf
-        [ contentDecoder |> Decode.map SimpleNode
+        [ simpleContentDecoder |> Decode.map SimpleNode
         , Decode.map3
             (\todo current done ->
                 CompositNode todo (Subnodes <| Checklist.fromItems { current = current, done = done })
             )
-            (Decode.field contentField contentDecoder)
-            (Decode.field currentField (Decode.list (Decode.lazy (\_ -> nodeDecoder contentDecoder))))
-            (Decode.field doneField (Decode.list (Decode.lazy (\_ -> nodeDecoder contentDecoder))))
+            (Decode.field contentField compositContentDecoder)
+            (Decode.field currentField (Decode.list (Decode.lazy (\_ -> nodeDecoder simpleContentDecoder compositContentDecoder))))
+            (Decode.field doneField (Decode.list (Decode.lazy (\_ -> nodeDecoder simpleContentDecoder compositContentDecoder))))
         ]

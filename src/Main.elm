@@ -51,7 +51,34 @@ type alias Model =
 
 
 type alias TodoTree =
-    CheckTree Todo
+    CheckTree Todo CompositTodo
+
+
+type alias TodoNode =
+    Node Todo CompositTodo
+
+
+type alias TodoSubnodes =
+    Subnodes Todo CompositTodo
+
+
+type alias CompositTodo =
+    ( Todo, Fold )
+
+
+type Fold
+    = Show
+    | Hide
+
+
+toggleFold : Fold -> Fold
+toggleFold fold =
+    case fold of
+        Show ->
+            Hide
+
+        Hide ->
+            Show
 
 
 type alias EditingInfo =
@@ -90,7 +117,7 @@ decodeFlags flags =
         decodeTodos field value =
             Decode.decodeValue
                 (Decode.field field
-                    (Decode.list <| CheckTree.nodeDecoder Todo.decoder)
+                    (Decode.list <| CheckTree.nodeDecoder Todo.decoder decodeCompositTodo)
                 )
                 value
     in
@@ -101,6 +128,16 @@ decodeFlags flags =
         currentTodos
         doneTodos
         |> Result.toMaybe
+
+
+encodeCompositeTodo : CompositTodo -> Encode.Value
+encodeCompositeTodo ( todo, _ ) =
+    Todo.encode todo
+
+
+decodeCompositTodo : Decode.Decoder CompositTodo
+decodeCompositTodo =
+    Decode.map (\todo -> ( todo, Hide )) Todo.decoder
 
 
 
@@ -114,6 +151,7 @@ type Msg
     | MoveToCurrent CheckTree.Id
     | MoveToDone CheckTree.Id
     | Remove CheckTree.Id
+    | ClickedTodo CheckTree.Id
     | DoubleClickedTodo CheckTree.Id
     | UpdateEdit EditingInfo
     | AddSubtodo EditingInfo
@@ -180,6 +218,27 @@ update msg model =
             , Cmd.none
             )
 
+        ClickedTodo id ->
+            let
+                newModel =
+                    { model
+                        | todos =
+                            CheckTree.update
+                                (\node ->
+                                    case node of
+                                        CompositNode ( todo, fold ) children ->
+                                            CompositNode ( todo, toggleFold fold ) children
+
+                                        n ->
+                                            n
+                                )
+                                id
+                                model.todos
+                                |> Maybe.withDefault model.todos
+                    }
+            in
+            ( applyEdit newModel, Cmd.none )
+
         DoubleClickedTodo id ->
             case CheckTree.get id model.todos of
                 Just node ->
@@ -189,7 +248,7 @@ update msg model =
                                 SimpleNode t ->
                                     t
 
-                                CompositNode t _ ->
+                                CompositNode ( t, _ ) _ ->
                                     t
                     in
                     ( { model
@@ -219,8 +278,8 @@ update msg model =
                                             SimpleNode t ->
                                                 SimpleNode (Todo.setAction newAction t)
 
-                                            CompositNode t subtodos ->
-                                                CompositNode (Todo.setAction newAction t) subtodos
+                                            CompositNode ( t, fold ) subtodos ->
+                                                CompositNode ( Todo.setAction newAction t, fold ) subtodos
                                     )
                                     newEditInfo.todoId
                                     model.todos
@@ -238,6 +297,7 @@ update msg model =
                                 CheckTree.insertCurrentAt
                                     newEditInfo.todoId
                                     (SimpleNode (Todo.fromAction newAction))
+                                    (\todo -> ( todo, Hide ))
                                     model.todos
                             )
                         |> Maybe.map Tuple.second
@@ -249,17 +309,22 @@ update msg model =
             ( { model | todos = newTodos, editing = Just updatedEditInfo }, Cmd.none )
 
         ApplyEdit ->
-            ( { model | editing = Nothing }, Cmd.none )
+            ( applyEdit model, Cmd.none )
 
         CancelEdit ->
             ( cancelEdit model, Cmd.none )
 
         BackgroundClicked ->
-            ( cancelEdit model, Cmd.none )
+            ( applyEdit model, Cmd.none )
     )
         |> (\( mdl, cmd ) ->
                 ( mdl, Cmd.batch [ cmd, save mdl ] )
            )
+
+
+applyEdit : Model -> Model
+applyEdit model =
+    { model | editing = Nothing }
 
 
 cancelEdit : Model -> Model
@@ -275,8 +340,8 @@ cancelEdit model =
                                     SimpleNode t ->
                                         SimpleNode (Todo.setAction editInfo.oldAction t)
 
-                                    CompositNode t subtodos ->
-                                        CompositNode (Todo.setAction editInfo.oldAction t) subtodos
+                                    CompositNode ( t, fold ) subtodos ->
+                                        CompositNode ( Todo.setAction editInfo.oldAction t, fold ) subtodos
                             )
                             editInfo.todoId
                             model.todos
@@ -326,8 +391,8 @@ save model =
                     CheckTree.mapDone (\_ todo -> todo)
     in
     Encode.object
-        [ ( "currentTodos", Encode.list (CheckTree.encodeNode Todo.encode) <| getTodos Current model.todos )
-        , ( "doneTodos", Encode.list (CheckTree.encodeNode Todo.encode) <| getTodos Done model.todos )
+        [ ( "currentTodos", Encode.list (CheckTree.encodeNode Todo.encode encodeCompositeTodo) <| getTodos Current model.todos )
+        , ( "doneTodos", Encode.list (CheckTree.encodeNode Todo.encode encodeCompositeTodo) <| getTodos Done model.todos )
         ]
         |> saveRaw
 
@@ -450,7 +515,7 @@ viewTodoTree todos editing currentInput =
         ]
 
 
-viewSubtodoTree : CheckTree.Id -> Subnodes Todo -> Maybe EditingInfo -> Html Msg
+viewSubtodoTree : CheckTree.Id -> TodoSubnodes -> Maybe EditingInfo -> Html Msg
 viewSubtodoTree id subtodos editing =
     div [ css [ todoTreeStyle ] ]
         [ ul [ css [ todoListStyle ] ]
@@ -489,7 +554,7 @@ editingForCurrent id editing =
     Maybe.filter (\edit -> edit.todoId == id) editing
 
 
-viewTodoListItem : Selector -> Maybe EditingInfo -> CheckTree.Id -> Node Todo -> Html Msg
+viewTodoListItem : Selector -> Maybe EditingInfo -> CheckTree.Id -> TodoNode -> Html Msg
 viewTodoListItem selector editing id node =
     let
         extraStyles =
@@ -544,7 +609,7 @@ todoListEntryBorderStyle border =
     border (px 1) solid (hsla 0.0 0.0 0.0 0.1)
 
 
-viewTodoNode : Selector -> Maybe EditingInfo -> CheckTree.Id -> Node Todo -> Html Msg
+viewTodoNode : Selector -> Maybe EditingInfo -> CheckTree.Id -> TodoNode -> Html Msg
 viewTodoNode selector editing id node =
     let
         ( iconName, moveText, moveMessage ) =
@@ -555,21 +620,31 @@ viewTodoNode selector editing id node =
                 Done ->
                     ( "refresh", "Mark as to do", MoveToCurrent )
 
-        ( todo, maybeSubtodos ) =
+        ( todo, maybeSubtodos, toggleIcon ) =
             case node of
                 SimpleNode t ->
-                    ( t, Nothing )
+                    ( t, Nothing, [] )
 
-                CompositNode t subs ->
-                    ( t, Just subs )
+                CompositNode ( t, fold ) subs ->
+                    let
+                        ( maybeSubtodos_, toggleIcon_ ) =
+                            case fold of
+                                Show ->
+                                    ( Just subs, icon "arrow-down" )
+
+                                Hide ->
+                                    ( Nothing, icon "arrow-right" )
+                    in
+                    ( t, maybeSubtodos_, [ toggleIcon_ ] )
     in
     div
         [ css
             [ todoContainerStyle
             ]
+        , onClick (ClickedTodo id)
         , onDoubleClick (DoubleClickedTodo id)
         ]
-        ([ div [ css [ todoLeftMarginStyle ] ] [ text (Todo.readAction todo) ]
+        ([ div [ css [ todoLeftMarginStyle, displayFlex, flexDirection row, alignItems center ] ] (toggleIcon ++ [ text (Todo.readAction todo) ])
          , div [ css [ todoRightMarginStyle ] ] [ button moveText iconName (moveMessage id) ]
          ]
             ++ (case maybeSubtodos of
@@ -584,7 +659,7 @@ viewTodoNode selector editing id node =
         )
 
 
-viewEditNode : CheckTree.Id -> Node Todo -> EditingInfo -> Html Msg
+viewEditNode : CheckTree.Id -> TodoNode -> EditingInfo -> Html Msg
 viewEditNode id node editInfo =
     let
         ( todo, subtodos ) =
@@ -592,7 +667,7 @@ viewEditNode id node editInfo =
                 SimpleNode t ->
                     ( t, CheckTree.emptySubnodes )
 
-                CompositNode t subs ->
+                CompositNode ( t, _ ) subs ->
                     ( t, subs )
     in
     div
@@ -676,7 +751,7 @@ subtodoTreeStyle =
 button : String -> String -> Msg -> Html Msg
 button description iconName action =
     Html.button
-        [ onClick action, css [ buttonStyle, icon iconName ], title description ]
+        [ onClick action, css [ iconStyle iconName, buttonStyle ], title description ]
         [ span [ css [ visuallyHidden ] ] [ text description ] ]
 
 
@@ -686,11 +761,16 @@ inputSubmit description iconName =
         [ span [ css [ visuallyHidden ] ] [ text description ]
         , input
             [ type_ "submit"
-            , css [ buttonStyle, icon iconName, color transparent ]
+            , css [ iconStyle iconName, buttonStyle, color transparent ]
             , title description
             ]
             []
         ]
+
+
+icon : String -> Html msg
+icon iconName =
+    Html.div [ css [ iconStyle iconName ] ] []
 
 
 
@@ -705,21 +785,24 @@ buttonStyle =
         , border zero
         , padding (em 0.5)
         , margin (em 0.1)
+        , width (em 3)
+        , height (em 3)
+        , backgroundSize (pct 75)
         , textAlign center
         , hover [ backgroundColor (hsl 0.0 0.0 0.92) ]
         , active [ backgroundColor (hsl 0.0 0.0 0.88) ]
         ]
 
 
-icon : String -> Css.Style
-icon iconName =
+iconStyle : String -> Css.Style
+iconStyle iconName =
     Css.batch
         [ backgroundImage (url <| "./icons/" ++ iconName ++ ".svg")
         , backgroundRepeat noRepeat
         , backgroundPosition center
-        , backgroundSize (pct 75)
-        , width (em 3)
-        , height (em 3)
+        , backgroundSize (pct 100)
+        , minWidth (em 2)
+        , minHeight (em 2)
         ]
 
 
