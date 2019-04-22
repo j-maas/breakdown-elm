@@ -6,9 +6,18 @@ Divide and conquer your tasks.
 
 # Development
 
-Install with `yarn install`.
+After cloning the repository, you might need to initialize the [Git submodule] with `git submodule init && git submodule update`.
+
+Install the dependencies with `yarn install`.
 
 Launch a development server with live reload using the npm script.
 ```bash
-yarn start:dev
+yarn watch
 ```
+
+To test just the Elm app, without a service worker's cache, run
+```bash
+yarn watch:elm
+```
+
+[Git submodule]: https://git-scm.com/book/en/v2/Git-Tools-Submodules
